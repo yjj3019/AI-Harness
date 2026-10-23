@@ -23,7 +23,7 @@ Harness Engineering is an engineering methodology for designing safety mechanism
                      ┌─────────────────────────────────────┐
                      │            CLAUDE.md                 │
                      │ (Project Constitution & Index File)  │
-                     └────────────────┬──────────────────────────┘
+                     └───────────────┬───────────────────────────┘
                                         │
            ┌───────────────────────────┼─────────────────────────┐
            ▼                            ▼                            ▼
@@ -108,6 +108,16 @@ Agents must read `docs/compound-log.md` before starting any task to avoid repeat
 
 Execution: `/phase-harness 1`, `/phase-harness 2`, etc.
 
+## 5.1 Office Document (PPT) Creation Workflow
+
+Document-driven phase approach for high-quality PPT generation with Claude Code + Anthropic pptx skill.
+
+**Key sequence**: Brain.md → UpgradeBrain.md → Phase.md → PageDetail.md → PageLayout.md → sample.ppt (3 slides) → full PPT.
+
+See full guide: [docs/ppt-harness-workflow.md](./ppt-harness-workflow.md).
+
+This pattern directly applies the No One-Shot and sample-first verification principles to non-code deliverables.
+
 ## 6. Future Outlook
 
 - Engineer role shifts from writing code lines to designing Harness Scaffolding and Feedback Loops.
@@ -120,6 +130,7 @@ Execution: `/phase-harness 1`, `/phase-harness 2`, etc.
 | CLAUDE.md | Top-level constitution & index | Keep ~100 lines; index to docs/ |
 | docs/DETAIL_SPEC.md | Functional requirements & PRD | Detailed technical requirements |
 | docs/PHASES.md | Step-by-step roadmap | Phase checklists & completion criteria |
+| docs/ppt-harness-workflow.md | PPT / office document creation | Document-driven phases + sample verification |
 | docs/HANDOFF.md | Session migration state | Used for Context Reset |
 | docs/compound-log.md | Accumulated learnings & errors | Must be reviewed before every task |
 | .claude/agents/ | Independent Subagents | Isolated contexts for unbiased assessment |
