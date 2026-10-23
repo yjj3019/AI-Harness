@@ -39,6 +39,7 @@ AI-Harness/
 ├── README.en.md                       # 영문 버전
 ├── docs/
 │   ├── architecture-spec.md            # 전체 종합 명세
+│   ├── ppt-harness-workflow.md         # PPT/오피스 문서 제작 하네스
 │   ├── DETAIL_SPEC.md                 # 요구사항 템플릿
 │   ├── PHASES.md                      # 단계별 체크리스트
 │   ├── HANDOFF.md                     # 세션 핸드오프 상태
@@ -113,6 +114,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ## 추가 자료
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서
+- [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Claude Code로 PPT/오피스 문서 제작하는 단계별 하네스 워크플로
 - Anthropic: [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - Anthropic: [Harness design for long-running apps](https://www.anthropic.com/research/harness-design-long-running-apps)
 - Geoffrey Huntley — Ralph technique
