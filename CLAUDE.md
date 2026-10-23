@@ -8,7 +8,8 @@ Notice to Code Agent: This is the top-level index file. Follow all instructions 
 - **Think Before Coding**: Analyze assumptions, dependencies, and risks prior to editing.
 - **Simplicity First**: Write minimal, robust code to solve the immediate problem. No over-engineering.
 - **Execution Safety**: Do NOT run applications or open servers automatically unless explicitly asked.
-- **Context Window Reset**: If context becomes congested or response degrades, summarize progress in `docs/HANDOFF.md` and request a fresh session.
+- **Evidence Required**: Do not claim completion without observable evidence (test logs, artifacts, PASS/FAIL verdicts).
+- **Context Window Reset**: After each Phase completes, or if context degrades, update `docs/HANDOFF.md` and start a fresh session.
 
 ## 2. Document Map & Index
 
@@ -26,7 +27,7 @@ The system uses 5 independent Subagents located in `.claude/agents/`:
 
 - `coding.md`: Implementation of phase requirements.
 - `test.md`: Automated testing via Playwright / DevTools MCP.
-- `verify.md`: Functional criteria check against phase checklists (PASS/FAIL).
+- `verify.md`: Functional criteria check against phase checklists using evidence only (PASS/FAIL).
 - `review.md`: Static code analysis and bug inspection ([BLOCKING], [NIT]).
 - `compound.md`: Record lessons learned into `docs/compound-log.md`.
 
@@ -39,3 +40,5 @@ If test, verify, or review returns FAIL or [BLOCKING], automatically return to c
 Maximum retry budget: 3 iterations.
 
 Always check `docs/compound-log.md` before starting any task.
+
+After a Phase fully passes, update `docs/HANDOFF.md` and prefer a new session for the next Phase.
