@@ -23,7 +23,7 @@ Harness Engineering is an engineering methodology for designing safety mechanism
                      ┌─────────────────────────────────────┐
                      │            CLAUDE.md                 │
                      │ (Project Constitution & Index File)  │
-                     └───────────────┬───────────────────────────┘
+                     └──────────────┬────────────────────────────┘
                                         │
            ┌───────────────────────────┼─────────────────────────┐
            ▼                            ▼                            ▼
@@ -46,12 +46,14 @@ Harness Engineering is an engineering methodology for designing safety mechanism
 - Index-only design: Keep ~100 lines. Detailed content lives in `docs/`.
 - Prevents Context Anxiety and context pollution.
 - Strict behavioral rules: scope control, no automatic execution, simplicity first.
+- Evidence required: completion claims must be backed by observable artifacts or logs.
 
 ### 3.2 Context Window Management & Resets
 
 - Context Window = capacity; Context = loaded data.
 - Context Anxiety appears above ~70% usage (forgetting rules, premature termination).
-- Mitigation: `/compact` or Context Reset via `docs/HANDOFF.md` to a fresh session.
+- Mitigation: `/compact` or **mandatory Context Reset** via `docs/HANDOFF.md` at Phase boundaries and when quality degrades.
+- After a Phase fully passes, update HANDOFF.md and prefer a fresh session for the next Phase.
 - Model differences: Sonnet more sensitive; Opus handles larger contexts better.
 
 ### 3.3 Feedback Loop (Ralph Wiggum Loop)
@@ -59,8 +61,8 @@ Harness Engineering is an engineering methodology for designing safety mechanism
 5-step autonomous cycle:
 
 1. **Coding**: Implement minimum required code for the current Phase.
-2. **Test**: Execute objective tests (npm test, Playwright, DevTools MCP).
-3. **Verify**: Check physical artifacts against Phase checklist → PASS/FAIL.
+2. **Test**: Execute objective tests (npm test, Playwright, DevTools MCP) → TEST_PASS / TEST_FAIL + logs.
+3. **Verify**: Check physical artifacts against Phase checklist using evidence only → PASS/FAIL.
 4. **Review**: Static analysis → [BLOCKING] / [NIT].
 5. **Compound**: Extract lessons into `docs/compound-log.md`.
 
@@ -71,20 +73,24 @@ If FAIL or [BLOCKING], loop back to Coding (max 3 retries).
 - LLMs exhibit self-assessment bias.
 - Separate Context Windows for coding vs. evaluation agents.
 - Agents: coding, test, verify, review, compound.
+- verify and review must not rely on the coding agent's self-report.
 
-### 3.5 Objective Verification Tools
+### 3.5 Objective Verification Tools & Evidence Gates
 
-Never rely on subjective code reading. Use:
+Never rely on subjective code reading or self-claims. Require:
 
-- Playwright MCP
-- Chrome DevTools MCP
-- Linter / CI outputs
+- Playwright MCP / Chrome DevTools MCP outputs
+- Linter / CI / test runner exit codes and logs
 - Browser snapshots / console logs
+- Physical artifacts (files, build outputs) that can be inspected
+
+A step may only proceed when the previous step has produced clear evidence of success.
 
 ### 3.6 Incremental Phase / Sprint Strategy
 
 - Reject One-Shot for complex work.
 - Break into Phases with explicit completion criteria and checklists.
+- Prefer a fresh session after each completed Phase (via HANDOFF.md).
 
 ### 3.7 Compounded Intelligence
 
@@ -127,10 +133,11 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 
 | File / Component | Primary Purpose | Key Guidelines |
 |------------------|-----------------|----------------|
-| CLAUDE.md | Top-level constitution & index | Keep ~100 lines; index to docs/ |
+| CLAUDE.md | Top-level constitution & index | Keep ~100 lines; index to docs/; evidence required |
 | docs/DETAIL_SPEC.md | Functional requirements & PRD | Detailed technical requirements |
 | docs/PHASES.md | Step-by-step roadmap | Phase checklists & completion criteria |
 | docs/ppt-harness-workflow.md | PPT / office document creation | Document-driven phases + sample verification |
-| docs/HANDOFF.md | Session migration state | Used for Context Reset |
+| docs/HANDOFF.md | Session migration state | Mandatory at Phase boundaries for Context Reset |
 | docs/compound-log.md | Accumulated learnings & errors | Must be reviewed before every task |
-| .claude/agents/ | Independent Subagents | Isolated contexts for unbiased assessment |
+| .claude/agents/ | Independent Subagents | Isolated contexts; evidence-based PASS/FAIL |
+| .claude/workflows/phase-harness.js | Loop skeleton | Evidence gates + post-Phase handoff |
