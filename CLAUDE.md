@@ -1,44 +1,30 @@
-# CLAUDE.md - AI Harness Constitution
+# CLAUDE.md - PPT 제작 하네스
 
-Notice to Code Agent: This is the top-level index file. Follow all instructions strictly. Do not execute unrequested scope. Keep modifications surgical.
+## 프로젝트 개요
+이 프로젝트는 PPT(PowerPoint)를 만드는 프로젝트입니다.
+사용하는 스킬은 Anthropic 공식 pptx 스킬입니다.
+(npx skills add https://github.com/anthropics/skills --skill pptx --agent claude-code)
 
-## 1. Primary Rules
+사내 템플릿이 존재하지 않으므로 템플릿 관련 내용은 생략합니다.
+생성 시 일관된 색상 테마, 글자 깨짐 방지, 적절한 로고/요소 위치를 준수하여 톤앤매너를 유지합니다.
 
-- **Scope Control**: Work strictly within the requested scope. Do not refactor unrelated files.
-- **Think Before Coding**: Analyze assumptions, dependencies, and risks prior to editing.
-- **Simplicity First**: Write minimal, robust code to solve the immediate problem. No over-engineering.
-- **Execution Safety**: Do NOT run applications or open servers automatically unless explicitly asked.
-- **Evidence Required**: Do not claim completion without observable evidence (test logs, artifacts, PASS/FAIL verdicts).
-- **Context Window Reset**: After each Phase completes, or if context degrades, update `docs/HANDOFF.md` and start a fresh session.
+## 핵심 규칙
+- 샘플 우선: 전체 생성 전 항상 3장 샘플을 먼저 생성하고 시각 QA를 통과한다.
+- 결론형 타이틀: 슬라이드 제목은 섹션 레이블이 아닌 판단 문장으로 작성한다.
+- 소스 충실성: PageDetail.md에 명시된 데이터 외에 새로운 숫자를 추가하지 않는다.
+- 네이티브 객체: 테이블과 차트는 OOXML 네이티브로 생성한다 (그림 금지).
+- 시각 QA 강제: 생성 후 슬라이드를 이미지로 렌더링하여 오버플로우·대비를 확인한다.
+- 한 슬라이드 한 아이디어.
 
-## 2. Document Map & Index
+## 참조 문서
+- 자유 아이디어: docs/Brain.md
+- 논리 구체화: docs/UpgradeBrain.md
+- PPT 전체 흐름: docs/Phase.md
+- 페이지별 상세: docs/PageDetail.md
+- 페이지별 레이아웃: docs/PageLayout.md
+- 상세 워크플로: docs/ppt-harness-workflow.md
 
-Refer to these detailed documents in `docs/` rather than bloating this top-level file:
-
-- Requirements & Specification: `docs/DETAIL_SPEC.md`
-- Phase Breakdown: `docs/PHASES.md`
-- Compound Learning Log: `docs/compound-log.md`
-- Session Hand-off State: `docs/HANDOFF.md`
-- Full Architecture: `docs/architecture-spec.md`
-
-## 3. Verify Loop Subagents
-
-The system uses 5 independent Subagents located in `.claude/agents/`:
-
-- `coding.md`: Implementation of phase requirements.
-- `test.md`: Automated testing via Playwright / DevTools MCP.
-- `verify.md`: Functional criteria check against phase checklists using evidence only (PASS/FAIL).
-- `review.md`: Static code analysis and bug inspection ([BLOCKING], [NIT]).
-- `compound.md`: Record lessons learned into `docs/compound-log.md`.
-
-## 4. Feedback & Self-Correction Loop (Ralph Wiggum Loop)
-
-Run implementation using the workflow: coding → test → verify → review → compound
-
-If test, verify, or review returns FAIL or [BLOCKING], automatically return to coding to fix issues.
-
-Maximum retry budget: 3 iterations.
-
-Always check `docs/compound-log.md` before starting any task.
-
-After a Phase fully passes, update `docs/HANDOFF.md` and prefer a new session for the next Phase.
+## 하네스 원칙 (요약)
+- No One-Shot: 샘플 검증 후 전체 생성.
+- 단계별 문서 기반 진행.
+- 실패 시 compound-log.md에 기록.
