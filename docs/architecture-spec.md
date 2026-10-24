@@ -155,4 +155,16 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 
 - OpenAI Harness Engineering (2026): https://openai.com/index/harness-engineering/
 - Anthropic Harness Design for long-running apps (2026): https://www.anthropic.com/engineering/harness-design-long-running-apps
+- Anthropic Effective Harnesses for Long-Running Agents (2025): https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents
 - Andrej Karpathy Simplify principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) — applied as behavioral rules in CLAUDE.md.
+
+## 9. External Pattern Synthesis
+
+Reusable patterns from established harness repositories are documented in `docs/external-patterns.md`:
+
+- Forced lifecycle (obra/superpowers)
+- Default-FAIL contract + fresh-context evaluator (anthropics/cwc-long-running-agents)
+- Small stories + append-only learnings (snarktank/ralph)
+- Agent backpressure (Geoffrey Huntley)
+
+These are mapped to the existing components of this repository (evidence gates, independent agents, HANDOFF, compound-log).

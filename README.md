@@ -119,12 +119,13 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ## 추가 자료
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서 (하네스 정의, 실패 모드, 참고 자료 포함)
+- [docs/external-patterns.md](./docs/external-patterns.md) — 외부 저장소에서 추출한 보편 패턴 (Superpowers, Anthropic cwc, Ralph, Huntley)
 - [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Claude Code로 PPT/오피스 문서 제작하는 단계별 하네스 워크플로 (영문)
 - OpenAI: [Harness Engineering](https://openai.com/index/harness-engineering/)
 - Anthropic: [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - Anthropic: [Harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps)
-- Geoffrey Huntley — Ralph technique
 - obra/superpowers
+- Geoffrey Huntley — Ralph technique
 - Karpathy-inspired CLAUDE.md 컬렉션
 
 ---
