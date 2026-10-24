@@ -149,7 +149,7 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 | docs/HANDOFF.md | Session migration state | Mandatory at Phase boundaries for Context Reset |
 | docs/compound-log.md | Accumulated learnings & errors | Must be reviewed before every task |
 | .claude/agents/ | Independent Subagents | Isolated contexts; evidence-based PASS/FAIL |
-| .claude/workflows/phase-harness.js | Loop skeleton | Evidence gates + post-Phase handoff |
+| .claude/workflows/phase-harness.js | Loop skeleton | Evidence gates + post-Phase handoff. Validates phase against PHASES.md. Requires `.phase-evidence/phase-<id>-<step>.json` with `"status":"PASS"`. Exit codes: 0=complete, 1=invalid phase, 2/3=evidence failure after retries. |
 
 ## 8. Foundational References
 
