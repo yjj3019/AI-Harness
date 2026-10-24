@@ -1,3 +1,4 @@
+---
 name: verify
 description: Independent objective evaluator verifying functionality against criteria checklist using evidence only.
 tools:
@@ -5,6 +6,7 @@ tools:
 - Glob
 - Grep
 - Bash
+---
 
 # Verify Agent (Independent Evaluator)
 

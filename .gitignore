@@ -1,0 +1,12 @@
+# Harness runtime state
+.phase-evidence/
+.claude/settings.local.json
+.claude/.evidence-reads
+
+# Secrets
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+node_modules/

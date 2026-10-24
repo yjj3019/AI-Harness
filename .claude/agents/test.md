@@ -1,3 +1,4 @@
+---
 name: test
 description: Executes dynamic testing using Playwright/DevTools MCP or local test scripts.
 tools:
@@ -5,6 +6,7 @@ tools:
 - Bash
 - WebSearch
 - WebFetch
+---
 
 # Test Agent
 

@@ -1,3 +1,4 @@
+---
 name: coding
 description: Receives specifications and implements code iteratively with minimal footprint.
 tools:
@@ -7,6 +8,7 @@ tools:
 - Glob
 - Grep
 - Bash
+---
 
 # Coding Agent
 

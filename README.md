@@ -180,6 +180,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서 (하네스 정의, 실패 모드, 참고 자료 포함)
 - [docs/external-patterns.md](./docs/external-patterns.md) — 외부 저장소에서 추출한 보편 패턴 (Superpowers, Anthropic cwc, Ralph, Huntley, Ponytail, Karpathy)
+- [docs/SUPPLEMENTS.md](./docs/SUPPLEMENTS.md) — 현황 분석, 확인된 결함, 보강 저장소 맵과 적용 순서
 - [docs/usage-scenarios.md](./docs/usage-scenarios.md) — 시나리오별 적용 가이드 (웹, API, PPT, 장기 실행, 버그 수정, 개선)
 - [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Claude Code로 PPT/오피스 문서 제작하는 단계별 하네스 워크플로 (영문)
 - OpenAI: [Harness Engineering](https://openai.com/index/harness-engineering/)
