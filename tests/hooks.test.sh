@@ -55,8 +55,58 @@ t $G test 2 Bash command "node .claude/workflows/phase-gate.js"
 t $G test 2 Bash command "cat .phase-evidence/x"
 t $G test 0 Bash command "npm test"
 
+# ta <agent_type-or-empty> <expected-exit> <tool> <field> <value>   (auto mode, as registered in settings.json)
+ta() {
+  local atype=$1 want=$2 tool=$3 field=$4 value=$5 got
+  got=$(jq -n --arg a "$atype" --arg tool "$tool" --arg f "$field" --arg v "$value" \
+    '{tool_name:$tool, tool_input:({($f):$v})} + (if $a == "" then {} else {agent_id:"x1", agent_type:$a} end)' \
+    | bash ".claude/hooks/$G" auto >/dev/null 2>&1; echo $?)
+  total=$((total + 1))
+  if [ "$got" != "$want" ]; then
+    fails=$((fails + 1))
+    printf 'FAIL auto want=%s got=%s  agent=%s %s: %s\n' "$want" "$got" "${atype:-main}" "$tool" "$value"
+  fi
+}
+
+echo "== evidence-guard auto mode (settings.json) =="
+ta "" 0 Write file_path ".phase-evidence/phase-1-verify.md"
+ta "" 0 Bash command "node .claude/workflows/phase-gate.js record 1 verify --status PASS --report .phase-evidence/r.md"
+ta coding 2 Write file_path ".phase-evidence/x.json"
+ta verify 2 Bash command "cat .phase-evidence/x"
+ta general-purpose 2 Bash command "echo '{}' > .phase-evidence/a.json"
+ta general-purpose 2 Bash command "node .claude/workflows/phase-gate.js record 1 verify --status PASS"
+ta test 0 Bash command "node .claude/workflows/phase-gate.js run 1 test -- npm test"
+ta test 2 Bash command "node .claude/workflows/phase-gate.js check 1"
+ta test 2 Bash command "cat .phase-evidence/x"
+ta coding 0 Write file_path "src/app.js"
+ta coding 0 Bash command "npm test"
+
+echo "== read-tracker =="
+RT=".claude/hooks/read-tracker.sh"
+tmp=$(mktemp -d)
+mkdir -p "$tmp/.phase-evidence" "$tmp/src"
+echo log >"$tmp/.phase-evidence/phase-1-test.log"
+echo code >"$tmp/src/a.js"
+rt() { # rt <agent_type-or-empty> <file>
+  jq -n --arg a "$1" --arg f "$2" '{tool_name:"Read", tool_input:{file_path:$f}} + (if $a == "" then {} else {agent_id:"x1", agent_type:$a} end)' \
+    | CLAUDE_PROJECT_DIR="$tmp" bash "$RT" >/dev/null 2>&1
+}
+rt verify "$tmp/.phase-evidence/phase-1-test.log"
+rt verify ".phase-evidence/phase-1-test.log"
+rt verify "$tmp/src/a.js"
+rt coding "$tmp/.phase-evidence/phase-1-test.log"
+rt "" "$tmp/.phase-evidence/phase-1-test.log"
+rt verify "$tmp/.phase-evidence/../src/a.js"
+n=$(wc -l <"$tmp/.phase-evidence/.reads.jsonl")
+want=$(sha256sum "$tmp/.phase-evidence/phase-1-test.log" | cut -d' ' -f1)
+total=$((total + 2))
+[ "$n" = 2 ] || { fails=$((fails + 1)); echo "FAIL read-tracker: want 2 records (verify, evidence only), got $n"; }
+jq -e --arg s "$want" -s 'all(.[]; .path == ".phase-evidence/phase-1-test.log" and .sha256 == $s)' "$tmp/.phase-evidence/.reads.jsonl" >/dev/null \
+  || { fails=$((fails + 1)); echo "FAIL read-tracker: record path or sha256 wrong"; }
+rm -rf "$tmp"
+
 echo "== fail-open on empty or invalid input =="
-for h in $B "$G deny"; do
+for h in $B "$G deny" "$G auto"; do
   total=$((total + 1))
   printf '' | bash .claude/hooks/$h >/dev/null 2>&1 || { fails=$((fails + 1)); echo "FAIL empty input: $h"; }
   total=$((total + 1))

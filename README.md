@@ -49,10 +49,12 @@ AI-Harness/
 │   ├── PHASES.md                      # 단계별 체크리스트
 │   ├── HANDOFF.md                     # 세션 핸드오프 상태
 │   ├── compound-log.md                # 축적 교훈 로그
+│   ├── DECISIONS.md                   # 설계 결정 기록
 │   └── SUPPLEMENTS.md                 # 현황 분석, 결함, 보강 저장소 맵
 ├── tests/                             # 훅·에이전트·phase-gate 검증 (bash tests/run-all.sh)
 ├── .github/workflows/ci.yml           # 위 검증을 CI에서 실행
 ├── .mcp.json.example                  # Playwright MCP 예시 (활성화는 .mcp.json으로 복사)
+├── .claude/settings.unattended.example.json  # 무인 실행용 샌드박스 설정 예시
 └── .claude/
     ├── settings.json                  # 훅·권한
     ├── agents/
@@ -65,7 +67,8 @@ AI-Harness/
     │   └── phase-harness.md            # /phase-harness <id> 루프 오케스트레이터
     ├── hooks/
     │   ├── block-destructive.sh        # 파괴적 명령 차단
-    │   └── evidence-guard.sh           # 서브에이전트의 증거 쓰기 제한
+    │   ├── evidence-guard.sh           # 서브에이전트의 증거 쓰기 제한 (settings.json에 등록)
+    │   └── read-tracker.sh             # verify 에이전트의 증거 열람 기록
     └── workflows/
         └── phase-gate.js               # 증거 기록·검사
 ```

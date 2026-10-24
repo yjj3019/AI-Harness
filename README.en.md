@@ -46,10 +46,12 @@ AI-Harness/
 │   ├── PHASES.md                      # Phase checklists
 │   ├── HANDOFF.md                     # Session hand-off state
 │   ├── compound-log.md                # Accumulated lessons
+│   ├── DECISIONS.md                   # Design decisions (Korean)
 │   └── SUPPLEMENTS.md                 # Gap analysis, defects, supplementary repo map (Korean)
 ├── tests/                             # Hook, agent and phase-gate checks (bash tests/run-all.sh)
 ├── .github/workflows/ci.yml           # Runs the checks in CI
 ├── .mcp.json.example                  # Playwright MCP example (copy to .mcp.json to enable)
+├── .claude/settings.unattended.example.json  # Sandbox settings example for unattended runs
 └── .claude/
     ├── settings.json                  # Hooks and permissions
     ├── agents/
@@ -62,7 +64,8 @@ AI-Harness/
     │   └── phase-harness.md            # /phase-harness <id> loop orchestrator
     ├── hooks/
     │   ├── block-destructive.sh        # Blocks destructive commands
-    │   └── evidence-guard.sh           # Stops subagents from writing evidence
+    │   ├── evidence-guard.sh           # Stops subagents from writing evidence (registered in settings.json)
+    │   └── read-tracker.sh             # Records which evidence files the verify agent opened
     └── workflows/
         └── phase-gate.js               # Evidence recorder and checker
 ```

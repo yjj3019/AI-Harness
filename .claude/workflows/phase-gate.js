@@ -13,10 +13,16 @@
  *   record <phase> <step> --status PASS|FAIL [--report <file>]
  *                                            Record coding|verify|review|compound evidence
  *   check <phase>                            Verify all five steps; exit 0 only if complete
+ *   attest <phase>                           After check passes, write docs/attestations/phase-<id>.json
+ *                                            (code tree hash + test command) to be committed
+ *   verify-attestation <phase> [-- <cmd...>] CI side: recompute the tree hash, re-run the attested
+ *                                            test command itself, require exit 0. With -- <cmd...>
+ *                                            the attested command must equal it
  *
  * Evidence (.phase-evidence/phase-<id>-<step>.json) holds the status, SHA-256 of its
  * report or log, and SHA-256 of the previous step's evidence file (a hash chain).
- * Recording a step clears the steps after it.
+ * The test evidence also holds a hash of the code tree it ran against; check fails when
+ * the code changed afterwards. Recording a step clears the steps after it.
  *
  * Exit codes:
  *   0  success (check: Phase complete; run: test passed)
@@ -38,6 +44,14 @@ const STEPS = ["coding", "test", "verify", "review", "compound"];
 const RECORD_STEPS = ["coding", "verify", "review", "compound"];
 const SCHEMA = 1;
 const ID_RE = /^[A-Za-z0-9._-]+$/;
+const ATTEST_DIR = path.join(ROOT, "docs", "attestations");
+// Files that legitimately change after the test step (or are environment state) are not part of the tree hash.
+const TREE_EXCLUDE = [
+  /^\.phase-evidence\//,
+  /^\.claude\/\.verification\//,
+  /^docs\/(compound-log|HANDOFF)\.md$/,
+  /^docs\/attestations\//,
+];
 
 function die(code, msg) {
   console.error(msg);
@@ -53,6 +67,8 @@ function usage() {
       "  node phase-gate.js run <phase> test -- <command...>",
       "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>]",
       "  node phase-gate.js check <phase>",
+      "  node phase-gate.js attest <phase>",
+      "  node phase-gate.js verify-attestation <phase> [-- <expected command...>]",
       `Steps: ${STEPS.join(", ")}`,
     ].join("\n")
   );
@@ -60,6 +76,33 @@ function usage() {
 
 function sha256(buf) {
   return crypto.createHash("sha256").update(buf).digest("hex");
+}
+
+// Hash of tracked and untracked-but-not-ignored files (minus TREE_EXCLUDE). null when git is unavailable.
+function treeHash() {
+  const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+    cwd: ROOT,
+    encoding: "buffer",
+  });
+  if (r.error || r.status !== 0) return null;
+  const files = [...new Set(r.stdout.toString("utf8").split("\0").filter(Boolean))]
+    .filter((f) => !TREE_EXCLUDE.some((re) => re.test(f)))
+    .sort();
+  const h = crypto.createHash("sha256");
+  for (const f of files) {
+    const abs = path.join(ROOT, f);
+    let content;
+    try {
+      const st = fs.lstatSync(abs);
+      if (st.isSymbolicLink()) content = Buffer.from("symlink:" + fs.readlinkSync(abs));
+      else if (st.isFile()) content = fs.readFileSync(abs);
+      else continue;
+    } catch {
+      continue; // deleted but still listed
+    }
+    h.update(`${f}\0${sha256(content)}\n`);
+  }
+  return h.digest("hex");
 }
 
 function loadValidPhases() {
@@ -149,7 +192,9 @@ function writeEvidence(phase, step, fields) {
     step,
     status: fields.status,
     recorded_at: new Date().toISOString(),
-    ...(fields.command !== undefined ? { command: fields.command, exit_code: fields.exit_code } : {}),
+    ...(fields.command !== undefined
+      ? { command: fields.command, argv: fields.argv, exit_code: fields.exit_code, tree: fields.tree }
+      : {}),
     artifacts: fields.artifacts,
     prev: fields.prev,
   };
@@ -176,6 +221,42 @@ function cmdList() {
   console.log(phases.length ? phases.join("\n") : "(none defined)");
 }
 
+// Default-FAIL: verify PASS needs proof that the verify subagent opened the test artifacts as recorded.
+// Enforced only when read-tracker.sh is registered in .claude/settings.json (otherwise nothing writes the log).
+function readTrackingArmed() {
+  try {
+    const st = JSON.parse(fs.readFileSync(path.join(ROOT, ".claude", "settings.json"), "utf8"));
+    return JSON.stringify((st.hooks || {}).PostToolUse || []).includes("read-tracker.sh");
+  } catch {
+    return false;
+  }
+}
+
+function requireEvidenceRead(phase) {
+  if (!readTrackingArmed()) return;
+  const t = loadEvidence(phase, "test");
+  const wanted = (t.ev && Array.isArray(t.ev.artifacts) ? t.ev.artifacts : []).map((a) => ({ path: a.path, sha256: a.sha256 }));
+  let reads = [];
+  try {
+    reads = fs
+      .readFileSync(path.join(EVIDENCE_DIR, ".reads.jsonl"), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+  } catch {
+    // no log, or a damaged line: treated as no proof
+  }
+  const missing = wanted.filter((w) => !reads.some((r) => r && r.path === w.path && r.sha256 === w.sha256));
+  if (wanted.length === 0 || missing.length > 0) {
+    die(
+      2,
+      "ERROR: verify PASS needs proof that the verify agent opened the test artifacts" +
+        (missing.length ? ` (no read record: ${missing.map((m) => m.path).join(", ")})` : "") +
+        ". Run the verify agent again and have it Read them. Record FAIL if it cannot."
+    );
+  }
+}
+
 function cmdRecord(args) {
   const [phase, step, ...rest] = args;
   if (!phase || !step) usage();
@@ -189,6 +270,7 @@ function cmdRecord(args) {
   if (status === "PASS" && !opts.report) die(1, "ERROR: PASS requires --report <file under .phase-evidence/>");
   const artifacts = opts.report ? [artifactFor(opts.report, false)] : [];
   const prev = prevLink(phase, step);
+  if (step === "verify" && status === "PASS") requireEvidenceRead(phase);
   writeEvidence(phase, step, { status, artifacts, prev });
   console.log(`Recorded phase ${phase} ${step}: ${status}`);
 }
@@ -219,7 +301,9 @@ function cmdRun(args) {
   writeEvidence(phase, "test", {
     status,
     command: cmd.join(" "),
+    argv: cmd,
     exit_code: exitCode,
+    tree: treeHash(),
     artifacts: [artifactFor(toRel(logAbs), true)],
     prev,
   });
@@ -230,53 +314,132 @@ function cmdRun(args) {
   process.exit(status === "PASS" ? 0 : 2);
 }
 
-function cmdCheck(args) {
-  const phase = args[0];
-  requirePhase(phase);
+// Walks the five steps. Returns { passed: [...], fail: { step, why } | null, testEv, warnings: [...] }.
+function validateChain(phase) {
+  const passed = [];
+  const warnings = [];
   let prevSha = null;
   let prevStep = null;
   let prevTime = null;
+  let testEv = null;
 
   for (const step of STEPS) {
-    const bad = (why) => {
-      console.error(`[FAIL]    ${step}: ${why}`);
-      console.error(`\nPhase ${phase} is NOT complete.`);
-      process.exit(2);
-    };
+    const fail = (why) => ({ passed, fail: { step, why }, testEv, warnings });
     const r = loadEvidence(phase, step);
-    if (r.error) bad(`${r.error} (${toRel(r.file)})`);
+    if (r.error) return fail(`${r.error} (${toRel(r.file)})`);
     const ev = r.ev;
-    if (!ev || typeof ev !== "object") bad("evidence is not an object");
-    if (ev.schema !== SCHEMA) bad(`missing or unsupported schema (expected ${SCHEMA}). Hand-written evidence is rejected`);
-    if (String(ev.phase) !== phase || ev.step !== step) bad("phase/step fields do not match the file name");
-    if (ev.status !== "PASS") bad(`status=${ev.status}`);
-    if (!Array.isArray(ev.artifacts) || ev.artifacts.length === 0) bad("no artifacts recorded");
+    if (!ev || typeof ev !== "object") return fail("evidence is not an object");
+    if (ev.schema !== SCHEMA) return fail(`missing or unsupported schema (expected ${SCHEMA}). Hand-written evidence is rejected`);
+    if (String(ev.phase) !== phase || ev.step !== step) return fail("phase/step fields do not match the file name");
+    if (ev.status !== "PASS") return fail(`status=${ev.status}`);
+    if (!Array.isArray(ev.artifacts) || ev.artifacts.length === 0) return fail("no artifacts recorded");
     for (const a of ev.artifacts) {
       const p = a && safeEvidencePath(a.path);
-      if (!p || p.error) bad(`artifact ${p ? p.error : "malformed entry"}`);
-      if (sha256(fs.readFileSync(p.real)) !== a.sha256) bad(`artifact changed after it was recorded: ${a.path}`);
+      if (!p || p.error) return fail(`artifact ${p ? p.error : "malformed entry"}`);
+      if (sha256(fs.readFileSync(p.real)) !== a.sha256) return fail(`artifact changed after it was recorded: ${a.path}`);
     }
-    if (step === "test" && (ev.exit_code !== 0 || !ev.command)) bad("test evidence needs a command and exit_code 0");
+    if (step === "test") {
+      if (ev.exit_code !== 0 || !ev.command || !Array.isArray(ev.argv) || ev.argv.length === 0) {
+        return fail("test evidence needs a command, argv and exit_code 0");
+      }
+      const now = treeHash();
+      if (now !== null) {
+        if (typeof ev.tree !== "string") return fail("test evidence has no code tree hash. Run the test again");
+        if (ev.tree !== now) return fail("code changed after the test ran. Run the test again");
+      } else if (ev.tree !== null) {
+        warnings.push("git is unavailable here, so the code tree could not be compared");
+      } else {
+        warnings.push("code tree is not bound (git was unavailable when the test ran)");
+      }
+      testEv = ev;
+    }
 
     if (prevStep === null) {
-      if (ev.prev !== null) bad("first step must not link to a previous step");
+      if (ev.prev !== null) return fail("first step must not link to a previous step");
     } else if (!ev.prev || ev.prev.step !== prevStep || ev.prev.sha256 !== prevSha) {
-      bad(`chain broken: '${prevStep}' changed after this step was recorded`);
+      return fail(`chain broken: '${prevStep}' changed after this step was recorded`);
     }
 
     const t = Date.parse(ev.recorded_at);
-    if (Number.isNaN(t)) bad("invalid recorded_at");
-    if (prevTime !== null && t < prevTime) bad("recorded before the previous step");
+    if (Number.isNaN(t)) return fail("invalid recorded_at");
+    if (prevTime !== null && t < prevTime) return fail("recorded before the previous step");
 
-    console.log(`[PASS]    ${step}`);
+    passed.push(step);
     prevSha = r.sha;
     prevStep = step;
     prevTime = t;
   }
+  return { passed, fail: null, testEv, warnings };
+}
 
+function cmdCheck(args) {
+  const phase = args[0];
+  requirePhase(phase);
+  const res = validateChain(phase);
+  for (const step of res.passed) console.log(`[PASS]    ${step}`);
+  for (const w of res.warnings) console.log(`[WARN]    ${w}`);
+  if (res.fail) {
+    console.error(`[FAIL]    ${res.fail.step}: ${res.fail.why}`);
+    console.error(`\nPhase ${phase} is NOT complete.`);
+    process.exit(2);
+  }
   console.log(`\nPhase ${phase} COMPLETED with full evidence.`);
   console.log("Next: update docs/HANDOFF.md and start a fresh session for the next Phase.");
   process.exit(0);
+}
+
+function attestationFile(phase) {
+  return path.join(ATTEST_DIR, `phase-${phase}.json`);
+}
+
+function cmdAttest(args) {
+  const phase = args[0];
+  requirePhase(phase);
+  const res = validateChain(phase);
+  if (res.fail) die(2, `ERROR: cannot attest. ${res.fail.step}: ${res.fail.why}`);
+  const tree = treeHash();
+  if (tree === null) die(2, "ERROR: cannot attest without git. The attestation binds to the code tree");
+  fs.mkdirSync(ATTEST_DIR, { recursive: true });
+  const att = {
+    schema: SCHEMA,
+    phase,
+    tree,
+    argv: res.testEv.argv,
+    attested_at: new Date().toISOString(),
+  };
+  fs.writeFileSync(attestationFile(phase), JSON.stringify(att, null, 2) + "\n");
+  console.log(`Wrote ${toRel(attestationFile(phase))}. Commit it; CI re-runs the test command and compares the tree.`);
+}
+
+function cmdVerifyAttestation(args) {
+  const sep = args.indexOf("--");
+  const head = sep < 0 ? args : args.slice(0, sep);
+  const expected = sep < 0 ? null : args.slice(sep + 1);
+  if (head.length !== 1 || (expected !== null && expected.length === 0)) usage();
+  const phase = head[0];
+  requirePhase(phase);
+  const file = attestationFile(phase);
+  const bad = (why) => die(2, `[FAIL] attestation for phase ${phase}: ${why}`);
+  if (!fs.existsSync(file)) bad(`missing (${toRel(file)})`);
+  let att;
+  try {
+    att = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    bad("invalid JSON");
+  }
+  if (!att || att.schema !== SCHEMA || String(att.phase) !== phase) bad("schema or phase mismatch");
+  if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
+  if (typeof att.tree !== "string") bad("tree hash is missing");
+  if (expected && JSON.stringify(expected) !== JSON.stringify(att.argv)) {
+    bad(`attested command differs from the required one: ${att.argv.join(" ")}`);
+  }
+  const now = treeHash();
+  if (now === null) bad("git is unavailable, so the code tree cannot be compared");
+  if (now !== att.tree) bad("code changed after the attestation. Run the phase again and re-attest");
+  const r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: "inherit" });
+  if (r.error) bad(`test command failed to start: ${r.error.message}`);
+  if (r.status !== 0) bad(`test command exited with ${r.status}`);
+  console.log(`Phase ${phase} attestation verified: tree matches and the test command passes.`);
 }
 
 function main() {
@@ -290,6 +453,10 @@ function main() {
       return cmdRecord(args);
     case "check":
       return cmdCheck(args);
+    case "attest":
+      return cmdAttest(args);
+    case "verify-attestation":
+      return cmdVerifyAttestation(args);
     default:
       return usage();
   }
