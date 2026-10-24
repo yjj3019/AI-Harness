@@ -411,7 +411,8 @@ test("doctor reports missing tools instead of failing open silently", () => {
   delete env.PHASE_GATE_ROOT;
   const r = doctor(env);
   assert.equal(r.status, 2);
-  assert.match(r.stderr, /jq is missing/);
+  // With no usable shell the probe cannot name jq; otherwise jq is the first missing tool.
+  assert.match(r.stderr, /jq is missing|bash could not be started/);
 });
 
 test("doctor flags a missing settings.json and an unquoted hook path", () => {
