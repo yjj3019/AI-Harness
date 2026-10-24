@@ -6,7 +6,16 @@ Comprehensive synthesis of all provided Gemini notebook sources on AI Harness En
 
 Harness Engineering is an engineering methodology for designing safety mechanisms, environments, tools, constraints, and feedback loops. Its main goal is to enable a Code Agent (e.g., Claude Code) to execute complex, long-running tasks safely and accurately without derailment, hallucinations, or over-engineering.
 
+**Precise definition**: A harness consists of tools, rules, and actions that are *directly associated* with the Code Agent to keep it stable over long runs. Examples include rules in CLAUDE.md (AGENTS.md), independent verification agents, evidence gates, and compound learning logs. It does **not** include every possible safety measure (stable IDE, hardware, user mindset, etc.). A Skill or MCP becomes part of the harness only when used specifically to constrain or verify Agent behavior.
+
 **Goal**: Shift developer roles from manual coding to Agent System Scaffolding and Feedback Loop Design.
+
+**Common failure modes addressed**:
+- Premature “done” claims without evidence
+- Context Anxiety (quality drop when context usage is high)
+- Self-assessment bias
+- Scope creep and over-engineering
+- Loss of progress across sessions
 
 ## 2. Evolutionary Stages of Code Agent Engineering
 
@@ -141,3 +150,9 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 | docs/compound-log.md | Accumulated learnings & errors | Must be reviewed before every task |
 | .claude/agents/ | Independent Subagents | Isolated contexts; evidence-based PASS/FAIL |
 | .claude/workflows/phase-harness.js | Loop skeleton | Evidence gates + post-Phase handoff |
+
+## 8. Foundational References
+
+- OpenAI Harness Engineering (2026): https://openai.com/index/harness-engineering/
+- Anthropic Harness Design for long-running apps (2026): https://www.anthropic.com/engineering/harness-design-long-running-apps
+- Andrej Karpathy Simplify principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) — applied as behavioral rules in CLAUDE.md.

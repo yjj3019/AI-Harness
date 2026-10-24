@@ -10,6 +10,7 @@ Notice to Code Agent: This is the top-level index file. Follow all instructions 
 - **Execution Safety**: Do NOT run applications or open servers automatically unless explicitly asked.
 - **Evidence Required**: Do not claim completion without observable evidence (test logs, artifacts, PASS/FAIL verdicts).
 - **Context Window Reset**: After each Phase completes, or if context degrades, update `docs/HANDOFF.md` and start a fresh session.
+- **Compound First**: Always read `docs/compound-log.md` before starting any task or workflow.
 
 ## 2. Document Map & Index
 

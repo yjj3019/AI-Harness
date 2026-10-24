@@ -2,6 +2,11 @@
 
 Define incremental development phases with explicit completion criteria.
 
+**Requirements for every Phase**:
+- Each Phase must be independently executable and human-testable.
+- A person should be able to run the result of the Phase and confirm the checklist without relying on Agent self-report.
+- Completion criteria must be observable (artifacts, logs, UI state, test output).
+
 ## Template
 
 ### Phase N: [Title]
@@ -13,7 +18,7 @@ Define incremental development phases with explicit completion criteria.
 - [ ] Requirement B verified via objective tool
 - [ ] No out-of-scope changes
 
-**Completion Criteria**: All checklist items PASS via verify agent.
+**Completion Criteria**: All checklist items PASS via verify agent (evidence required).
 
 ---
 
