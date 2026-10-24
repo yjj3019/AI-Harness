@@ -113,6 +113,64 @@ Systems such as Oh My Claudecode / Oh My Opencode provide higher-level orchestra
 4. Run phases via agent orchestration or the workflow skeleton in `.claude/workflows/phase-harness.js`.
 5. When context degrades, write state to `docs/HANDOFF.md` and start a fresh session.
 
+## Applying These Patterns to Other Projects
+
+Recommended adoption order when transplanting this harness into a new project.
+
+### Minimal Adoption (under 1 hour)
+
+1. Place a `CLAUDE.md` at the project root that states only:
+   - Read `docs/compound-log.md` before any task
+   - Evidence is required before claiming completion
+   - Each Phase must be independently executable and human-testable
+2. Create `docs/PHASES.md` with phases sized so a person can run and verify each one.
+3. Create a `.phase-evidence/` directory and require one JSON file per step:
+   ```json
+   { "status": "PASS", "evidence": ["test-output.log"] }
+   ```
+   Copy `phase-harness.js` so missing evidence automatically fails.
+
+### Add a Default-FAIL Contract (recommended)
+
+Keep a file that starts every item as `false`:
+
+```json
+{
+  "US-001": { "passes": false },
+  "US-002": { "passes": false }
+}
+```
+
+- The agent may set an item to `true` only after opening evidence.
+- The verification agent runs in a separate context with no Write/Edit tools.
+
+### Forced Lifecycle (Superpowers style)
+
+When starting a new feature, enforce this order:
+
+1. **Clarify intent** — questions that surface real requirements (no code yet)
+2. **Write a plan** — 2–5 minute tasks with exact file paths and acceptance criteria
+3. **TDD** — write a failing test first
+4. **Independent review** — separate context from the implementation agent
+5. **Verify before claiming done** — run the actual command and confirm output
+
+### Priority by Project Type
+
+| Type | Apply first | Reason |
+|------|-------------|--------|
+| Web / app | Default-FAIL + fresh-context evaluator + Playwright evidence | Agents miss broken UI |
+| Backend / API | TDD + test-runner backpressure | Compilers and tests give strong feedback |
+| Docs / PPT | 3-slide sample gate + conclusion-style titles + visual QA | Full generation before approval is expensive |
+| Long autonomous runs | Agent-maintained handoff + small stories | Context reset is mandatory |
+
+### Caveats
+
+- Do not adopt everything at once. “No evidence = FAIL” and “keep phases small” already deliver most of the value.
+- Re-simplify as models improve. Periodically ask whether a rule is still load-bearing.
+- Do not store project-specific scenarios in the harness repository. Keep only mechanisms; put project content in the project.
+
+Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, and `.claude/workflows/phase-harness.js` from this repository, then fill in only the phases for the target project.
+
 ## Further Reading
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — Full synthesis (includes precise harness definition, failure modes, and references)
