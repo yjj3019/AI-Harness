@@ -20,6 +20,16 @@ Define incremental development phases with explicit completion criteria.
 
 **Completion Criteria**: All checklist items PASS via verify agent (evidence required).
 
+**Evidence files** (required by `.claude/workflows/phase-harness.js`):  
+Place one JSON file per step under `.phase-evidence/`:
+- `.phase-evidence/phase-<id>-coding.json`
+- `.phase-evidence/phase-<id>-test.json`
+- `.phase-evidence/phase-<id>-verify.json`
+- `.phase-evidence/phase-<id>-review.json`
+- `.phase-evidence/phase-<id>-compound.json`
+
+Each file must contain `"status": "PASS"` (or `"APPROVED"` / `"pass": true`) for the step to be accepted. Missing or non-PASS evidence causes the runner to exit non-zero after retries.
+
 ---
 
 ## Example: API Log Analyzer
