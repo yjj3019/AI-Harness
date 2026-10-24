@@ -1,148 +1,148 @@
-# Claude Code를 활용한 오피스 문서(PPT) 제작 하네스 워크플로
+# Office Document (PPT) Harness Workflow with Claude Code
 
-이 문서는 원본 교육 자료를 그대로 이식하지 않고, 실제 실패 패턴과 외부 최선 실무(스킬 비교, 시각 검증, 내러티브 설계)를 분석해 개선한 버전입니다.
+This document improves on educational material by analyzing real failure patterns and external best practices (skill comparison, visual verification, narrative design). It does not copy source material verbatim.
 
-한 번의 프롬프트로 전체 덱을 생성하면 수정 비용이 급격히 늘어납니다. 이 워크플로는 **문서 기반 단계 구성 + 샘플 우선 검증 + 객관적 시각 QA**를 결합하여 안정적인 오피스 문서 생성을 목표로 합니다.
+Generating an entire deck in a single prompt causes modification costs to rise sharply. This workflow combines **document-based staged construction + sample-first verification + objective visual QA** to produce stable office documents.
 
-## 1. 왜 단계별 문서화가 필요한가 (분석)
+## 1. Why Staged Documentation Is Necessary (Analysis)
 
-실제 실패 원인을 세 가지로 분류합니다:
+Real failure causes are classified as follows:
 
-| 실패 유형 | 원인 | 단계별 접근이 해결하는 이유 |
-|-----------|------|------------------------|
-| 레이아웃 불일치 · 오버플로우 | 한 번에 너무 많은 슬라이드를 생성 | 샘플 3장으로 톤·간격·톤앤매너를 먼저 고정 |
-| 핵심 메시지 모호 | 슬라이드 제목이 섹션 레이블에 그침 | PageDetail에서 “결론형 타이틀” 강제 |
-| 데이터-메시지 불일치 | 소스 그라운딩 부족 | PageDetail에 근거 데이터를 명시하고 검증 |
-| 편집 불가능 아티팩트 | 일부 스킬이 테이블·차트를 그림으로 그림 | Anthropic 공식 pptx 스킬의 네이티브 OOXML 활용 |
-| 무한 수정 사이클 | 방향 승인 전에 전체 생성 | 샘플 검증 게이트 배치 |
+| Failure Type | Cause | How Staged Approach Resolves It |
+|--------------|-------|---------------------------------|
+| Layout inconsistency · overflow | Too many slides generated at once | Fix tone, spacing, and tone-and-manner with a 3-slide sample first |
+| Ambiguous core message | Slide titles remain section labels | Force “conclusion-style titles” in PageDetail |
+| Data-message mismatch | Insufficient source grounding | Explicitly record supporting data in PageDetail and verify it |
+| Non-editable artifacts | Some skills render tables/charts as images | Use Anthropic official pptx skill’s native OOXML |
+| Infinite revision cycle | Full generation before direction approval | Place a sample verification gate |
 
-기존 교육 자료의 Brain → UpgradeBrain → Phase → PageDetail → PageLayout 순서는 유효합니다. 이 문서는 그 순서를 유지하되, **검증 강도와 현실적 스킬 특성**을 보강했습니다.
+The original educational sequence Brain → UpgradeBrain → Phase → PageDetail → PageLayout remains valid. This document preserves that sequence while strengthening **verification intensity and realistic skill characteristics**.
 
-## 2. 권장 스킬 및 기술 제약
+## 2. Recommended Skill and Technical Constraints
 
-### Anthropic 공식 pptx 스킬 (1순 권장)
+### Anthropic Official pptx Skill (Primary Recommendation)
 
-공식 스킬은 다음에서 가장 안정적입니다:
+The official skill is most stable for the following:
 
-- **네이티브 OOXML** 테이블·차트 생성 (그림이 아닌 실제 편집 가능 객체)
-- 생성 후 **슬라이드를 이미지로 렌더링**하여 오버플로우·오버랩·대비 문제를 검사하는 QA 루프 내장
-- 템플릿 기반 생성·편집 지원
+- **Native OOXML** table and chart generation (real editable objects, not images)
+- Built-in QA loop that **renders slides to images** after generation to inspect overflow, overlap, and contrast
+- Template-based generation and editing support
 
-설치 (프로젝트 또는 글로벌):
+Installation (project or global):
 
 ```bash
 /plugin marketplace add anthropics/skills
 /plugin install document-skills@anthropic-agent-skills
 ```
 
-시각 QA를 위해서는 LibreOffice(와 Poppler)가 환경에 있어야 합니다. 없으면 오버플로우 검사가 약해집니다.
+Visual QA requires LibreOffice (and Poppler) in the environment. Without them, overflow inspection becomes weaker.
 
-### 스킬 선택 가이드
+### Skill Selection Guide
 
-| 상황 | 권장 스킬 | 이유 |
-|------|----------|------|
-| 일반 업무 보고서·제안서 | Anthropic 공식 | 네이티브 객체 + 시각 QA |
-| 강조 브랜드 톤 필요 | 공식 + 디자인 가이드라인 추가 | 편집 가능성 유지 |
-| 논문·코드베이스 기반 차트 | slides_maker 등 보조 | 네이티브 차트 강화 시 |
+| Situation | Recommended Skill | Reason |
+|-----------|-------------------|--------|
+| General business reports / proposals | Anthropic official | Native objects + visual QA |
+| Strong brand tone required | Official + additional design guidelines | Maintain editability |
+| Paper / codebase-based charts | slides_maker or similar auxiliary | Strengthen native charts when needed |
 
-## 3. 개선된 단계별 문서 구조
+## 3. Improved Staged Document Structure
 
-원본 6단계 구조를 유지하되, 각 단계에 **명확한 완료 기준**을 추가했습니다.
+The original 6-stage structure is retained, with **clear completion criteria** added to each stage.
 
-| 단계 | 문서 | 핵심 목표 | 완료 기준 |
-|------|------|----------|----------|
-| 0 | CLAUDE.md | 헌법 + 스킬/템플릿 연결 | 규칙·참조 경로가 명시되어 있음 |
-| 1 | Brain.md | 자유 아이디어 폭발 | 주장, 수용자, 질문, 소스 키워드가 있음 |
-| 2 | UpgradeBrain.md | 논리 구체화 | 핵심 주장 1개 + 근거 3~5개가 명확 |
-| 3 | Phase.md | 내러티브 흐름 | 기승전결 또는 SCQA가 슬라이드 단위로 매핑됨 |
-| 4 | PageDetail.md | 페이지별 스펙 | 각 슬라이드에 결론형 타이틀 + 근거 데이터 |
-| 5 | PageLayout.md | 시각 배치 | 템플릿 레이아웃 번호·위치 명시 |
-| 6 | sample.ppt | 방향 검증 | 3장 시각 QA 통과 |
-| 7 | final.ppt | 전체 생성 | 샘플 톤 유지 + 전체 검증 |
+| Stage | Document | Core Goal | Completion Criteria |
+|-------|----------|-----------|---------------------|
+| 0 | CLAUDE.md | Constitution + skill/template linking | Rules and reference paths are explicit |
+| 1 | Brain.md | Free idea explosion | Contains claims, audience, questions, source keywords |
+| 2 | UpgradeBrain.md | Logical concretization | One core claim + 3–5 pieces of supporting evidence are clear |
+| 3 | Phase.md | Narrative flow | Gi-seung-jeon-gyeol or SCQA mapped to slide units |
+| 4 | PageDetail.md | Per-page specification | Each slide has a conclusion-style title + supporting data |
+| 5 | PageLayout.md | Visual placement | Template layout numbers and positions specified |
+| 6 | sample.ppt | Direction verification | 3 slides pass visual QA |
+| 7 | final.ppt | Full generation | Sample tone maintained + full verification |
 
-### 내러티브 강화 포인트 (추가)
+### Narrative Strengthening Points (Additions)
 
-- **결론형 타이틀**: “배경”, “문제” 대신 “2010년 현대·기아의 글로벌 시장 점유율은 5% 미만이었다”처럼 판단을 담는 제목을 사용.
-- **수용자·결정 중심**: 누가 보는지, 어떤 결정을 내려는지를 UpgradeBrain.md 또는 Phase.md에 명시.
-- **소스 그라운딩**: 숫자·비교 데이터는 PageDetail.md에 출처를 적고, 없는 데이터는 생성 금지.
-- **한 슬라이드 한 아이디어**: PageDetail.md에서 각 슬라이드는 핵심 메시지 1개로 제한.
+- **Conclusion-style titles**: Use titles that contain a judgment (e.g., “Global market share of the company was under 5% in the target year”) rather than section labels such as “Background” or “Problem”.
+- **Audience- and decision-centered**: Explicitly state who will see the deck and what decision is intended in UpgradeBrain.md or Phase.md.
+- **Source grounding**: Record sources for numbers and comparative data in PageDetail.md; do not generate data that is not present.
+- **One idea per slide**: Limit each slide to one core message in PageDetail.md.
 
-## 4. CLAUDE.md 예시 (개선 버전)
-
-```markdown
-# CLAUDE.md - PPT 제작 하네스
-
-## 핵심 규칙
-- 샘플 우선: 전체 생성 전 항상 3장 샘플을 먼저 생성하고 시각 QA를 통과한다.
-- 결론형 타이틀: 슬라이드 제목은 섹션 레이블이 아닌 판단 문장으로 작성한다.
-- 소스 충실성: PageDetail.md에 명시된 데이터 외에 새로운 숫자를 추가하지 않는다.
-- 네이티브 객체: 테이블과 차트는 OOXML 네이티브로 생성한다 (그림 금지).
-- 시각 QA 강제: 생성 후 슬라이드를 이미지로 렌더링하여 오버플로우·대비를 확인한다.
-
-## 참조
-- 스킬: Anthropic document-skills (pptx)
-- 템플릿: templates/회사_PPT_템플릿.pptx
-- 상세 워크플로: docs/ppt-harness-workflow.md
-```
-
-## 5. 샘플 제작 및 검증 (강화)
-
-### 프롬프트 예시
-
-```
-/pptx 
-CLAUDE.md와 PageDetail.md, PageLayout.md를 참조하여 샘플 3장을 먼저 만들어줘. 
-파일명: sample.pptx
-요구사항:
-- 사내 템플릿 적용
-- 결론형 타이틀 사용
-- 생성 후 각 슬라이드를 이미지로 렌더링하여 오버플로우·대비 문제가 없는지 확인하고 수정
-```
-
-### 검증 포인트 (추가)
-
-- 시각: 텍스트 오버플로우, 요소 중첩, 대비 비율
-- 내용: 타이틀만 읽어도 메시지가 전달되는가
-- 기술: 테이블/차트가 편집 가능한 네이티브 객체인가
-- 브랜드: 템플릿 슬라이드 마스터 유지 여부
-
-## 6. 전체 생성 및 피드백 루프
-
-샘플이 통과한 후에만 전체를 생성합니다. 생성 후에도 다시 한 번 시각 QA를 수행합니다.
-
-실패 패턴은 `docs/compound-log.md`에 기록하여 다음 제작에 반영합니다. 예:
+## 4. CLAUDE.md Example (Improved Version)
 
 ```markdown
-### [YYYY-MM-DD] PPT Phase - 시각 QA
-- **Issue/Risk**: 샘플 2번 슬라이드에서 텍스트 오버플로우 발생
-- **Root Cause**: PageLayout.md에 폰트 사이즈 제약 누락
-- **Resolution/Pattern**: PageLayout.md에 최대 문자 수를 명시하고 샘플 단계에서 강제 검사
+# CLAUDE.md - PPT Creation Harness
+
+## Core Rules
+- Sample first: Always generate a 3-slide sample and pass visual QA before full generation.
+- Conclusion-style titles: Write slide titles as judgment sentences, not section labels.
+- Source fidelity: Do not add new numbers beyond data explicitly stated in PageDetail.md.
+- Native objects: Generate tables and charts as native OOXML (no images).
+- Mandatory visual QA: After generation, render each slide to an image and check for overflow and contrast issues, then fix.
+
+## References
+- Skill: Anthropic document-skills (pptx)
+- Template: templates/company_PPT_template.pptx
+- Detailed workflow: docs/ppt-harness-workflow.md
 ```
 
-## 7. 하네스 원칙과의 연계 (강화)
+## 5. Sample Creation and Verification (Strengthened)
 
-| 하네스 원칙 | PPT 워크플로 적용 |
-|---------------|-----------------|
-| No One-Shot | 샘플 3장 게이트 후 전체 생성 |
-| Phase 관리 | Brain → PageDetail → sample → final |
-| 독립 평가자 | 시각 QA + 사람 검증을 코딩과 분리 |
-| Objective Verification | 슬라이드 이미지 렌더링 + 오버플로우 검사 |
-| Compound Log | 오버플로우·톤 불일치 패턴을 구조화하여 기록 |
-| Context Reset | 긴 제작 시 HANDOFF.md로 현재 Phase와 샘플 상태 이관 |
+### Example Prompt
 
-## 8. 실행 체크리스트
+```
+/pptx
+Referencing CLAUDE.md, PageDetail.md, and PageLayout.md, first create a 3-slide sample.
+Filename: sample.pptx
+Requirements:
+- Apply the company template
+- Use conclusion-style titles
+- After generation, render each slide to an image, check for overflow/contrast problems, and fix them
+```
 
-- [ ] Anthropic pptx 스킬 설치 및 템플릿 배치
-- [ ] CLAUDE.md에 규칙·스킬 연결
-- [ ] Brain.md → UpgradeBrain.md 완료
-- [ ] Phase.md에 내러티브(기승전결 또는 SCQA) 확정
-- [ ] PageDetail.md에 결론형 타이틀 + 근거 데이터 작성
-- [ ] PageLayout.md에 템플릿 기반 배치 정의
-- [ ] sample.pptx 3장 생성 + 시각 QA 통과
-- [ ] 전체 PPT 생성 + 재검증
-- [ ] 실패 패턴을 compound-log.md에 기록
+### Verification Points (Additions)
+
+- Visual: text overflow, element overlap, contrast ratio
+- Content: does the message come across from the title alone?
+- Technical: are tables/charts editable native objects?
+- Brand: is the template slide master preserved?
+
+## 6. Full Generation and Feedback Loop
+
+Generate the full deck only after the sample passes. Perform visual QA again after full generation.
+
+Record failure patterns in `docs/compound-log.md` so they are reflected in the next creation. Example:
+
+```markdown
+### [YYYY-MM-DD] PPT Phase - Visual QA
+- **Issue/Risk**: Text overflow occurred on sample slide 2
+- **Root Cause**: Font size constraint missing in PageLayout.md
+- **Resolution/Pattern**: Explicitly state maximum character count in PageLayout.md and enforce inspection at the sample stage
+```
+
+## 7. Linkage with Harness Principles (Strengthened)
+
+| Harness Principle | PPT Workflow Application |
+|-------------------|--------------------------|
+| No One-Shot | Full generation only after 3-slide sample gate |
+| Phase management | Brain → PageDetail → sample → final |
+| Independent evaluator | Visual QA + human verification separated from coding |
+| Objective Verification | Slide image rendering + overflow inspection |
+| Compound Log | Structure and record overflow / tone-mismatch patterns |
+| Context Reset | Hand off current Phase and sample state via HANDOFF.md for long productions |
+
+## 8. Execution Checklist
+
+- [ ] Install Anthropic pptx skill and place template
+- [ ] Link rules and skill in CLAUDE.md
+- [ ] Complete Brain.md → UpgradeBrain.md
+- [ ] Finalize narrative (Gi-seung-jeon-gyeol or SCQA) in Phase.md
+- [ ] Write conclusion-style titles + supporting data in PageDetail.md
+- [ ] Define template-based placement in PageLayout.md
+- [ ] Generate sample.pptx (3 slides) + pass visual QA
+- [ ] Generate full PPT + re-verify
+- [ ] Record failure patterns in compound-log.md
 
 ---
 
-이 워크플로는 기존 `docs/PHASES.md`, `docs/DETAIL_SPEC.md`, `docs/compound-log.md`와 함께 사용하세요. 
-프로젝트별로 위 문서 템플릿을 복사해 시작하면 됩니다.
+Use this workflow together with `docs/PHASES.md`, `docs/DETAIL_SPEC.md`, and `docs/compound-log.md`.  
+Copy the document templates above to start a new project.
