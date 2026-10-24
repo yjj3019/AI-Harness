@@ -17,7 +17,7 @@
 | 5 | `/phase-harness`가 문서에만 있음 | `.claude/commands/` 없음 | 수정 (`.claude/commands/phase-harness.md`) |
 | 6 | compound 항목 서식 불일치 | `compound.md`의 `### [날짜] Phase X` 형식과 `compound-log.md`의 Date/Category/Rule 형식이 다름 | 수정. 서식 통일, 30항목 초과 시 승격·보관 규칙 추가 |
 | 7 | `PHASES.md` 템플릿의 `Phase N`이 유효 Phase로 인식됨 | 러너 정규식이 `### Phase <토큰>` 전체에 매치 | 수정. 템플릿·예시를 코드 펜스로 감싸고 러너가 펜스를 제외 |
-| 8 | `.gitignore`·LICENSE·CI 없음 | 파일 목록 확인 | `.gitignore`, 테스트, CI 추가. LICENSE는 소유자 결정 사항이라 미적용 |
+| 8 | `.gitignore`·LICENSE·CI 없음 | 파일 목록 확인 | `.gitignore`, 테스트, CI 추가. LICENSE는 소유자가 Apache-2.0을 선택해 추가 (저작권 표기는 템플릿 그대로, 4장 2번) |
 | 9 | `test` 에이전트의 `tools`에 MCP 도구가 없음 | 문서는 Playwright MCP를 전제하나 `tools`는 Read, Bash, WebSearch, WebFetch뿐 | 수정. WebSearch·WebFetch 제거, 증거 실행 경로 명시, 버전 고정 `.mcp.json.example`, 검토한 Playwright 도구만 `tools`에 허용(3차). MCP 활성화는 승인 후 (4장 1번) |
 
 3번은 교체 전 코드를 읽어 확인했다. 교체 전 스크립트는 실행하지 않았다.
@@ -66,7 +66,7 @@
 결정 근거는 `docs/DECISIONS.md`에 있다.
 
 1. Playwright MCP 활성화: `.mcp.json.example`을 `.mcp.json`으로 복사한다. `test` 에이전트의 허용 도구는 반영되어 있다. 외부 코드를 실행하므로 소유자 승인 후 진행한다.
-2. LICENSE: 소유자가 선택한다.
+2. LICENSE 저작권 표기: `LICENSE` 끝의 `Copyright [yyyy] [name of copyright owner]`는 템플릿 그대로다. 소유자가 연도와 이름을 채운다.
 3. Actions에서 `verify-attestation` 단계 확인: 이 저장소에는 attestation 파일이 없어 반복문이 비어 있다. 대상 프로젝트에서 처음 `attest`를 커밋할 때 실제로 실행된다.
 4. 새 세션에서 `/phase-harness <id>` 한 번을 끝까지 돌려 보는 종단 시험. 지금까지는 구성 요소별 시험만 했다 [unverified].
 5. 계획 단계 도구(superpowers, spec-kit, OpenSpec)와 관측 대시보드는 번들하지 않기로 했다. 프로젝트별로 필요할 때 고른다.
