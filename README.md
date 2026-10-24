@@ -10,8 +10,12 @@
 
 코드 에이전트가 수 시간 자율 실행이 가능해지면서 제약 요인은 모델 지능이 아닐 “하네스(harness)”가 되었습니다. 하네스는 에이전트가 경로를 이탈하지 않고 안전하게 작업하도록 만드는 규칙, 피드백 루프, 도구, 컨텍스트 관리, 검증 시스템입니다.
 
+**정확한 정의**: 하네스는 Code Agent와 *직접 연관된* 도구·규칙·행동으로 구성됩니다.  
+예: `CLAUDE.md` 규칙, 독립 검증 에이전트, 증거 게이트, compound learning log.  
+IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조치는 포함하지 않습니다. Skill이나 MCP도 Agent 동작을 제약하거나 검증할 때만 하네스의 일부가 됩니다.
+
 하네스 없이 자주 발생하는 실패:
-- 조기 “완료” 선언
+- 조기 “완료” 선언 (증거 없는 done 선언)
 - Context Anxiety (컨텍스트 용량 ~70% 초과 시 일관성 저하)
 - 자기 평가 편향 (Self-assessment bias)
 - 과잉 엔지니어링 및 범위 이탈
@@ -22,7 +26,8 @@
 ## 핵심 원칙
 
 1. **Index-Only Constitution** — `CLAUDE.md`는 ~100줄 이내로 유지. 상세 내용은 `docs/`로 분리.
-2. **No One-Shot** — 명확한 완료 기준을 가진 Phase/Sprint로 분할.
+2. **No One-Shot** — 명확한 완료 기준을 가진 Phase/Sprint로 분할.  
+   각 Phase는 **독립적으로 실행 가능**하고 **사람이 직접 테스트**할 수 있어야 하며, 완료 기준은 관찰 가능한 증거(아티팩트, 로그, UI 상태, 테스트 출력)여야 합니다.
 3. **Ralph Wiggum Loop** — `coding → test → verify → review → compound` 자율 사이클. FAIL 또는 [BLOCKING] 시 재시도 (최대 3회).
 4. **독립 평가자** — 코딩과 평가를 독립된 컨텍스트 창에서 실행하여 자기 평가 편향 제거.
 5. **객관적 검증** — Playwright MCP, DevTools, 로그, 테스트 러너 사용. 주관적 코드 읽기 금지.
@@ -113,10 +118,11 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 추가 자료
 
-- [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서
-- [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Claude Code로 PPT/오피스 문서 제작하는 단계별 하네스 워크플로
+- [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서 (하네스 정의, 실패 모드, 참고 자료 포함)
+- [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Claude Code로 PPT/오피스 문서 제작하는 단계별 하네스 워크플로 (영문)
+- OpenAI: [Harness Engineering](https://openai.com/index/harness-engineering/)
 - Anthropic: [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
-- Anthropic: [Harness design for long-running apps](https://www.anthropic.com/research/harness-design-long-running-apps)
+- Anthropic: [Harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps)
 - Geoffrey Huntley — Ralph technique
 - obra/superpowers
 - Karpathy-inspired CLAUDE.md 컬렉션
