@@ -19,6 +19,10 @@ deny() {
 if printf '%s' "$cmd" | grep -Eq 'rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-[a-zA-Z]*[rRf][a-zA-Z]*[[:space:]]+(/|~|\$HOME|\.|\.\.|\*)([[:space:]]|$)'; then
   deny "recursive/forced rm on a broad target"
 fi
+# ...or at a top-level system path (/usr, /etc, /*). Deeper absolute paths stay allowed.
+if printf '%s' "$cmd" | grep -Eq 'rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-[a-zA-Z]*[rRf][a-zA-Z]*[[:space:]]+(/\*|/[A-Za-z0-9._-]+)([[:space:]]|$)'; then
+  deny "recursive/forced rm on a top-level system path"
+fi
 
 # git push --force / -f (--force-with-lease is allowed)
 if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push([[:space:]]+[^;&|]*)?[[:space:]](--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)'; then
@@ -35,8 +39,11 @@ if printf '%s' "$cmd" | grep -Eq '(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]
   deny "download piped into a shell"
 fi
 
-# world-writable recursive chmod, raw disk writes
-if printf '%s' "$cmd" | grep -Eq 'chmod[[:space:]]+(-[a-zA-Z]*R[a-zA-Z]*)[[:space:]]+777'; then
+# world-writable recursive chmod. The three parts are matched separately so that flag order and
+# extra flags (chmod -R -v 777 /srv) cannot slip through.
+if printf '%s' "$cmd" | grep -Eq '(^|[[:space:];&|])chmod([[:space:]]|$)' &&
+  printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])(-[a-zA-Z]*R[a-zA-Z]*|--recursive)([[:space:]]|$)' &&
+  printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])0?777([[:space:]]|$)'; then
   deny "recursive chmod 777"
 fi
 if printf '%s' "$cmd" | grep -Eq '(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'; then

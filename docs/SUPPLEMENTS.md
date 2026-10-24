@@ -106,4 +106,33 @@
 - CI에 attestation 재검증 단계, `/phase-harness` 종료 단계에 `attest`.
 - `test` 에이전트에 검토한 Playwright 도구 22개 허용. 위험 도구는 린트가 거부한다.
 - `.claude/settings.unattended.example.json`, `docs/DECISIONS.md`.
-- 시험: 훅 58건, `phase-gate` 25건, 프런트매터·설정 린트. 가드마다 되돌려 실패하는지 확인했다.
+- 시험: 훅 58건, `phase-gate` 25건, 프런트매터·설정 린트. 가드마다 되돌려 실패하는지 확인했다. (5차에서 87건·33건으로 늘었다. 현재 수치는 `bash tests/run-all.sh` 출력이 기준이다.)
+
+## 6. 5차 (2026-10-25) - 실행 검증과 플랫폼 결함
+
+3차까지의 검증은 리눅스 CI와 임시 복제본에서만 이뤄졌다. 5차는 Windows(Git Bash)에서 스위트를 직접 돌리고, 5단계 루프를 임시 프로젝트에서 재현하는 E2E 시험을 추가한 라운드다.
+
+### 실측
+
+- 수정 전: 훅 75/76, 게이트 29/30. 실패 1건은 `read-tracker`, 1건은 `doctor`.
+- 수정 후: 훅 87/87, 게이트 33/33, `ALL CHECKS PASSED`.
+- CRLF 체크아웃과 LF 사본의 결과가 동일했다. Git Bash의 bash가 CR을 허용하므로 CRLF는 원인이 아니었다. (`.gitattributes`는 다른 셸·도구에서의 비결정성을 없애기 위해 추가했다.)
+
+### 확인된 결함과 조치
+
+| 심각도 | 문제 | 근거 | 조치 |
+|--------|------|------|------|
+| P1 | Windows에서 읽기 기록이 남지 않아 `verify PASS`가 영구 거부 | `bash -x` 추적: MSYS가 `/tmp/...`를 `C:/...`로 바꾸고, 훅은 `/*`만 절대경로로 인정해 `$root/C:/...`를 만들어 realpath 실패 | `read-tracker.sh`가 POSIX·`C:\`·`C:/`를 모두 정규화(`cygpath`→`wslpath`→원문). `realpath -e`가 없는 BSD/macOS용 폴백 추가 |
+| P1 | `doctor`가 Windows를 무조건 problem으로 처리해 `/phase-harness` 0단계가 항상 중단 | `process.platform === "win32"` 분기 | 훅이 실제로 쓰는 셸에서 도구를 탐침(`HARNESS_BASH`→Git Bash→`bash`). Windows는 정보로 강등 |
+| P2 | `.phase-evidence` 경로 매칭이 `/`만 인정 | 정규식 재실행으로 `C:\proj\.phase-evidence\x.json` 통과 확인 | `(^|[\\/])\.phase-evidence([\\/]|$)` |
+| P2 | `rm -rf /*`, `rm -rf /usr`, `chmod -R -v 777` 통과 | 정규식 재실행 | 최상위 시스템 경로 규칙 추가, chmod는 3조건 분리 매칭 |
+| P2 | CI가 저장소에 커밋된 `argv`를 그대로 실행하는데 명령 고정 파일이 없음 | `ci.yml`·`phase-gate.js` 확인 | `.claude/required-test-command.json`(`["bash","tests/run-all.sh"]`) 커밋 |
+| P3 | E2E 배선 검증 부재 | 단위 테스트 30건은 훅 연동을 검증하지 않음 | `tests/e2e.test.js` 3건 추가 (5단계 루프·재시도·실제 훅 연동) |
+
+### 남은 한계
+
+- CI는 여전히 `ubuntu-latest` 단일이다. 이번 P1 2건은 정확히 그 사각지대에서 나왔다. `windows-latest` 잡 추가가 다음 조치다.
+- `cygpath`도 `wslpath`도 없는 셸에서는 Windows 경로를 해석하지 못한다(fail-open → verify PASS 거부).
+- macOS는 여전히 미검증이다(`realpath` 부재 시 폴백은 넣었으나 실행하지 못했다).
+- `block-destructive.sh`는 여전히 패턴 매칭이다. `rm -rf /home/user`처럼 2단계 깊이의 경로는 통과한다.
+

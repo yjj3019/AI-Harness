@@ -95,6 +95,21 @@ ta test 2 Bash command "cat .phase-evidence/x"
 ta coding 0 Write file_path "src/app.js"
 ta coding 0 Bash command "npm test"
 
+echo "== block-destructive: system paths and flag variants =="
+t $B "" 2 Bash command 'rm -rf /*'
+t $B "" 2 Bash command 'rm -rf /usr'
+t $B "" 2 Bash command 'chmod -R -v 777 /srv'
+t $B "" 2 Bash command 'chmod --recursive 777 /srv'
+t $B "" 0 Bash command 'rm -rf /tmp/build'
+t $B "" 0 Bash command 'chmod 777 file.txt'
+t $B "" 0 Bash command 'chmod -R 755 /srv'
+
+echo "== evidence-guard: Windows paths =="
+t $G deny 2 Write file_path 'C:\proj\.phase-evidence\x.json'
+t $G deny 2 Write file_path 'C:/proj/.phase-evidence/x.json'
+t $G deny 0 Write file_path 'C:\proj\src\app.js'
+ta coding 2 Write file_path 'C:\proj\.phase-evidence\x.json'
+
 echo "== read-tracker =="
 RT=".claude/hooks/read-tracker.sh"
 tmp=$(mktemp -d)
