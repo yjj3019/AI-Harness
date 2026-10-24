@@ -13,6 +13,8 @@
  *   record <phase> <step> --status PASS|FAIL [--report <file>]
  *                                            Record coding|verify|review|compound evidence
  *   check <phase>                            Verify all five steps; exit 0 only if complete
+ *   doctor                                   Check that the guards can run here (jq, sha256sum, realpath, git,
+ *                                            hook registration, quoting, executable bits). Exit 2 on a problem
  *   attest <phase>                           After check passes, write docs/attestations/phase-<id>.json
  *                                            (code tree hash + test command) to be committed
  *   verify-attestation <phase> [-- <cmd...>] CI side: recompute the tree hash, re-run the attested
@@ -67,6 +69,7 @@ function usage() {
       "  node phase-gate.js run <phase> test -- <command...>",
       "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>]",
       "  node phase-gate.js check <phase>",
+      "  node phase-gate.js doctor",
       "  node phase-gate.js attest <phase>",
       "  node phase-gate.js verify-attestation <phase> [-- <expected command...>]",
       `Steps: ${STEPS.join(", ")}`,
@@ -390,6 +393,59 @@ function cmdCheck(args) {
   process.exit(0);
 }
 
+// Guards fail open when a tool they need is missing, so a missing tool must be visible before work starts.
+function cmdDoctor() {
+  const problems = [];
+  const ok = (m) => console.log(`[OK]      ${m}`);
+  const bad = (m) => {
+    problems.push(m);
+    console.error(`[PROBLEM] ${m}`);
+  };
+  const has = (cmd, args) => {
+    const r = spawnSync(cmd, args, { encoding: "utf8" });
+    return !r.error && r.status === 0;
+  };
+  if (process.platform === "win32") {
+    bad("Windows: the hooks are bash scripts. Run Claude Code in WSL2 or with Git Bash on PATH, or the guards do not run");
+  }
+  for (const [name, args] of [["bash", ["-c", "true"]], ["jq", ["--version"]], ["sha256sum", ["--version"]], ["git", ["--version"]]]) {
+    has(name, args) ? ok(name) : bad(`${name} is missing; the hooks fail open without it`);
+  }
+  has("realpath", ["-e", "/"]) ? ok("realpath -e") : bad("realpath -e is unsupported (BSD/macOS); read-tracker.sh cannot record, so verify PASS will be refused");
+
+  const settingsFile = path.join(ROOT, ".claude", "settings.json");
+  let st = null;
+  try {
+    st = JSON.parse(fs.readFileSync(settingsFile, "utf8"));
+  } catch {
+    bad(".claude/settings.json is missing or not valid JSON; no guard is registered");
+  }
+  if (st) {
+    const cmds = Object.values(st.hooks || {}).flatMap((groups) => groups.flatMap((g) => (g.hooks || []).map((h) => h.command || "")));
+    for (const want of ["evidence-guard.sh", "block-destructive.sh", "read-tracker.sh"]) {
+      const c = cmds.find((x) => x.includes(want));
+      if (!c) {
+        bad(`${want} is not registered in .claude/settings.json`);
+        continue;
+      }
+      if (!c.startsWith('"${CLAUDE_PROJECT_DIR}/')) bad(`${want}: the command path must be quoted, or a project path with a space disables the hook`);
+      else ok(`${want} registered`);
+      const f = path.join(ROOT, ".claude", "hooks", want);
+      try {
+        fs.accessSync(f, fs.constants.X_OK);
+      } catch {
+        bad(`${toRel(f)} is missing or not executable`);
+      }
+    }
+  }
+  if (/\s/.test(ROOT)) ok("project path contains a space (hook commands are quoted)");
+  if (problems.length) {
+    console.error(`\n${problems.length} problem(s). Fix them before relying on the evidence gate.`);
+    process.exit(2);
+  }
+  console.log("\nGuards can run here.");
+}
+
 function attestationFile(phase) {
   return path.join(ATTEST_DIR, `phase-${phase}.json`);
 }
@@ -474,6 +530,8 @@ function main() {
       return cmdRecord(args);
     case "check":
       return cmdCheck(args);
+    case "doctor":
+      return cmdDoctor();
     case "attest":
       return cmdAttest(args);
     case "verify-attestation":

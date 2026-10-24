@@ -53,12 +53,19 @@ fi
 
 # The evidence guard must be registered in settings.json. Agent frontmatter hooks are skipped
 # until the workspace trust dialog is accepted, so they cannot be the only guard.
-for h in 'evidence-guard.sh auto' 'block-destructive.sh'; do
-  if ! jq -e --arg h "$h" '[.hooks.PreToolUse[]?.hooks[]?.command] | any(contains($h))' .claude/settings.json >/dev/null 2>&1; then
-    echo "FAIL .claude/settings.json: PreToolUse hook '$h' is not registered"
+for h in 'evidence-guard.sh" auto' 'block-destructive.sh' 'read-tracker.sh'; do
+  if ! jq -e --arg h "$h" '[.hooks[][]?.hooks[]?.command] | any(contains($h))' .claude/settings.json >/dev/null 2>&1; then
+    echo "FAIL .claude/settings.json: hook '$h' is not registered"
     fails=$((fails + 1))
   fi
 done
+
+# A project path with a space splits an unquoted command; the hook then exits 127, which does not block,
+# so every guard would be off without any message.
+if jq -e '[.hooks[][]?.hooks[]?.command] | all(startswith("\"${CLAUDE_PROJECT_DIR}/"))' .claude/settings.json >/dev/null 2>&1; then :; else
+  echo "FAIL .claude/settings.json: every hook command must start with a quoted \"\${CLAUDE_PROJECT_DIR}/...\" path"
+  fails=$((fails + 1))
+fi
 
 echo "frontmatter: $checked files checked, $fails problems"
 [ "$fails" -eq 0 ]

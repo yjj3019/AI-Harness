@@ -392,3 +392,41 @@ test("a silent test still leaves a log with the command and exit code", () =>
     assert.match(log, /\[phase-gate\] exit_code: 0/);
     assert.match(log, /\[phase-gate\] command: /);
   }));
+
+// ---- doctor ----
+
+function doctor(env, root) {
+  return spawnSync(NODE, [GATE, "doctor"], { env: { ...env, ...(root ? { PHASE_GATE_ROOT: root } : {}) }, encoding: "utf8" });
+}
+
+test("doctor passes in this repository", () => {
+  const env = { ...process.env };
+  delete env.PHASE_GATE_ROOT;
+  const r = doctor(env);
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test("doctor reports missing tools instead of failing open silently", () => {
+  const env = { ...process.env, PATH: "/nonexistent" };
+  delete env.PHASE_GATE_ROOT;
+  const r = doctor(env);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /jq is missing/);
+});
+
+test("doctor flags a missing settings.json and an unquoted hook path", () => {
+  withRoot((root) => {
+    const none = doctor(process.env, root);
+    assert.equal(none.status, 2);
+    assert.match(none.stderr, /settings\.json is missing/);
+    fs.mkdirSync(path.join(root, ".claude", "hooks"), { recursive: true });
+    const hook = (n) => ({ hooks: [{ type: "command", command: `\${CLAUDE_PROJECT_DIR}/.claude/hooks/${n}` }] });
+    fs.writeFileSync(
+      path.join(root, ".claude", "settings.json"),
+      JSON.stringify({ hooks: { PreToolUse: [hook("evidence-guard.sh auto"), hook("block-destructive.sh")], PostToolUse: [hook("read-tracker.sh")] } })
+    );
+    const r = doctor(process.env, root);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /path must be quoted/);
+  });
+});

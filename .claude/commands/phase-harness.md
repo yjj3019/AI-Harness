@@ -12,6 +12,7 @@ You are the orchestrator. You coordinate subagents and record evidence. You do n
 
 ## Setup
 
+0. Run `node .claude/workflows/phase-gate.js doctor`. If it reports a problem, stop and tell the user: the guards fail open without their tools.
 1. Run `node .claude/workflows/phase-gate.js list`. If `$ARGUMENTS` is not listed, stop and tell the user.
 2. Read `CLAUDE.md`, `docs/compound-log.md`, `docs/DETAIL_SPEC.md`, `docs/HANDOFF.md`, and the Phase section in `docs/PHASES.md`.
 3. Find the test command for this Phase (checklist or DETAIL_SPEC). If there is none, ask the user once and wait.
