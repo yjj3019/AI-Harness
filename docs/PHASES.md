@@ -7,9 +7,23 @@ Define incremental development phases with explicit completion criteria.
 - A person should be able to run the result of the Phase and confirm the checklist without relying on Agent self-report.
 - Completion criteria must be observable (artifacts, logs, UI state, test output).
 
+## Evidence
+
+Evidence is recorded only through `.claude/workflows/phase-gate.js`. Never write `.phase-evidence/*` by hand.
+
+- `coding`, `verify`, `review`, `compound`: save the agent's report under `.phase-evidence/`, then run
+  `node .claude/workflows/phase-gate.js record <id> <step> --status PASS|FAIL --report .phase-evidence/<file>.md`
+- `test`: run `node .claude/workflows/phase-gate.js run <id> test -- <command>`. The script runs the command, stores the log, and records the real exit code.
+- Gate: `node .claude/workflows/phase-gate.js check <id>` exits 0 only when all five steps are valid.
+
+Each `.phase-evidence/phase-<id>-<step>.json` holds the status, the SHA-256 of its report or log, and the SHA-256 of the previous step's file. A step cannot be recorded until the previous step is PASS. Recording a step clears the steps after it, so a changed result must be re-tested and re-verified.
+
 ## Template
 
-### Phase N: [Title]
+Copy into the Phases section below. Code fences are ignored by the runner, so this template is never treated as a real Phase.
+
+```markdown
+### Phase <id>: <Title>
 
 **Goal**: Clear, minimal objective for this phase.
 
@@ -19,21 +33,11 @@ Define incremental development phases with explicit completion criteria.
 - [ ] No out-of-scope changes
 
 **Completion Criteria**: All checklist items PASS via verify agent (evidence required).
-
-**Evidence files** (required by `.claude/workflows/phase-harness.js`):  
-Place one JSON file per step under `.phase-evidence/`:
-- `.phase-evidence/phase-<id>-coding.json`
-- `.phase-evidence/phase-<id>-test.json`
-- `.phase-evidence/phase-<id>-verify.json`
-- `.phase-evidence/phase-<id>-review.json`
-- `.phase-evidence/phase-<id>-compound.json`
-
-Each file must contain `"status": "PASS"` (or `"APPROVED"` / `"pass": true`) for the step to be accepted. Missing or non-PASS evidence causes the runner to exit non-zero after retries.
-
----
+```
 
 ## Example: API Log Analyzer
 
+```markdown
 ### Phase 1: UI Scaffolding
 - [ ] Basic layout rendered
 - [ ] No functional logic
@@ -41,5 +45,8 @@ Each file must contain `"status": "PASS"` (or `"APPROVED"` / `"pass": true`) for
 ### Phase 2: Log Ingestion
 - [ ] Accept log URL
 - [ ] Download and display sample
+```
 
-(Add subsequent phases as needed.)
+## Phases
+
+(none defined. Add `### Phase <id>: <Title>` sections here.)

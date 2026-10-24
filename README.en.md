@@ -45,16 +45,26 @@ AI-Harness/
 │   ├── DETAIL_SPEC.md                 # Requirements template
 │   ├── PHASES.md                      # Phase checklists
 │   ├── HANDOFF.md                     # Session hand-off state
-│   └── compound-log.md                # Accumulated lessons
+│   ├── compound-log.md                # Accumulated lessons
+│   └── SUPPLEMENTS.md                 # Gap analysis, defects, supplementary repo map (Korean)
+├── tests/                             # Hook, agent and phase-gate checks (bash tests/run-all.sh)
+├── .github/workflows/ci.yml           # Runs the checks in CI
+├── .mcp.json.example                  # Playwright MCP example (copy to .mcp.json to enable)
 └── .claude/
+    ├── settings.json                  # Hooks and permissions
     ├── agents/
     │   ├── coding.md
     │   ├── test.md
     │   ├── verify.md
     │   ├── review.md
     │   └── compound.md
+    ├── commands/
+    │   └── phase-harness.md            # /phase-harness <id> loop orchestrator
+    ├── hooks/
+    │   ├── block-destructive.sh        # Blocks destructive commands
+    │   └── evidence-guard.sh           # Stops subagents from writing evidence
     └── workflows/
-        └── phase-harness.js            # Loop runner skeleton
+        └── phase-gate.js               # Evidence recorder and checker
 ```
 
 ## The Ralph Wiggum Loop
@@ -110,7 +120,7 @@ Systems such as Oh My Claudecode / Oh My Opencode provide higher-level orchestra
 1. Read `CLAUDE.md`.
 2. Review `docs/compound-log.md`.
 3. Define phases in `docs/PHASES.md` and requirements in `docs/DETAIL_SPEC.md`.
-4. Run phases via agent orchestration or the workflow skeleton in `.claude/workflows/phase-harness.js`.
+4. Run a phase with `/phase-harness <phase-id>`. Completion is decided by `node .claude/workflows/phase-gate.js check <phase-id>`.
 5. When context degrades, write state to `docs/HANDOFF.md` and start a fresh session.
 
 ## Applying These Patterns to Other Projects
@@ -124,11 +134,11 @@ Recommended adoption order when transplanting this harness into a new project.
    - Evidence is required before claiming completion
    - Each Phase must be independently executable and human-testable
 2. Create `docs/PHASES.md` with phases sized so a person can run and verify each one.
-3. Create a `.phase-evidence/` directory and require one JSON file per step:
-   ```json
-   { "status": "PASS", "evidence": ["test-output.log"] }
+3. Copy `.claude/workflows/phase-gate.js` and `.claude/commands/phase-harness.md`. Never write evidence by hand; record it only with `phase-gate.js run` and `record`. Hand-written JSON is rejected by `check`, and missing evidence fails.
+   ```bash
+   node .claude/workflows/phase-gate.js run 1 test -- npm test
+   node .claude/workflows/phase-gate.js check 1
    ```
-   Copy `phase-harness.js` so missing evidence automatically fails.
 
 ### Add a Default-FAIL Contract (recommended)
 
@@ -169,7 +179,7 @@ When starting a new feature, enforce this order:
 - Re-simplify as models improve. Periodically ask whether a rule is still load-bearing.
 - Do not store project-specific scenarios in the harness repository. Keep only mechanisms; put project content in the project.
 
-Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, and `.claude/workflows/phase-harness.js` from this repository, then fill in only the phases for the target project.
+Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-gate.js`, and `.claude/commands/phase-harness.md` from this repository, then fill in only the phases for the target project. To get the evidence write restrictions as well, also copy `.claude/agents/`, `.claude/hooks/`, and `.claude/settings.json`.
 
 ## Further Reading
 

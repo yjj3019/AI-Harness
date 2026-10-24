@@ -120,8 +120,8 @@ These four principles are already primary rules in `CLAUDE.md`. The source adds 
 
 | External Pattern | AI-Harness Equivalent |
 |------------------|-----------------------|
-| Forced lifecycle | Phase structure + evidence gates in `phase-harness.js` |
-| Default-FAIL | `.phase-evidence/phase-<id>-<step>.json` must contain `"status":"PASS"`; missing = FAIL |
+| Forced lifecycle | Phase structure + the `/phase-harness` loop with evidence gates in `phase-gate.js` |
+| Default-FAIL | A step passes only with evidence recorded through `phase-gate.js` (hash-chained, hand-written JSON rejected); missing = FAIL |
 | Fresh-context evaluator | Independent `verify` and `review` agents (isolated context) |
 | Agent-maintained handoff | `docs/HANDOFF.md` + mandatory read of `docs/compound-log.md` |
 | Small stories | Phase checklists in `docs/PHASES.md` must be independently human-testable |
