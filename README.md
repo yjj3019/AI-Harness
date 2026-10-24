@@ -53,7 +53,7 @@ AI-Harness/
 │   ├── compound-log.md                 # 축적 교훈 로그
 │   ├── DECISIONS.md                    # 설계 결정 기록
 │   └── SUPPLEMENTS.md                  # 현황 분석, 결함, 보강 저장소 맵
-├── tests/                              # 훅 87건·게이트 33건 검증 (bash tests/run-all.sh)
+├── tests/                              # 훅 93건·게이트 52건 검증 (bash tests/run-all.sh)
 ├── .github/workflows/ci.yml            # 위 검증을 CI에서 실행
 ├── .gitattributes                      # .sh·.js는 LF 고정 (Windows 체크아웃에서도 CI와 동일)
 ├── .mcp.json.example                   # Playwright MCP 예시 (활성화는 .mcp.json으로 복사)
