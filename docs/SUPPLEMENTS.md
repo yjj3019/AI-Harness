@@ -68,7 +68,7 @@
 1. Playwright MCP 활성화: `.mcp.json.example`을 `.mcp.json`으로 복사한다. `test` 에이전트의 허용 도구는 반영되어 있다. 외부 코드를 실행하므로 소유자 승인 후 진행한다.
 2. LICENSE 저작권 표기: `LICENSE` 끝의 `Copyright [yyyy] [name of copyright owner]`는 템플릿 그대로다. 소유자가 연도와 이름을 채운다.
 3. Actions에서 `verify-attestation` 단계 확인: 이 저장소에는 attestation 파일이 없어 반복문이 비어 있다. 대상 프로젝트에서 처음 `attest`를 커밋할 때 실제로 실행된다.
-4. 새 세션에서 `/phase-harness <id>` 한 번을 끝까지 돌려 보는 종단 시험. 지금까지는 구성 요소별 시험만 했다 [unverified].
+4. 종단 시험은 한 번 통과했다. 임시 복제본에 장난감 Phase를 두고 헤드리스로 `/phase-harness 1`을 돌려 5단계가 모두 PASS했고, 이어서 `check`, `attest`, `verify-attestation`도 통과했다. 실제 프로젝트의 실패·재시도 경로(최대 3회)는 아직 돌려 보지 못했다 [unverified].
 5. 계획 단계 도구(superpowers, spec-kit, OpenSpec)와 관측 대시보드는 번들하지 않기로 했다. 프로젝트별로 필요할 때 고른다.
 6. 공식 `ralph-wiggum` 플러그인: 문서와 GitHub 페이지가 모두 robots 정책으로 읽히지 않아 미확인이다. 우회하지 않았다.
 
