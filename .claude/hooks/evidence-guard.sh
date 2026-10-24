@@ -33,21 +33,21 @@ block() {
 case "$tool" in
   Write | Edit | MultiEdit | NotebookEdit)
     path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)
-    if printf '%s' "$path" | grep -Eq '(^|/)\.phase-evidence(/|$)'; then
+    if printf '%s' "$path" | grep -Eiq '(^|/)\.phase-evidence(/|$)'; then
       block "only the orchestrator records evidence"
     fi
     ;;
   Bash)
     cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
-    if printf '%s' "$cmd" | grep -Fq '.phase-evidence'; then
+    if printf '%s' "$cmd" | grep -Fiq '.phase-evidence'; then
       block "commands must not touch .phase-evidence/"
     fi
-    uses=$(printf '%s' "$cmd" | grep -Eo 'phase-gate\.js[[:space:]]*[A-Za-z]*' || true)
+    uses=$(printf '%s' "$cmd" | grep -Eio 'phase-gate\.js["'"'"']?[[:space:]]*[A-Za-z]*' || true)
     if [ -n "$uses" ]; then
       [ "$mode" = "test" ] || block "phase-gate.js is called by the orchestrator only"
       while IFS= read -r use; do
         [ -n "$use" ] || continue
-        printf '%s' "$use" | grep -Eq '^phase-gate\.js[[:space:]]+run$' || block "the test agent may only call phase-gate.js run"
+        printf '%s' "$use" | grep -Eiq '^phase-gate\.js["'"'"']?[[:space:]]+run$' || block "the test agent may only call phase-gate.js run"
       done <<<"$uses"
     fi
     ;;

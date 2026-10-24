@@ -31,7 +31,7 @@ if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+reset[[:space:]]+(.*[[:space:]]
 fi
 
 # piping a download straight into a shell
-if printf '%s' "$cmd" | grep -Eq '(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh'; then
+if printf '%s' "$cmd" | grep -Eq '(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$|[;&)])'; then
   deny "download piped into a shell"
 fi
 
@@ -39,7 +39,7 @@ fi
 if printf '%s' "$cmd" | grep -Eq 'chmod[[:space:]]+(-[a-zA-Z]*R[a-zA-Z]*)[[:space:]]+777'; then
   deny "recursive chmod 777"
 fi
-if printf '%s' "$cmd" | grep -Eq '(^|[;&|[:space:]])(mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/)'; then
+if printf '%s' "$cmd" | grep -Eq '(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'; then
   deny "raw disk write or filesystem creation"
 fi
 
