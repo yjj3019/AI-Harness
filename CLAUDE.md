@@ -21,6 +21,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Compound Learning Log: `docs/compound-log.md`
 - Session Hand-off State: `docs/HANDOFF.md`
 - Full Architecture: `docs/architecture-spec.md`
+- External Pattern Synthesis: `docs/external-patterns.md`
 
 ## 3. Verify Loop Subagents
 

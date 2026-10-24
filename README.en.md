@@ -116,12 +116,13 @@ Systems such as Oh My Claudecode / Oh My Opencode provide higher-level orchestra
 ## Further Reading
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — Full synthesis (includes precise harness definition, failure modes, and references)
+- [docs/external-patterns.md](./docs/external-patterns.md) — Universal patterns extracted from Superpowers, Anthropic cwc-long-running-agents, Ralph, and Huntley
 - [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Staged harness workflow for PPT/office document creation with Claude Code
 - OpenAI: [Harness Engineering](https://openai.com/index/harness-engineering/)
 - Anthropic: [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 - Anthropic: [Harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps)
-- Geoffrey Huntley — Ralph technique
 - obra/superpowers
+- Geoffrey Huntley — Ralph technique
 - Karpathy-inspired CLAUDE.md collections
 
 ---
