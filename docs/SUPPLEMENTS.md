@@ -115,7 +115,7 @@
 ### 실측
 
 - 수정 전: 훅 75/76, 게이트 29/30. 실패 1건은 `read-tracker`, 1건은 `doctor`.
-- 수정 후: 훅 87/87, 게이트 33/33, `ALL CHECKS PASSED`.
+- 수정 후: 훅 87/87, 게이트 33/33. 6차에서 훅 93/93, 게이트 52건으로 더 넓혔다.
 - CRLF 체크아웃과 LF 사본의 결과가 동일했다. Git Bash의 bash가 CR을 허용하므로 CRLF는 원인이 아니었다. (`.gitattributes`는 다른 셸·도구에서의 비결정성을 없애기 위해 추가했다.)
 
 ### 확인된 결함과 조치
@@ -135,4 +135,12 @@
 - `cygpath`도 `wslpath`도 없는 셸에서는 Windows 경로를 해석하지 못한다(fail-open → verify PASS 거부).
 - macOS는 여전히 미검증이다(`realpath` 부재 시 폴백은 넣었으나 실행하지 못했다).
 - `block-destructive.sh`는 여전히 패턴 매칭이다. `rm -rf /home/user`처럼 2단계 깊이의 경로는 통과한다.
+
+## 7. 6차 (2026-10-25) - 테스트 강도
+
+- 커버리지(`node --test --experimental-test-coverage`): `phase-gate.js` 라인 **99.3%**, 분기 **77.1%**, 함수 100%. 남은 미커버 3곳은 환경 전용 분기다(인덱스의 디렉터리 항목, 셸이 기동하지 않는 경우, `realpath -e`가 없는 BSD).
+- 신규: `tests/gate-edge.test.js`(11건), `tests/gate-branches.test.js`(8건), 훅 단언 6건. 훅 93건, 게이트 52건(Windows에서 심볼릭 링크 1건 skip, CI에서 실행).
+- 표적 뮤테이션 3/3 kill: 트리 바인딩 제거, 해시 연쇄 검증 제거, 읽기 증명 요구 제거를 각각 담당 테스트가 잡았다. 측정 스크립트는 저장소 밖에 두었다(전체 스위트 뮤테이션은 Windows에서 회차당 3분 이상 걸려 CI에 넣지 않는다).
+- 수정: `block-destructive.sh`의 rm 규칙이 장형 플래그(`rm -rf --no-preserve-root /`, `rm --recursive --force /usr`)를 통과시키던 문제. 위치 기반 패턴을 3조건(명령·재귀 플래그·위험 대상) 분리 매칭으로 교체했다.
+- 회귀 방지: `doctor`의 "도구 없음" 테스트가 셸 부재(`PATH=/nonexistent`, 우분투 CI가 보는 상황)를 수용하도록 고쳤다. 5차의 doctor 변경이 리눅스 CI에서 red가 될 수 있던 지점이다.
 
