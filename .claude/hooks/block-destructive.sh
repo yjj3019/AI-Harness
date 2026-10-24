@@ -15,13 +15,13 @@ deny() {
   exit 2
 }
 
-# rm with recursive/force flags aimed at root, home, cwd, parent, or a bare glob
-if printf '%s' "$cmd" | grep -Eq 'rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-[a-zA-Z]*[rRf][a-zA-Z]*[[:space:]]+(/|~|\$HOME|\.|\.\.|\*)([[:space:]]|$)'; then
-  deny "recursive/forced rm on a broad target"
-fi
-# ...or at a top-level system path (/usr, /etc, /*). Deeper absolute paths stay allowed.
-if printf '%s' "$cmd" | grep -Eq 'rm[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-[a-zA-Z]*[rRf][a-zA-Z]*[[:space:]]+(/\*|/[A-Za-z0-9._-]+)([[:space:]]|$)'; then
-  deny "recursive/forced rm on a top-level system path"
+# rm aimed at root, home, cwd, parent, a bare glob or a top-level system path. Split into three
+# checks so that long options (--recursive, --no-preserve-root) and flag order cannot slip past.
+# A recursive delete of a project-relative path (rm -rf ./build, rm -rf node_modules) stays allowed.
+if printf '%s' "$cmd" | grep -Eq '(^|[[:space:];&|])rm([[:space:]]|$)' &&
+  printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])(-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)([[:space:]]|$)' &&
+  printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])(/|/\*|/[A-Za-z0-9._-]+|~|\$HOME|\$PWD|\.|\.\.|\*)([[:space:]]|$)'; then
+  deny "recursive rm on a broad target"
 fi
 
 # git push --force / -f (--force-with-lease is allowed)
