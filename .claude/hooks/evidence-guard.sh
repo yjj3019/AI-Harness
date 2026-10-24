@@ -33,7 +33,8 @@ block() {
 case "$tool" in
   Write | Edit | MultiEdit | NotebookEdit)
     path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)
-    if printf '%s' "$path" | grep -Eiq '(^|/)\.phase-evidence(/|$)'; then
+    # Both separators: Claude Code on Windows passes C:\proj\.phase-evidence\x.json.
+    if printf '%s' "$path" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
       block "only the orchestrator records evidence"
     fi
     ;;

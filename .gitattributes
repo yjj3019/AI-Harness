@@ -1,0 +1,5 @@
+# Line endings are part of the contract: the hooks are bash scripts and the CI runs them
+# on Linux. Force LF for anything that is executed, so a Windows checkout cannot change
+# what CI runs. Documentation and JSON may follow core.autocrlf.
+*.sh text eol=lf
+*.js text eol=lf

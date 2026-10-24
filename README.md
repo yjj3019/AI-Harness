@@ -44,19 +44,23 @@ AI-Harness/
 ├── README.en.md                       # 영문 버전
 ├── docs/
 │   ├── architecture-spec.md            # 전체 종합 명세
+│   ├── external-patterns.md            # 외부 저장소에서 추출한 보편 패턴
+│   ├── usage-scenarios.md              # 시나리오별 적용 가이드
 │   ├── ppt-harness-workflow.md         # PPT/오피스 문서 제작 하네스
-│   ├── DETAIL_SPEC.md                 # 요구사항 템플릿
-│   ├── PHASES.md                      # 단계별 체크리스트
-│   ├── HANDOFF.md                     # 세션 핸드오프 상태
-│   ├── compound-log.md                # 축적 교훈 로그
-│   ├── DECISIONS.md                   # 설계 결정 기록
-│   └── SUPPLEMENTS.md                 # 현황 분석, 결함, 보강 저장소 맵
-├── tests/                             # 훅·에이전트·phase-gate 검증 (bash tests/run-all.sh)
-├── .github/workflows/ci.yml           # 위 검증을 CI에서 실행
-├── .mcp.json.example                  # Playwright MCP 예시 (활성화는 .mcp.json으로 복사)
+│   ├── DETAIL_SPEC.md                  # 요구사항 템플릿
+│   ├── PHASES.md                       # 단계별 체크리스트
+│   ├── HANDOFF.md                      # 세션 핸드오프 상태
+│   ├── compound-log.md                 # 축적 교훈 로그
+│   ├── DECISIONS.md                    # 설계 결정 기록
+│   └── SUPPLEMENTS.md                  # 현황 분석, 결함, 보강 저장소 맵
+├── tests/                              # 훅 87건·게이트 33건 검증 (bash tests/run-all.sh)
+├── .github/workflows/ci.yml            # 위 검증을 CI에서 실행
+├── .gitattributes                      # .sh·.js는 LF 고정 (Windows 체크아웃에서도 CI와 동일)
+├── .mcp.json.example                   # Playwright MCP 예시 (활성화는 .mcp.json으로 복사)
 ├── .claude/settings.unattended.example.json  # 무인 실행용 샌드박스 설정 예시
 └── .claude/
-    ├── settings.json                  # 훅·권한
+    ├── settings.json                   # 훅·권한
+    ├── required-test-command.json      # attestation이 쓸 수 있는 테스트 명령 고정
     ├── agents/
     │   ├── coding.md
     │   ├── test.md
