@@ -116,6 +116,66 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 4. 에이전트 오케스트레이션 또는 `.claude/workflows/phase-harness.js` 스켈레톤으로 Phase 실행.
 5. 컨텍스트가 저하되면 `docs/HANDOFF.md`에 상태를 기록하고 새 세션 시작.
 
+## 다른 프로젝트에 적용하는 방법
+
+이 저장소의 패턴을 새 프로젝트에 이식할 때 권장 순서입니다.
+
+### 최소 적용 (1시간 내)
+
+1. 프로젝트 루트에 `CLAUDE.md`를 두고 다음만 명시합니다.
+   - 작업 전 `docs/compound-log.md` 읽기
+   - 완료 주장 전에 증거 필요
+   - Phase는 독립적으로 실행·사람이 확인 가능해야 함
+2. `docs/PHASES.md`를 만들고 각 Phase를 다음 기준으로 작성합니다.
+   - 한 번에 사람이 직접 돌려볼 수 있는 크기
+   - 체크리스트 항목이 관찰 가능한 증거로 확인 가능
+3. `.phase-evidence/` 디렉터리를 만들고, 각 단계마다 JSON 파일을 남기도록 합니다.
+   ```json
+   { "status": "PASS", "evidence": ["test-output.log"] }
+   ```
+   `phase-harness.js`를 복사해 두면 증거가 없으면 자동으로 실패합니다.
+
+### Default-FAIL 계약 추가 (권장)
+
+기능/스토리별로 기본값을 `false`로 두는 파일을 만듭니다.
+
+```json
+{
+  "US-001": { "passes": false },
+  "US-002": { "passes": false }
+}
+```
+
+- 에이전트가 이 파일을 `true`로 바꾸려면 먼저 증거 파일을 열어야 합니다.
+- 검증 에이전트는 Write/Edit 권한이 없는 별도 컨텍스트에서 실행합니다.
+
+### Forced Lifecycle (Superpowers 방식)
+
+새 기능을 시작할 때 순서를 강제합니다.
+
+1. **의도 확인** — 질문으로 요구사항을 구체화 (코드 작성 전)
+2. **계획 작성** — 2~5분 단위 태스크 + 정확한 파일 경로 + 수락 기준
+3. **TDD** — 실패하는 테스트 먼저 작성
+4. **독립 리뷰** — 구현 에이전트와 분리된 컨텍스트
+5. **검증 후 완료 선언** — 실제 명령 실행 결과를 확인한 뒤에만 “완료”
+
+### 프로젝트 유형별 우선순위
+
+| 유형 | 우선 적용 | 이유 |
+|------|-----------|------|
+| 웹/앱 | Default-FAIL + Fresh-context evaluator + Playwright 증거 | UI 깨짐을 스스로 못 봄 |
+| 백엔드/API | TDD + 테스트 러너 backpressure | 컴파일러·테스트가 강한 되먹임 |
+| 문서/PPT | 샘플 3장 게이트 + 결론형 타이틀 + 시각 QA | 한 번에 전체 생성 시 수정 비용 큼 |
+| 장기 자율 실행 | Agent-maintained handoff + 작은 스토리 | 컨텍스트 리셋이 필수 |
+
+### 주의점
+
+- 한 번에 다 넣지 마세요. 먼저 “증거 없으면 FAIL”과 “Phase를 작게”만 적용해도 효과가 큽니다.
+- 모델이 좋아질수록 하네스를 줄이세요. 주기적으로 “이 규칙이 아직 필요한가?”를 확인합니다.
+- 특정 시나리오 문서는 넣지 마세요. 메커니즘만 남기고 프로젝트별 내용은 해당 프로젝트 안에 둡니다.
+
+가장 빠른 시작은 이 저장소의 `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-harness.js`를 복사한 뒤 해당 프로젝트의 Phase만 채우는 것입니다.
+
 ## 추가 자료
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서 (하네스 정의, 실패 모드, 참고 자료 포함)
