@@ -362,3 +362,33 @@ test("a verify FAIL record needs no read proof, and unarmed projects are not blo
     assert.equal(verifyPass(root).status, 0);
   });
 });
+
+test("a committed required-test-command pin rejects any other attested command", () =>
+  withGitRoot((root) => {
+    const pin = path.join(root, ".claude", "required-test-command.json");
+    fs.mkdirSync(path.dirname(pin), { recursive: true });
+    // The pin is committed with the code, so it exists before the phase runs.
+    fs.writeFileSync(pin, JSON.stringify([NODE, "-e", 'console.log("suite"); process.exit(0)']));
+    fullChain(root);
+    assert.equal(gate(root, "attest", "1").status, 0);
+    assert.equal(gate(root, "verify-attestation", "1").status, 0);
+
+    fs.writeFileSync(pin, JSON.stringify(["npm", "test"]));
+    const wrong = gate(root, "verify-attestation", "1");
+    assert.equal(wrong.status, 2);
+    assert.match(wrong.stderr, /differs from the required one/);
+
+    fs.writeFileSync(pin, "not json");
+    const broken = gate(root, "verify-attestation", "1");
+    assert.equal(broken.status, 2);
+    assert.match(broken.stderr, /not valid JSON/);
+  }));
+
+test("a silent test still leaves a log with the command and exit code", () =>
+  withRoot((root) => {
+    recordPass(root, "1", "coding");
+    assert.equal(gate(root, "run", "1", "test", "--", NODE, "-e", "process.exit(0)").status, 0);
+    const log = fs.readFileSync(path.join(root, ".phase-evidence", "phase-1-test.log"), "utf8");
+    assert.match(log, /\[phase-gate\] exit_code: 0/);
+    assert.match(log, /\[phase-gate\] command: /);
+  }));

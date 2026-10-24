@@ -16,8 +16,8 @@
  *   attest <phase>                           After check passes, write docs/attestations/phase-<id>.json
  *                                            (code tree hash + test command) to be committed
  *   verify-attestation <phase> [-- <cmd...>] CI side: recompute the tree hash, re-run the attested
- *                                            test command itself, require exit 0. With -- <cmd...>
- *                                            the attested command must equal it
+ *                                            test command itself, require exit 0. The attested command must
+ *                                            equal -- <cmd...> or, if present, .claude/required-test-command.json
  *
  * Evidence (.phase-evidence/phase-<id>-<step>.json) holds the status, SHA-256 of its
  * report or log, and SHA-256 of the previous step's evidence file (a hash chain).
@@ -296,6 +296,8 @@ function cmdRun(args) {
   }
   if (result.error) fs.appendFileSync(logAbs, `\n[phase-gate] failed to start: ${result.error.message}\n`);
   const exitCode = typeof result.status === "number" ? result.status : -1;
+  // A silent test still leaves a log that says what ran and how it ended.
+  fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n`);
   const status = exitCode === 0 ? "PASS" : "FAIL";
 
   writeEvidence(phase, "test", {
@@ -411,6 +413,23 @@ function cmdAttest(args) {
   console.log(`Wrote ${toRel(attestationFile(phase))}. Commit it; CI re-runs the test command and compares the tree.`);
 }
 
+// .claude/required-test-command.json: a JSON array of strings, committed and reviewed with the code.
+// When present, no attestation may use any other test command.
+function loadPinnedCommand(bad) {
+  const file = path.join(ROOT, ".claude", "required-test-command.json");
+  if (!fs.existsSync(file)) return null;
+  let v;
+  try {
+    v = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return bad(`${toRel(file)} is not valid JSON`);
+  }
+  if (!Array.isArray(v) || v.length === 0 || !v.every((x) => typeof x === "string")) {
+    return bad(`${toRel(file)} must be a non-empty JSON array of strings`);
+  }
+  return v;
+}
+
 function cmdVerifyAttestation(args) {
   const sep = args.indexOf("--");
   const head = sep < 0 ? args : args.slice(0, sep);
@@ -430,7 +449,9 @@ function cmdVerifyAttestation(args) {
   if (!att || att.schema !== SCHEMA || String(att.phase) !== phase) bad("schema or phase mismatch");
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
-  if (expected && JSON.stringify(expected) !== JSON.stringify(att.argv)) {
+  // The required command comes from the command line, else from the committed pin file.
+  const required = expected || loadPinnedCommand(bad);
+  if (required && JSON.stringify(required) !== JSON.stringify(att.argv)) {
     bad(`attested command differs from the required one: ${att.argv.join(" ")}`);
   }
   const now = treeHash();
