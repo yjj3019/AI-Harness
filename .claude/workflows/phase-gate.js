@@ -401,17 +401,42 @@ function cmdDoctor() {
     problems.push(m);
     console.error(`[PROBLEM] ${m}`);
   };
-  const has = (cmd, args) => {
-    const r = spawnSync(cmd, args, { encoding: "utf8" });
-    return !r.error && r.status === 0;
-  };
-  if (process.platform === "win32") {
-    bad("Windows: the hooks are bash scripts. Run Claude Code in WSL2 or with Git Bash on PATH, or the guards do not run");
+  // The hooks are bash scripts, so a tool must exist where bash finds it, not only on the Node PATH
+  // (on Windows jq and git usually live on the Git Bash PATH). One probe answers all of them, run
+  // through the shell Claude Code uses: HARNESS_BASH, then Git Bash on Windows, then bash.
+  const probe = [
+    'for t in bash jq sha256sum git; do command -v "$t" >/dev/null 2>&1 && echo "have:$t" || echo "miss:$t"; done',
+    'if realpath -e / >/dev/null 2>&1; then echo have:realpath-e;',
+    'elif command -v realpath >/dev/null 2>&1; then echo have:realpath-plain;',
+    'else echo miss:realpath; fi',
+  ].join("\n");
+  const shells = [process.env.HARNESS_BASH, process.env.CLAUDE_CODE_GIT_BASH_PATH];
+  if (process.platform === "win32") shells.push("C:\\Program Files\\Git\\bin\\bash.exe");
+  shells.push("bash");
+  let probed = null;
+  for (const shell of shells.filter(Boolean)) {
+    const r = spawnSync(shell, ["-c", probe], { encoding: "utf8" });
+    if (!r.error && r.status === 0 && String(r.stdout).includes("have:bash")) {
+      probed = r;
+      break;
+    }
   }
-  for (const [name, args] of [["bash", ["-c", "true"]], ["jq", ["--version"]], ["sha256sum", ["--version"]], ["git", ["--version"]]]) {
-    has(name, args) ? ok(name) : bad(`${name} is missing; the hooks fail open without it`);
+  const seen = new Map();
+  for (const line of String((probed && probed.stdout) || "").split(/\r?\n/)) {
+    const m = /^(have|miss):(.+)$/.exec(line.trim());
+    if (m) seen.set(m[2], m[1] === "have");
   }
-  has("realpath", ["-e", "/"]) ? ok("realpath -e") : bad("realpath -e is unsupported (BSD/macOS); read-tracker.sh cannot record, so verify PASS will be refused");
+  if (seen.size === 0) {
+    bad("bash could not be started, so the hooks cannot run here (Windows: install Git Bash or use WSL2)");
+  } else {
+    for (const name of ["bash", "jq", "sha256sum", "git"]) {
+      seen.get(name) ? ok(name) : bad(`${name} is missing; the hooks fail open without it`);
+    }
+    if (seen.get("realpath-e")) ok("realpath -e");
+    else if (seen.get("realpath-plain")) ok("realpath (no -e; read-tracker.sh falls back)");
+    else bad("realpath is missing; read-tracker.sh cannot record, so verify PASS will be refused");
+    if (process.platform === "win32") ok("Windows: hook paths are matched with both separators");
+  }
 
   const settingsFile = path.join(ROOT, ".claude", "settings.json");
   let st = null;

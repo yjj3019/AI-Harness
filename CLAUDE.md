@@ -23,6 +23,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
 - Usage Scenarios: `docs/usage-scenarios.md`
+- PPT / Office Harness: `docs/ppt-harness-workflow.md`
 - Gaps & Supplementary Repos: `docs/SUPPLEMENTS.md`
 - Design Decisions: `docs/DECISIONS.md`
 

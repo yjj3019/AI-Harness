@@ -42,18 +42,23 @@ AI-Harness/
 ├── README.en.md                       # This file (English)
 ├── docs/
 │   ├── architecture-spec.md            # Full synthesis
-│   ├── DETAIL_SPEC.md                 # Requirements template
-│   ├── PHASES.md                      # Phase checklists
-│   ├── HANDOFF.md                     # Session hand-off state
-│   ├── compound-log.md                # Accumulated lessons
-│   ├── DECISIONS.md                   # Design decisions (Korean)
-│   └── SUPPLEMENTS.md                 # Gap analysis, defects, supplementary repo map (Korean)
-├── tests/                             # Hook, agent and phase-gate checks (bash tests/run-all.sh)
-├── .github/workflows/ci.yml           # Runs the checks in CI
-├── .mcp.json.example                  # Playwright MCP example (copy to .mcp.json to enable)
+│   ├── external-patterns.md            # Universal patterns from external harnesses
+│   ├── usage-scenarios.md              # Scenario guides
+│   ├── ppt-harness-workflow.md         # Office document (PPT) harness
+│   ├── DETAIL_SPEC.md                  # Requirements template
+│   ├── PHASES.md                       # Phase checklists
+│   ├── HANDOFF.md                      # Session hand-off state
+│   ├── compound-log.md                 # Accumulated lessons
+│   ├── DECISIONS.md                    # Design decisions (Korean)
+│   └── SUPPLEMENTS.md                  # Gap analysis, defects, supplementary repo map (Korean)
+├── tests/                              # 87 hook assertions, 33 gate tests (bash tests/run-all.sh)
+├── .github/workflows/ci.yml            # Runs the checks in CI
+├── .gitattributes                      # LF for .sh/.js, so a Windows checkout matches CI
+├── .mcp.json.example                   # Playwright MCP example (copy to .mcp.json to enable)
 ├── .claude/settings.unattended.example.json  # Sandbox settings example for unattended runs
 └── .claude/
-    ├── settings.json                  # Hooks and permissions
+    ├── settings.json                   # Hooks and permissions
+    ├── required-test-command.json      # The only command an attestation may pin
     ├── agents/
     │   ├── coding.md
     │   ├── test.md

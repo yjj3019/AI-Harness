@@ -5,6 +5,11 @@
 # Only this script writes .phase-evidence/.reads.jsonl; subagents cannot touch .phase-evidence/
 # through Write/Edit/Bash (evidence-guard.sh). Guardrail, not a security boundary.
 # Fail-open if jq or sha256sum is missing (phase-gate.js then refuses PASS, which is the safe side).
+#
+# Paths reach this hook in three shapes: POSIX (/home/x), native Windows (C:\x) and the
+# forward-slash Windows form (C:/x). Each is converted to what this shell's realpath understands
+# before the comparison. Without that a Windows read is never recorded, and verify PASS stays
+# refused on that platform, which is the opposite of what the guard is for.
 
 set -u
 command -v jq >/dev/null 2>&1 || exit 0
@@ -21,10 +26,37 @@ file=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null
 
 root=${CLAUDE_PROJECT_DIR:-$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)}
 [ -n "$root" ] || exit 0
-root=$(realpath -e "$root" 2>/dev/null) || exit 0
-dir=$(realpath -m "$root/.phase-evidence" 2>/dev/null) || exit 0
-case "$file" in /*) abs=$file ;; *) abs=$root/$file ;; esac
-real=$(realpath -e "$abs" 2>/dev/null) || exit 0
+
+# Resolve without GNU-only flags: BSD/macOS realpath has neither -e nor -m.
+abspath() {
+  local out
+  out=$(realpath -e "$1" 2>/dev/null) && [ -n "$out" ] && { printf '%s' "$out"; return 0; }
+  out=$(realpath "$1" 2>/dev/null) && [ -n "$out" ] && { printf '%s' "$out"; return 0; }
+  return 1
+}
+
+# Convert a Windows path to the form this shell resolves (Git Bash: cygpath, WSL: wslpath).
+shell_path() {
+  case "$1" in
+    [A-Za-z]:[\\/]*)
+      if command -v cygpath >/dev/null 2>&1; then cygpath -u "$1"
+      elif command -v wslpath >/dev/null 2>&1; then wslpath -u "$1"
+      else printf '%s' "$1"; fi
+      ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+root=$(shell_path "$root")
+file=$(shell_path "$file")
+root=$(abspath "$root") || exit 0
+dir=$(abspath "$root/.phase-evidence") || exit 0
+
+case "$file" in
+  /*) abs=$file ;;
+  *) abs=$root/$file ;;
+esac
+real=$(abspath "$abs") || exit 0
 
 case "$real" in
   "$dir"/*) ;;
