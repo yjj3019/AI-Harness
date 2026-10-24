@@ -35,7 +35,7 @@
 - 해시 연쇄로 기록 이후의 수정을 `check`가 탐지한다. 손으로 쓴 JSON은 스키마 검사에서 거부된다.
 - `attest`가 코드 트리 해시와 테스트 명령을 `docs/attestations/phase-<id>.json`에 남기고, 커밋한다. CI의 `verify-attestation`이 트리를 다시 계산하고 그 명령을 직접 재실행한다. 로컬 증거는 gitignore 대상이라 CI에 없으므로, 독립 검증은 이 파일이 맡는다.
 - 한계
-  - 메인 세션이 마음먹으면 위조할 수 있다. 위조해도 PR에 남는 attestation의 명령과 CI 재실행 결과는 속이지 못한다. 단, 기록된 명령 자체가 `true` 같은 것이면 CI도 통과하므로 PR 리뷰나 `verify-attestation <id> -- <기대 명령>`으로 명령을 고정해야 한다.
+  - 메인 세션이 마음먹으면 위조할 수 있다. 위조해도 PR에 남는 attestation의 명령과 CI 재실행 결과는 속이지 못한다. 단, 기록된 명령 자체가 `true` 같은 것이면 CI도 통과한다. `.claude/required-test-command.json`(문자열 배열)을 커밋해 두면 `verify-attestation`이 다른 명령의 attestation을 거부한다. 이 파일을 코드와 함께 리뷰해야 의미가 있다.
   - 훅은 패턴 매칭이라 우회될 수 있다. 읽기 추적은 Read 호출을 증명할 뿐 내용을 이해했다는 증명이 아니다.
   - 트리 해시는 git이 있어야 계산된다. git이 없으면 `check`가 경고만 하고 코드 바인딩이 빠진다.
   - 읽기 추적은 `read-tracker.sh`가 `settings.json`에 등록된 프로젝트에서만 강제된다. 최소 이식(러너와 커맨드만 복사)에서는 꺼진다.
@@ -68,7 +68,7 @@
 1. Playwright MCP 활성화: `.mcp.json.example`을 `.mcp.json`으로 복사한다. `test` 에이전트의 허용 도구는 반영되어 있다. 외부 코드를 실행하므로 소유자 승인 후 진행한다.
 2. LICENSE 저작권 표기: `LICENSE` 끝의 `Copyright [yyyy] [name of copyright owner]`는 템플릿 그대로다. 소유자가 연도와 이름을 채운다.
 3. Actions에서 `verify-attestation` 단계 확인: 이 저장소에는 attestation 파일이 없어 반복문이 비어 있다. 대상 프로젝트에서 처음 `attest`를 커밋할 때 실제로 실행된다.
-4. 종단 시험은 한 번 통과했다. 임시 복제본에 장난감 Phase를 두고 헤드리스로 `/phase-harness 1`을 돌려 5단계가 모두 PASS했고, 이어서 `check`, `attest`, `verify-attestation`도 통과했다. 실제 프로젝트의 실패·재시도 경로(최대 3회)는 아직 돌려 보지 못했다 [unverified].
+4. 종단 시험은 한 번 통과했다. 임시 복제본에 장난감 Phase를 두고 헤드리스로 `/phase-harness 1`을 돌려 5단계가 모두 PASS했고, 이어서 `check`, `attest`, `verify-attestation`도 통과했다. 재시도 경로도 한 번 돌렸다. 첫 실행에서 반드시 실패하는 테스트 명령으로 시험한 결과 1차 시도가 실패하고 2차 시도에서 통과했으며, 증거 파일의 시도 번호(coding-1, coding-2)와 `check` 통과로 확인했다. 3회 소진 후 중단하는 경로는 돌려 보지 못했다 [unverified]. 시험용 임시 복제본에서만 돌렸다.
 5. 계획 단계 도구(superpowers, spec-kit, OpenSpec)와 관측 대시보드는 번들하지 않기로 했다. 프로젝트별로 필요할 때 고른다.
 6. 공식 `ralph-wiggum` 플러그인: 문서와 GitHub 페이지가 모두 robots 정책으로 읽히지 않아 미확인이다. 우회하지 않았다.
 
