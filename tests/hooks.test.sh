@@ -98,9 +98,14 @@ ta coding 0 Bash command "npm test"
 echo "== block-destructive: system paths and flag variants =="
 t $B "" 2 Bash command 'rm -rf /*'
 t $B "" 2 Bash command 'rm -rf /usr'
+t $B "" 2 Bash command 'rm -rf --no-preserve-root /'
+t $B "" 2 Bash command 'rm --recursive --force /usr'
 t $B "" 2 Bash command 'chmod -R -v 777 /srv'
 t $B "" 2 Bash command 'chmod --recursive 777 /srv'
+t $B "" 2 Bash command 'chmod -R 0777 /srv'
 t $B "" 0 Bash command 'rm -rf /tmp/build'
+t $B "" 0 Bash command 'rm -rf ./build'
+t $B "" 0 Bash command 'rm --force file.txt'
 t $B "" 0 Bash command 'chmod 777 file.txt'
 t $B "" 0 Bash command 'chmod -R 755 /srv'
 
@@ -109,6 +114,11 @@ t $G deny 2 Write file_path 'C:\proj\.phase-evidence\x.json'
 t $G deny 2 Write file_path 'C:/proj/.phase-evidence/x.json'
 t $G deny 0 Write file_path 'C:\proj\src\app.js'
 ta coding 2 Write file_path 'C:\proj\.phase-evidence\x.json'
+
+echo "== evidence-guard: agent_id without agent_type is still a subagent =="
+got=$(jq -n '{tool_name:"Write", tool_input:{file_path:".phase-evidence/x"}, agent_id:"x1"}' | bash .claude/hooks/evidence-guard.sh auto >/dev/null 2>&1; echo $?)
+total=$((total + 1))
+[ "$got" = 2 ] || { fails=$((fails + 1)); echo "FAIL auto(agent_id only) want=2 got=$got"; }
 
 echo "== read-tracker =="
 RT=".claude/hooks/read-tracker.sh"
