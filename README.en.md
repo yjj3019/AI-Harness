@@ -51,7 +51,7 @@ AI-Harness/
 │   ├── compound-log.md                 # Accumulated lessons
 │   ├── DECISIONS.md                    # Design decisions (Korean)
 │   └── SUPPLEMENTS.md                  # Gap analysis, defects, supplementary repo map (Korean)
-├── tests/                              # 87 hook assertions, 33 gate tests (bash tests/run-all.sh)
+├── tests/                              # 93 hook assertions, 52 gate tests (bash tests/run-all.sh)
 ├── .github/workflows/ci.yml            # Runs the checks in CI
 ├── .gitattributes                      # LF for .sh/.js, so a Windows checkout matches CI
 ├── .mcp.json.example                   # Playwright MCP example (copy to .mcp.json to enable)
