@@ -10,8 +10,10 @@ This repository synthesizes a complete harness methodology for Claude Code (and 
 
 As coding agents become capable of multi-hour autonomous work, the limiting factor is no longer raw model intelligence. It is the **harness** — the scaffolding of rules, feedback loops, tools, context management, and verification that keeps the agent on track.
 
+**Precise definition**: A harness consists of tools, rules, and actions that are *directly associated* with the Code Agent to keep it stable over long runs. Examples include rules in CLAUDE.md, independent verification agents, evidence gates, and compound learning logs. It does **not** include every possible safety measure (stable IDE, hardware, user mindset, etc.). A Skill or MCP becomes part of the harness only when used specifically to constrain or verify Agent behavior.
+
 Common failure modes without a harness:
-- Premature "victory" declarations
+- Premature "victory" declarations (done claims without evidence)
 - Context Anxiety (degraded consistency above ~70% context window)
 - Self-assessment bias (agents praise their own work)
 - Over-engineering and scope creep
@@ -22,7 +24,8 @@ Harness Engineering shifts the developer role from writing code lines to designi
 ## Core Principles
 
 1. **Index-Only Constitution** — `CLAUDE.md` stays lean (~100 lines). Detailed specs live in `docs/`.
-2. **No One-Shot** — Break work into explicit Phases/Sprints with completion criteria.
+2. **No One-Shot** — Break work into explicit Phases/Sprints with completion criteria.  
+   Each Phase must be **independently executable** and **human-testable**. Completion criteria must be observable (artifacts, logs, UI state, test output).
 3. **Ralph Wiggum Loop** — Autonomous cycle: `coding → test → verify → review → compound`. Auto-retry on FAIL or [BLOCKING] (max 3 iterations).
 4. **Independent Evaluators** — Coding and evaluation run in isolated context windows to eliminate self-bias.
 5. **Objective Verification** — Use Playwright MCP, DevTools, logs, and test runners — never subjective code reading.
@@ -112,9 +115,11 @@ Systems such as Oh My Claudecode / Oh My Opencode provide higher-level orchestra
 
 ## Further Reading
 
-- [docs/architecture-spec.md](./docs/architecture-spec.md) — Full synthesis
+- [docs/architecture-spec.md](./docs/architecture-spec.md) — Full synthesis (includes precise harness definition, failure modes, and references)
+- [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Staged harness workflow for PPT/office document creation with Claude Code
+- OpenAI: [Harness Engineering](https://openai.com/index/harness-engineering/)
 - Anthropic: [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
-- Anthropic: [Harness design for long-running apps](https://www.anthropic.com/research/harness-design-long-running-apps)
+- Anthropic: [Harness design for long-running apps](https://www.anthropic.com/engineering/harness-design-long-running-apps)
 - Geoffrey Huntley — Ralph technique
 - obra/superpowers
 - Karpathy-inspired CLAUDE.md collections
