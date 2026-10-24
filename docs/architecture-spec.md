@@ -149,7 +149,10 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 | docs/HANDOFF.md | Session migration state | Mandatory at Phase boundaries for Context Reset |
 | docs/compound-log.md | Accumulated learnings & errors | Must be reviewed before every task |
 | .claude/agents/ | Independent Subagents | Isolated contexts; evidence-based PASS/FAIL |
-| .claude/workflows/phase-harness.js | Loop skeleton | Evidence gates + post-Phase handoff. Validates phase against PHASES.md. Requires `.phase-evidence/phase-<id>-<step>.json` with `"status":"PASS"`. Exit codes: 0=complete, 1=invalid phase, 2/3=evidence failure after retries. |
+| .claude/workflows/phase-gate.js | Evidence recorder and gate | `list`, `run <id> test -- <cmd>`, `record <id> <step>`, `check <id>`. Evidence JSON carries status, artifact SHA-256 and a hash link to the previous step. Hand-written evidence is rejected. Exit codes: 0=ok, 1=usage or invalid input, 2=evidence invalid or test failed. |
+| .claude/commands/phase-harness.md | Loop orchestrator | `/phase-harness <id>` runs coding → test → verify → review → compound (max 3 attempts) and records evidence only through phase-gate.js. |
+| .claude/hooks/ + .claude/settings.json | Guardrails | `block-destructive.sh` (Bash) and `evidence-guard.sh` (subagents may not write `.phase-evidence/`). |
+| tests/ | Regression checks | `bash tests/run-all.sh` runs syntax, frontmatter, hook and phase-gate tests. CI runs the same script. |
 
 ## 8. Foundational References
 

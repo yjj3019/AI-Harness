@@ -2,14 +2,13 @@
 
 This file maintains a history of bugs, operational mistakes, and effective solutions. Agents MUST review this document before starting new tasks.
 
-## [Initial Setup] Harness Architecture Active
+## Entries
 
-- **Date**: 2026-10-23
-- **Category**: System Setup
-- **Rule**: Always run independent Subagents to verify code rather than relying on self-assessment.
+### [2026-10-23] Setup - System Setup
+
 - **Issue/Risk**: Self-congratulatory bias in single-agent workflows.
 - **Root Cause**: LLMs naturally evaluate their own output positively.
-- **Resolution/Pattern**: Isolate coding and evaluation into separate context windows (coding → test → verify → review → compound).
+- **Resolution/Pattern**: Always run independent Subagents to verify code rather than relying on self-assessment. Isolate coding and evaluation into separate context windows (coding → test → verify → review → compound).
 
 ## Template for New Entries
 

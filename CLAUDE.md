@@ -23,6 +23,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
 - Usage Scenarios: `docs/usage-scenarios.md`
+- Gaps & Supplementary Repos: `docs/SUPPLEMENTS.md`
 
 ## 3. Verify Loop Subagents
 
@@ -41,6 +42,8 @@ Run implementation using the workflow: coding → test → verify → review →
 If test, verify, or review returns FAIL or [BLOCKING], automatically return to coding to fix issues.
 
 Maximum retry budget: 3 iterations.
+
+Run a Phase with `/phase-harness <id>`. Evidence is recorded only through `.claude/workflows/phase-gate.js`; never write `.phase-evidence/*` by hand, and subagents cannot. A Phase is complete only when `node .claude/workflows/phase-gate.js check <id>` exits 0.
 
 Always check `docs/compound-log.md` before starting any task.
 

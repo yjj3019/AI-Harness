@@ -48,16 +48,26 @@ AI-Harness/
 │   ├── DETAIL_SPEC.md                 # 요구사항 템플릿
 │   ├── PHASES.md                      # 단계별 체크리스트
 │   ├── HANDOFF.md                     # 세션 핸드오프 상태
-│   └── compound-log.md                # 축적 교훈 로그
+│   ├── compound-log.md                # 축적 교훈 로그
+│   └── SUPPLEMENTS.md                 # 현황 분석, 결함, 보강 저장소 맵
+├── tests/                             # 훅·에이전트·phase-gate 검증 (bash tests/run-all.sh)
+├── .github/workflows/ci.yml           # 위 검증을 CI에서 실행
+├── .mcp.json.example                  # Playwright MCP 예시 (활성화는 .mcp.json으로 복사)
 └── .claude/
+    ├── settings.json                  # 훅·권한
     ├── agents/
     │   ├── coding.md
     │   ├── test.md
     │   ├── verify.md
     │   ├── review.md
     │   └── compound.md
+    ├── commands/
+    │   └── phase-harness.md            # /phase-harness <id> 루프 오케스트레이터
+    ├── hooks/
+    │   ├── block-destructive.sh        # 파괴적 명령 차단
+    │   └── evidence-guard.sh           # 서브에이전트의 증거 쓰기 제한
     └── workflows/
-        └── phase-harness.js            # 루프 러너 스켈레톤
+        └── phase-gate.js               # 증거 기록·검사
 ```
 
 ## Ralph Wiggum Loop
@@ -113,7 +123,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 1. `CLAUDE.md` 읽기.
 2. `docs/compound-log.md` 검토.
 3. `docs/PHASES.md`에 단계 정의, `docs/DETAIL_SPEC.md`에 요구사항 작성.
-4. 에이전트 오케스트레이션 또는 `.claude/workflows/phase-harness.js` 스켈레톤으로 Phase 실행.
+4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id>`.
 5. 컨텍스트가 저하되면 `docs/HANDOFF.md`에 상태를 기록하고 새 세션 시작.
 
 ## 다른 프로젝트에 적용하는 방법
@@ -129,11 +139,11 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 2. `docs/PHASES.md`를 만들고 각 Phase를 다음 기준으로 작성합니다.
    - 한 번에 사람이 직접 돌려볼 수 있는 크기
    - 체크리스트 항목이 관찰 가능한 증거로 확인 가능
-3. `.phase-evidence/` 디렉터리를 만들고, 각 단계마다 JSON 파일을 남기도록 합니다.
-   ```json
-   { "status": "PASS", "evidence": ["test-output.log"] }
+3. `.claude/workflows/phase-gate.js`와 `.claude/commands/phase-harness.md`를 복사합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로만 남깁니다. 손으로 쓴 JSON은 `check`에서 거부되고, 증거가 없으면 실패합니다.
+   ```bash
+   node .claude/workflows/phase-gate.js run 1 test -- npm test
+   node .claude/workflows/phase-gate.js check 1
    ```
-   `phase-harness.js`를 복사해 두면 증거가 없으면 자동으로 실패합니다.
 
 ### Default-FAIL 계약 추가 (권장)
 
@@ -174,7 +184,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 - 모델이 좋아질수록 하네스를 줄이세요. 주기적으로 “이 규칙이 아직 필요한가?”를 확인합니다.
 - 특정 시나리오 문서는 넣지 마세요. 메커니즘만 남기고 프로젝트별 내용은 해당 프로젝트 안에 둡니다.
 
-가장 빠른 시작은 이 저장소의 `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-harness.js`를 복사한 뒤 해당 프로젝트의 Phase만 채우는 것입니다.
+가장 빠른 시작은 이 저장소의 `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-gate.js`, `.claude/commands/phase-harness.md`를 복사한 뒤 해당 프로젝트의 Phase만 채우는 것입니다. 증거 쓰기 제한까지 쓰려면 `.claude/agents/`, `.claude/hooks/`, `.claude/settings.json`도 함께 복사합니다.
 
 ## 추가 자료
 
