@@ -76,6 +76,46 @@ Let external systems push back so the agent corrects itself:
 
 The harness does not rely on the model's self-assessment. The environment is the evaluator.
 
+## Pattern 6: Lazy Senior / YAGNI (Ponytail)
+
+Source: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
+
+The best code is the code never written. Solve the whole problem with the least new code.
+
+**Decision order** (take the first that fully works):
+
+1. Does it need to exist? Skip unrequested features and name them.
+2. Already in this codebase? Reuse the existing helper, component, or pattern.
+3. Standard library or platform feature? Use it.
+4. Already-installed dependency? Use it. Never add a dependency for a few lines.
+5. Can it be one clear line? One line.
+6. Otherwise: the minimum code that works.
+
+**Rules**
+- Be lazy about the solution, never about completeness. Finish callers, tests, and fixtures your change breaks.
+- No abstraction, wrapper, config, or “for later” code nobody asked for.
+- Bug fix: grep every caller, then fix the root cause once in shared code.
+- New non-trivial logic leaves one small test or assert. Trivial changes need none.
+- Never cut: validation at trust boundaries, error handling that prevents data loss, security, accessibility, or anything the user asked for.
+- End with one or two lines: what was skipped and any residual risk.
+
+## Pattern 7: Karpathy Behavioral Guidelines (detail)
+
+Source: [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)
+
+These four principles are already primary rules in `CLAUDE.md`. The source adds concrete operational detail:
+
+| Principle | Operational detail |
+|-----------|--------------------|
+| Think Before Coding | State assumptions; present multiple interpretations; push back if a simpler approach exists; stop and name confusion. |
+| Simplicity First | No features beyond the ask; no single-use abstractions; no unrequested flexibility; if 200 lines could be 50, rewrite. |
+| Surgical Changes | Do not “improve” adjacent code or formatting; match existing style; remove only orphans your change created; every changed line must trace to the request. |
+| Goal-Driven Execution | Transform “add validation” → “write tests for invalid inputs, then make them pass”; “fix the bug” → “write a reproducing test, then make it pass”. |
+
+**Working signals**: fewer unnecessary diff lines, fewer rewrites from overcomplication, clarifying questions before implementation.
+
+**Tradeoff**: These bias toward caution over speed. For trivial tasks (typos, obvious one-liners), use judgment — not every change needs full rigor.
+
 ## Mapping to This Repository
 
 | External Pattern | AI-Harness Equivalent |
@@ -86,6 +126,8 @@ The harness does not rely on the model's self-assessment. The environment is the
 | Agent-maintained handoff | `docs/HANDOFF.md` + mandatory read of `docs/compound-log.md` |
 | Small stories | Phase checklists in `docs/PHASES.md` must be independently human-testable |
 | Backpressure | Objective verification tools (test runner, Playwright, logs) required before PASS |
+| Lazy senior / YAGNI | Simplicity First + Surgical Changes in `CLAUDE.md`; prefer reuse and stdlib before new code |
+| Karpathy guidelines | Primary Rules section of `CLAUDE.md` |
 
 ## Recommended Adoption Order
 

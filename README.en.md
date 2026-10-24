@@ -174,7 +174,7 @@ Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, and `.claude/workflows/
 ## Further Reading
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — Full synthesis (includes precise harness definition, failure modes, and references)
-- [docs/external-patterns.md](./docs/external-patterns.md) — Universal patterns extracted from Superpowers, Anthropic cwc-long-running-agents, Ralph, and Huntley
+- [docs/external-patterns.md](./docs/external-patterns.md) — Universal patterns extracted from Superpowers, Anthropic cwc, Ralph, Huntley, Ponytail, and Karpathy
 - [docs/usage-scenarios.md](./docs/usage-scenarios.md) — Scenario guides (web, API, PPT, long run, bug fix, improvement)
 - [docs/ppt-harness-workflow.md](./docs/ppt-harness-workflow.md) — Staged harness workflow for PPT/office document creation with Claude Code
 - OpenAI: [Harness Engineering](https://openai.com/index/harness-engineering/)

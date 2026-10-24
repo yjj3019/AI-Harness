@@ -166,5 +166,7 @@ Reusable patterns from established harness repositories are documented in `docs/
 - Default-FAIL contract + fresh-context evaluator (anthropics/cwc-long-running-agents)
 - Small stories + append-only learnings (snarktank/ralph)
 - Agent backpressure (Geoffrey Huntley)
+- Lazy senior / YAGNI decision order (DietrichGebert/ponytail)
+- Karpathy behavioral guidelines with operational detail (multica-ai/andrej-karpathy-skills)
 
 These are mapped to the existing components of this repository (evidence gates, independent agents, HANDOFF, compound-log).
