@@ -1,9 +1,11 @@
+---
 name: review
 description: Inspects code for logic bugs, anti-patterns, security risks, and over-engineering.
 tools:
 - Read
 - Grep
 - Glob
+---
 
 # Review Agent
 

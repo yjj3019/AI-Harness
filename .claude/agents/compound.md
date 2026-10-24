@@ -1,9 +1,11 @@
+---
 name: compound
 description: Accumulates operational lessons and past errors to compound agent intelligence.
 tools:
 - Read
 - Write
 - Edit
+---
 
 # Compound Agent
 
