@@ -15,7 +15,7 @@
 - 버린 것 1: 증거 디렉터리를 커밋. 로그와 해시가 매번 바뀌어 PR이 지저분해지고 위조 검토 지점도 흐려진다.
 - 버린 것 2: HMAC 서명. 키를 메인 세션이 읽을 수 있어 신뢰 경계를 옮기지 못한다.
 - 이유: 로컬 증거가 위조돼도 CI 재실행과 PR에 남는 명령은 속이지 못한다.
-- 한계: 기록된 명령이 `true`면 CI도 통과한다. `verify-attestation <id> -- <기대 명령>`으로 고정하거나 리뷰한다.
+- 한계: 기록된 명령이 `true`면 CI도 통과한다. 완화로 `.claude/required-test-command.json`을 커밋하면 `verify-attestation`이 그 명령과 다른 attestation을 거부한다. 일회성은 `verify-attestation <id> -- <기대 명령>`으로도 고정한다. 파일 자체의 리뷰는 사람이 해야 한다.
 
 ## D3. 평가자의 증거 열람 확인
 
