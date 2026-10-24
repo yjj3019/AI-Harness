@@ -45,5 +45,20 @@ lint() {
 for f in .claude/agents/*.md; do [ -e "$f" ] && lint "$f" agent yes; done
 for f in .claude/commands/*.md; do [ -e "$f" ] && lint "$f" command no; done
 
+# The test agent may hold only the reviewed Playwright tools: no wildcard, no code execution, storage writes, routing or uploads.
+if grep -Eq '^- mcp__playwright__(\*|browser_(run_code_unsafe|evaluate|route|unroute|route_list|set_storage_state|network_state_set|file_upload|drop|pdf_save|[a-z]+storage_(set|clear|delete)|cookie_(set|clear|delete)|localstorage_(set|clear|delete)|start_[a-z]+|stop_[a-z]+))' .claude/agents/test.md; then
+  echo "FAIL .claude/agents/test.md: lists a Playwright tool outside the reviewed safe set"
+  fails=$((fails + 1))
+fi
+
+# The evidence guard must be registered in settings.json. Agent frontmatter hooks are skipped
+# until the workspace trust dialog is accepted, so they cannot be the only guard.
+for h in 'evidence-guard.sh auto' 'block-destructive.sh'; do
+  if ! jq -e --arg h "$h" '[.hooks.PreToolUse[]?.hooks[]?.command] | any(contains($h))' .claude/settings.json >/dev/null 2>&1; then
+    echo "FAIL .claude/settings.json: PreToolUse hook '$h' is not registered"
+    fails=$((fails + 1))
+  fi
+done
+
 echo "frontmatter: $checked files checked, $fails problems"
 [ "$fails" -eq 0 ]

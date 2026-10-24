@@ -6,12 +6,6 @@ tools:
 - Glob
 - Grep
 - Bash
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit|MultiEdit|NotebookEdit|Bash"
-      hooks:
-        - type: command
-          command: '"$CLAUDE_PROJECT_DIR/.claude/hooks/evidence-guard.sh" deny'
 ---
 
 # Verify Agent (Independent Evaluator)
@@ -28,6 +22,7 @@ Eliminate LLM self-assessment bias by acting as an independent verifier of funct
   - Browser snapshots or Playwright logs
   - Build artifacts or generated files that actually exist
   - Checklist items in `docs/PHASES.md` that can be confirmed by inspection
+- Open every evidence file you were given with the Read tool, the test log first, before the verdict. The gate refuses a PASS when the test log has no read record. List what you opened under Evidence Reviewed.
 - If evidence is missing or ambiguous → Status: FAIL
 - Output strict verdict:
   - Status: PASS or FAIL

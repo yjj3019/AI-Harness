@@ -194,3 +194,171 @@ test("test is not accepted by record", () =>
   withRoot((root) => {
     assert.equal(gate(root, "record", "1", "test", "--status", "PASS", "--report", report(root, "t.md")).status, 1);
   }));
+
+// ---- code tree binding, attestation (needs git) ----
+
+function git(root, ...args) {
+  const r = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.invalid", ...args], { cwd: root, encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+}
+
+function withGitRoot(fn) {
+  withRoot((root) => {
+    git(root, "init", "-q");
+    fs.writeFileSync(path.join(root, ".gitignore"), ".phase-evidence/\n");
+    fs.writeFileSync(path.join(root, "app.txt"), "v1\n");
+    git(root, "add", "-A");
+    git(root, "commit", "-q", "-m", "init");
+    fn(root);
+  });
+}
+
+test("check fails when code changes after the test ran", () =>
+  withGitRoot((root) => {
+    fullChain(root);
+    assert.equal(gate(root, "check", "1").status, 0);
+    fs.writeFileSync(path.join(root, "app.txt"), "v2\n");
+    const r = gate(root, "check", "1");
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /code changed after the test ran/);
+  }));
+
+test("a new untracked source file also changes the tree", () =>
+  withGitRoot((root) => {
+    fullChain(root);
+    fs.writeFileSync(path.join(root, "extra.js"), "x\n");
+    assert.equal(gate(root, "check", "1").status, 2);
+  }));
+
+test("compound-log and HANDOFF edits after the test do not invalidate evidence", () =>
+  withGitRoot((root) => {
+    fullChain(root);
+    fs.writeFileSync(path.join(root, "docs", "compound-log.md"), "lesson\n");
+    fs.writeFileSync(path.join(root, "docs", "HANDOFF.md"), "state\n");
+    assert.equal(gate(root, "check", "1").status, 0);
+  }));
+
+test("test evidence without a tree hash is rejected when git is available", () =>
+  withGitRoot((root) => {
+    recordPass(root, "1", "coding");
+    assert.equal(runTest(root, "1", 0).status, 0);
+    // Strip the hash, then record the rest so the chain stays consistent: only the tree rule can fail.
+    const f = path.join(root, ".phase-evidence", "phase-1-test.json");
+    const ev = JSON.parse(fs.readFileSync(f, "utf8"));
+    ev.tree = null;
+    fs.writeFileSync(f, JSON.stringify(ev, null, 2) + "\n");
+    for (const step of ["verify", "review", "compound"]) recordPass(root, "1", step);
+    const r = gate(root, "check", "1");
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /no code tree hash/);
+  }));
+
+test("without git the tree is unbound and check warns", () =>
+  withRoot((root) => {
+    fullChain(root);
+    const r = gate(root, "check", "1");
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /\[WARN\]/);
+  }));
+
+test("attest requires a complete chain and git", () => {
+  withGitRoot((root) => {
+    recordPass(root, "1", "coding");
+    assert.equal(gate(root, "attest", "1").status, 2);
+  });
+  withRoot((root) => {
+    fullChain(root);
+    const r = gate(root, "attest", "1");
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /without git/);
+  });
+});
+
+test("attestation: verifies, then fails on code change, failing command, wrong command, or missing file", () =>
+  withGitRoot((root) => {
+    assert.equal(gate(root, "verify-attestation", "1").status, 2); // missing
+    fullChain(root);
+    assert.equal(gate(root, "attest", "1").status, 0);
+    const attFile = path.join(root, "docs", "attestations", "phase-1.json");
+    assert.ok(fs.existsSync(attFile));
+
+    assert.equal(gate(root, "verify-attestation", "1").status, 0);
+
+    // required command differs from the attested one
+    const wrong = gate(root, "verify-attestation", "1", "--", "npm", "test");
+    assert.equal(wrong.status, 2);
+    assert.match(wrong.stderr, /differs from the required one/);
+
+    // the attested command itself fails when CI re-runs it
+    const att = JSON.parse(fs.readFileSync(attFile, "utf8"));
+    const good = fs.readFileSync(attFile, "utf8");
+    att.argv = [NODE, "-e", "process.exit(3)"];
+    fs.writeFileSync(attFile, JSON.stringify(att));
+    const failing = gate(root, "verify-attestation", "1");
+    assert.equal(failing.status, 2);
+    assert.match(failing.stderr, /exited with 3/);
+    fs.writeFileSync(attFile, good);
+
+    // code changes after attestation
+    fs.writeFileSync(path.join(root, "app.txt"), "v2\n");
+    const drift = gate(root, "verify-attestation", "1");
+    assert.equal(drift.status, 2);
+    assert.match(drift.stderr, /code changed after the attestation/);
+  }));
+
+// ---- Default-FAIL: verify PASS needs proof the test artifacts were opened ----
+
+const crypto = require("crypto");
+
+function arm(root) {
+  fs.mkdirSync(path.join(root, ".claude"), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, ".claude", "settings.json"),
+    JSON.stringify({ hooks: { PostToolUse: [{ matcher: "Read", hooks: [{ type: "command", command: "x/read-tracker.sh" }] }] } })
+  );
+}
+
+function logRead(root, rel, sha) {
+  const real = sha || crypto.createHash("sha256").update(fs.readFileSync(path.join(root, rel))).digest("hex");
+  fs.appendFileSync(path.join(root, ".phase-evidence", ".reads.jsonl"), JSON.stringify({ path: rel, sha256: real, agent_type: "verify" }) + "\n");
+}
+
+function verifyPass(root) {
+  return gate(root, "record", "1", "verify", "--status", "PASS", "--report", report(root, "1-verify.md"));
+}
+
+test("verify PASS is refused without a read record when tracking is armed", () =>
+  withRoot((root) => {
+    arm(root);
+    recordPass(root, "1", "coding");
+    assert.equal(runTest(root, "1", 0).status, 0);
+    const r = verifyPass(root);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /opened the test artifacts/);
+  }));
+
+test("verify PASS is accepted after the test log was read; a stale hash or other file does not count", () =>
+  withRoot((root) => {
+    arm(root);
+    recordPass(root, "1", "coding");
+    assert.equal(runTest(root, "1", 0).status, 0);
+    logRead(root, ".phase-evidence/phase-1-test.log", "0".repeat(64));
+    logRead(root, ".phase-evidence/1-coding.md");
+    assert.equal(verifyPass(root).status, 2);
+    logRead(root, ".phase-evidence/phase-1-test.log");
+    assert.equal(verifyPass(root).status, 0);
+  }));
+
+test("a verify FAIL record needs no read proof, and unarmed projects are not blocked", () => {
+  withRoot((root) => {
+    arm(root);
+    recordPass(root, "1", "coding");
+    assert.equal(runTest(root, "1", 0).status, 0);
+    assert.equal(gate(root, "record", "1", "verify", "--status", "FAIL").status, 0);
+  });
+  withRoot((root) => {
+    recordPass(root, "1", "coding");
+    assert.equal(runTest(root, "1", 0).status, 0);
+    assert.equal(verifyPass(root).status, 0);
+  });
+});

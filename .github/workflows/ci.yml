@@ -18,3 +18,12 @@ jobs:
           node-version: 22
       - name: Run all checks
         run: bash tests/run-all.sh
+      # Independent re-verification: every committed attestation is checked against the checked-out
+      # code and its test command is run again here, not trusted from the local session.
+      - name: Verify phase attestations
+        run: |
+          shopt -s nullglob
+          for f in docs/attestations/phase-*.json; do
+            id=${f#docs/attestations/phase-}; id=${id%.json}
+            node .claude/workflows/phase-gate.js verify-attestation "$id"
+          done

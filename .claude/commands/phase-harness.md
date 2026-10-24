@@ -35,5 +35,5 @@ Recording a step clears the later steps, so a new coding result is always re-tes
 
 ## Finish
 
-- Gate exit 0: update `docs/HANDOFF.md` (last completed phase, key decisions, open issues, artifacts, next actions). Tell the user the Phase passed with evidence and recommend a fresh session for the next Phase. Do not commit or push unless asked.
+- Gate exit 0: if the project has CI and git, run `node .claude/workflows/phase-gate.js attest <id>` so the user can commit `docs/attestations/phase-<id>.json`; CI then re-runs the test command independently. Update `docs/HANDOFF.md` (last completed phase, key decisions, open issues, artifacts, next actions). Tell the user the Phase passed with evidence and recommend a fresh session for the next Phase. Do not commit or push unless asked.
 - Three attempts without a passing gate: stop. Report the failing step, the last defect list, and what you need from the user. Do not edit evidence to make the gate pass.

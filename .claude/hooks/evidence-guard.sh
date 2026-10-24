@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Subagent PreToolUse guard for .phase-evidence/.
-# Usage: evidence-guard.sh deny   (coding, verify, compound: no access to evidence or phase-gate.js)
-#        evidence-guard.sh test   (test: may only call `phase-gate.js run`)
+# Usage: evidence-guard.sh auto   (settings.json: subagents only; test agent -> test, others -> deny)
+#        evidence-guard.sh deny   (no access to evidence or phase-gate.js)
+#        evidence-guard.sh test   (may only call `phase-gate.js run`)
 # Only the orchestrator (main session) records evidence, through phase-gate.js.
 # Pattern matching is a guardrail, not a security boundary. Fail-open if jq is missing.
 
@@ -12,6 +13,17 @@ command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
 tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || exit 0
+
+# auto: registered in settings.json, so it runs for every tool call. Claude Code adds
+# agent_id / agent_type to the hook input only inside a subagent. The main session
+# (the orchestrator) is not restricted. Agent frontmatter hooks are skipped until the
+# workspace trust dialog is accepted, so settings.json is the authority.
+if [ "$mode" = auto ]; then
+  agent_id=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null) || exit 0
+  agent_type=$(printf '%s' "$input" | jq -r '.agent_type // empty' 2>/dev/null) || exit 0
+  [ -n "$agent_id$agent_type" ] || exit 0
+  if [ "$agent_type" = test ]; then mode=test; else mode=deny; fi
+fi
 
 block() {
   echo "Blocked by .claude/hooks/evidence-guard.sh: $1" >&2

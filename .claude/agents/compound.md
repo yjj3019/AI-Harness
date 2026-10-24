@@ -5,12 +5,6 @@ tools:
 - Read
 - Write
 - Edit
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit|MultiEdit|NotebookEdit|Bash"
-      hooks:
-        - type: command
-          command: '"$CLAUDE_PROJECT_DIR/.claude/hooks/evidence-guard.sh" deny'
 ---
 
 # Compound Agent
