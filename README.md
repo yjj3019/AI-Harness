@@ -218,3 +218,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ## 엄격한 테스트 증거 검사
 
 신규 Phase는 `phase-gate.js run <id> test --require-test-summary -- <command>`를 사용합니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+
+## ToolBroker 멱등성/승인 참조 구현 (선택형)
+
+[`toolbroker/`](toolbroker/README.md)에 **기본 거부형 시험용** 실행 경계를 추가했습니다. 승인 서명 없이는 DB 카운터 변경·로컬 HTTP POST가 불가능하며, 같은 요청의 재전송은 결과 재사용 또는 `UNKNOWN` 처리됩니다. 이는 실제 Claude/Codex 도구 전체를 차단하는 통합이 아니며, 운영 API·DB 연결이나 사용자의 자격증명을 요구하지 않습니다. Linux·Windows·macOS에서 `python -m unittest discover -s tests/toolbroker -v`로 독립 테스트를 실행합니다.
