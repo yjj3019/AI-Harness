@@ -9,7 +9,7 @@
  *
  * Commands:
  *   list                                     List valid phase ids from docs/PHASES.md
- *   run <phase> test -- <command...>         Run a test command, store its log, record the real exit code
+ *   run <phase> test [--require-test-summary] -- <command...>         Run a test command, store its log, record the real exit code
  *   record <phase> <step> --status PASS|FAIL [--report <file>]
  *                                            Record coding|verify|review|compound evidence
  *   check <phase>                            Verify all five steps; exit 0 only if complete
@@ -38,6 +38,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { spawnSync } = require("child_process");
+const { inspectTestSummary } = require("./test-summary.js");
 
 const ROOT = path.resolve(process.env.PHASE_GATE_ROOT || path.join(__dirname, "..", ".."));
 const PHASES_FILE = path.join(ROOT, "docs", "PHASES.md");
@@ -66,7 +67,7 @@ function usage() {
     [
       "Usage:",
       "  node phase-gate.js list",
-      "  node phase-gate.js run <phase> test -- <command...>",
+      "  node phase-gate.js run <phase> test [--require-test-summary] -- <command...>",
       "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>]",
       "  node phase-gate.js check <phase>",
       "  node phase-gate.js doctor",
@@ -196,7 +197,9 @@ function writeEvidence(phase, step, fields) {
     status: fields.status,
     recorded_at: new Date().toISOString(),
     ...(fields.command !== undefined
-      ? { command: fields.command, argv: fields.argv, exit_code: fields.exit_code, tree: fields.tree }
+      ? { command: fields.command, argv: fields.argv, exit_code: fields.exit_code, tree: fields.tree,
+          ...(fields.test_summary !== undefined ? { test_summary: fields.test_summary } : {}),
+          ...(fields.require_test_summary ? { require_test_summary: true } : {}) }
       : {}),
     artifacts: fields.artifacts,
     prev: fields.prev,
@@ -283,10 +286,19 @@ function cmdRun(args) {
   if (sep < 0 || sep === args.length - 1) usage();
   const head = args.slice(0, sep);
   const cmd = args.slice(sep + 1);
-  if (head.length !== 2 || head[1] !== "test") usage();
+  let strict = head.length === 3 && head[2] === "--require-test-summary";
+  if ((head.length !== 2 && !strict) || head[1] !== "test") usage();
   const phase = head[0];
   requirePhase(phase);
   const prev = prevLink(phase, "test");
+  // Enforce the committed command pin at the original run, not only at attestation replay.
+  const pinned = loadPinnedCommand((why) => die(2, "ERROR: " + why));
+  if (pinned && JSON.stringify(pinned) !== JSON.stringify(cmd)) {
+    die(2, "ERROR: test command differs from .claude/required-test-command.json");
+  }
+  // Projects with a committed command pin implicitly require recognized test counts.
+  // Unpinned legacy projects retain their old no-summary behavior unless opted in.
+  if (pinned) strict = true;
 
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   const logAbs = path.join(EVIDENCE_DIR, `phase-${phase}-test.log`);
@@ -299,9 +311,11 @@ function cmdRun(args) {
   }
   if (result.error) fs.appendFileSync(logAbs, `\n[phase-gate] failed to start: ${result.error.message}\n`);
   const exitCode = typeof result.status === "number" ? result.status : -1;
-  // A silent test still leaves a log that says what ran and how it ended.
-  fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n`);
-  const status = exitCode === 0 ? "PASS" : "FAIL";
+  const summary = inspectTestSummary(fs.readFileSync(logAbs, "utf8"), strict);
+  // A detected zero/all-skipped/failing summary is always FAIL. A missing summary
+  // also fails for new strict invocations; older projects retain legacy behavior.
+  const status = exitCode === 0 && summary.ok !== false ? "PASS" : "FAIL";
+  fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n[phase-gate] test_summary: ${JSON.stringify(summary)}\n`);
 
   writeEvidence(phase, "test", {
     status,
@@ -309,13 +323,15 @@ function cmdRun(args) {
     argv: cmd,
     exit_code: exitCode,
     tree: treeHash(),
+    require_test_summary: strict,
+    test_summary: summary,
     artifacts: [artifactFor(toRel(logAbs), true)],
     prev,
   });
 
   const tail = fs.readFileSync(logAbs, "utf8").split("\n").slice(-21).join("\n");
   console.log(tail);
-  console.log(`Recorded phase ${phase} test: ${status} (exit_code=${exitCode}, log=${toRel(logAbs)})`);
+  console.log(`Recorded phase ${phase} test: ${status} (exit_code=${exitCode}, log=${toRel(logAbs)}, summary=${summary.reason || summary.kind})`);
   process.exit(status === "PASS" ? 0 : 2);
 }
 
@@ -346,6 +362,16 @@ function validateChain(phase) {
     if (step === "test") {
       if (ev.exit_code !== 0 || !ev.command || !Array.isArray(ev.argv) || ev.argv.length === 0) {
         return fail("test evidence needs a command, argv and exit_code 0");
+      }
+      if (ev.require_test_summary) {
+        const log = ev.artifacts.find((a) => a && typeof a.path === "string" && a.path.endsWith("-test.log"));
+        if (!log) return fail("strict test summary has no test log");
+        const p = safeEvidencePath(log.path);
+        if (p.error) return fail("strict test log not available: " + p.error);
+        const check = inspectTestSummary(fs.readFileSync(p.real, "utf8"), true);
+        if (!check.ok || JSON.stringify(check) !== JSON.stringify(ev.test_summary)) {
+          return fail("strict test summary invalid or changed");
+        }
       }
       const now = treeHash();
       if (now !== null) {
@@ -488,6 +514,7 @@ function cmdAttest(args) {
     phase,
     tree,
     argv: res.testEv.argv,
+    ...(res.testEv.require_test_summary ? { require_test_summary: true } : {}),
     attested_at: new Date().toISOString(),
   };
   fs.writeFileSync(attestationFile(phase), JSON.stringify(att, null, 2) + "\n");
@@ -531,16 +558,31 @@ function cmdVerifyAttestation(args) {
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
   // The required command comes from the command line, else from the committed pin file.
-  const required = expected || loadPinnedCommand(bad);
-  if (required && JSON.stringify(required) !== JSON.stringify(att.argv)) {
+  const pinned = loadPinnedCommand(bad);
+  const required = expected || pinned;
+  if ((required && JSON.stringify(required) !== JSON.stringify(att.argv)) ||
+      (pinned && JSON.stringify(pinned) !== JSON.stringify(att.argv))) {
     bad(`attested command differs from the required one: ${att.argv.join(" ")}`);
   }
+  // An attestation cannot disable count checks when a trusted command pin exists.
+  const strictReplay = att.require_test_summary === true || Boolean(pinned);
   const now = treeHash();
   if (now === null) bad("git is unavailable, so the code tree cannot be compared");
   if (now !== att.tree) bad("code changed after the attestation. Run the phase again and re-attest");
-  const r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: "inherit" });
+  const opts = strictReplay
+    ? { cwd: ROOT, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }
+    : { cwd: ROOT, stdio: "inherit" };
+  const r = spawnSync(att.argv[0], att.argv.slice(1), opts);
+  if (strictReplay) {
+    if (r.stdout) process.stdout.write(r.stdout);
+    if (r.stderr) process.stderr.write(r.stderr);
+  }
   if (r.error) bad(`test command failed to start: ${r.error.message}`);
   if (r.status !== 0) bad(`test command exited with ${r.status}`);
+  if (strictReplay) {
+    const summary = inspectTestSummary(String(r.stdout || "") + "\n" + String(r.stderr || ""), true);
+    if (!summary.ok) bad(`strict test summary invalid: ${summary.reason}`);
+  }
   console.log(`Phase ${phase} attestation verified: tree matches and the test command passes.`);
 }
 

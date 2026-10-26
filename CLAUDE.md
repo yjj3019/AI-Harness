@@ -9,6 +9,9 @@ Notice to Code Agent: This is the top-level index file. Follow all instructions 
 - **Simplicity First**: Write minimal, robust code to solve the immediate problem. No over-engineering.
 - **Execution Safety**: Do NOT run applications or open servers automatically unless explicitly asked.
 - **Evidence Required**: Do not claim completion without observable evidence (test logs, artifacts, PASS/FAIL verdicts).
+- **Instruction Drift**: When an instruction file conflicts with verified current code or tests, cite both, check user/security/host precedence, and reconcile the owning document. Do not rewrite working code solely to satisfy stale prose.
+- **Meaningful Verification**: Exit code 0 alone is not enough: verify that required tests ran, not zero tests or all skipped, and independently challenge consequential results.
+- **Approval Boundary**: Prompts and shell hooks are not sandboxes. Require actual human approval and enforceable host/tool permissions for external or destructive effects.
 - **Context Window Reset**: After each Phase completes, or if context degrades, update `docs/HANDOFF.md` and start a fresh session.
 - **Compound First**: Always read `docs/compound-log.md` before starting any task or workflow.
 
@@ -22,6 +25,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Session Hand-off State: `docs/HANDOFF.md`
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
+- Evidence-first research adoption and optional skill: `docs/agent-harness-integration-2026-10-26.md`, `skills/evidence-first-harness/SKILL.md`
 - Usage Scenarios: `docs/usage-scenarios.md`
 - PPT / Office Harness: `docs/ppt-harness-workflow.md`
 - Gaps & Supplementary Repos: `docs/SUPPLEMENTS.md`

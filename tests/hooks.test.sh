@@ -136,7 +136,7 @@ rt verify "$tmp/src/a.js"
 rt coding "$tmp/.phase-evidence/phase-1-test.log"
 rt "" "$tmp/.phase-evidence/phase-1-test.log"
 rt verify "$tmp/.phase-evidence/../src/a.js"
-n=$(wc -l <"$tmp/.phase-evidence/.reads.jsonl")
+n=$(wc -l <"$tmp/.phase-evidence/.reads.jsonl" | tr -d "[:space:]")
 want=$(sha256sum "$tmp/.phase-evidence/phase-1-test.log" | cut -d' ' -f1)
 total=$((total + 2))
 [ "$n" = 2 ] || { fails=$((fails + 1)); echo "FAIL read-tracker: want 2 records (verify, evidence only), got $n"; }

@@ -27,3 +27,34 @@ jobs:
             id=${f#docs/attestations/phase-}; id=${id%.json}
             node .claude/workflows/phase-gate.js verify-attestation "$id"
           done
+
+  portability:
+    name: portability / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ensure test dependencies
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            dependencies=()
+            command -v jq >/dev/null 2>&1 || dependencies+=(jq)
+            command -v sha256sum >/dev/null 2>&1 || dependencies+=(coreutils)
+            if [ "${#dependencies[@]}" -gt 0 ]; then brew install "${dependencies[@]}"; fi
+            if brew list coreutils >/dev/null 2>&1; then
+              echo "$(brew --prefix coreutils)/libexec/gnubin" >> "$GITHUB_PATH"
+            fi
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            command -v jq >/dev/null 2>&1 || choco install jq -y --no-progress
+          fi
+      - name: Run full regression on host
+        run: bash tests/run-all.sh
