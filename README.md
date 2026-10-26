@@ -218,3 +218,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ## 엄격한 테스트 증거 검사
 
 신규 Phase는 `phase-gate.js run <id> test --require-test-summary -- <command>`를 사용합니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+
+## 컨텍스트 제약 보존과 HANDOFF 검증
+
+고위험/장시간 작업에서만 정본 계약을 선택적으로 정의합니다. 선언된 Phase는 출처·해시·필수 조건이 다른 컨텍스트 체크포인트를 거부합니다. HANDOFF에 기록한 지원 CI 운영체제가 실제 워크플로와 다르면 자동 검사에서 실패합니다. 내부 모델 압축을 자동 가로채거나 외부 쓰기 권한을 부여하는 기능은 아닙니다. 자세한 내용은 `docs/task-contracts/README.md`와 `docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`를 참조하세요.

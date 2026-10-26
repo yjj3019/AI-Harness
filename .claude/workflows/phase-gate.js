@@ -39,6 +39,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 const { inspectTestSummary } = require("./test-summary.js");
+const { verifyPhaseContext } = require("../../scripts/context-contract.js");
 
 const ROOT = path.resolve(process.env.PHASE_GATE_ROOT || path.join(__dirname, "..", ".."));
 const PHASES_FILE = path.join(ROOT, "docs", "PHASES.md");
@@ -290,6 +291,8 @@ function cmdRun(args) {
   if ((head.length !== 2 && !strict) || head[1] !== "test") usage();
   const phase = head[0];
   requirePhase(phase);
+  const context = verifyPhaseContext(ROOT, phase);
+  if (!context.ok) die(2, "ERROR: required context contract: " + context.reason);
   const prev = prevLink(phase, "test");
   // Enforce the committed command pin at the original run, not only at attestation replay.
   const pinned = loadPinnedCommand((why) => die(2, "ERROR: " + why));
@@ -343,6 +346,8 @@ function validateChain(phase) {
   let prevStep = null;
   let prevTime = null;
   let testEv = null;
+  const context = verifyPhaseContext(ROOT, phase);
+  if (!context.ok) return { passed, fail: { step: "context", why: context.reason }, testEv, warnings };
 
   for (const step of STEPS) {
     const fail = (why) => ({ passed, fail: { step, why }, testEv, warnings });
