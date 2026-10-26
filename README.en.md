@@ -214,3 +214,7 @@ The [evidence-first harness integration review](docs/agent-harness-integration-2
 ## Strict test-evidence mode
 
 New phases should run `phase-gate.js run <id> test --require-test-summary -- <command>`. The gate validates Node TAP/pytest counts, rejects zero/all-skipped recognized summaries, and enforces the committed pinned test command on the first run. Strict CI attestation replays re-check the counts. Legacy commands with unrecognized output retain compatibility but cannot prove test coverage. The [maturity acceptance matrix](docs/maturity/ACCEPTANCE-2026-10-26.md) distinguishes implemented checks from unverified live-agent and sandbox scenarios.
+
+## Typed constraint preservation and handoff drift
+
+Opt-in Phase contracts are checked against typed, full-text local checkpoints before test runs and Phase completion. CI cross-checks the HANDOFF platform list. These checks do not intercept the model's private compaction, authenticate approval, or replace tool-level authorization. See `docs/task-contracts/README.md`.

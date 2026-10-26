@@ -222,3 +222,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ## ToolBroker 멱등성/승인 참조 구현 (선택형)
 
 [`toolbroker/`](toolbroker/README.md)에 **기본 거부형 시험용** 실행 경계를 추가했습니다. 승인 서명 없이는 DB 카운터 변경·로컬 HTTP POST가 불가능하며, 같은 요청의 재전송은 결과 재사용 또는 `UNKNOWN` 처리됩니다. 이는 실제 Claude/Codex 도구 전체를 차단하는 통합이 아니며, 운영 API·DB 연결이나 사용자의 자격증명을 요구하지 않습니다. Linux·Windows·macOS에서 `python -m unittest discover -s tests/toolbroker -v`로 독립 테스트를 실행합니다.
+
+## 컨텍스트 제약 보존과 HANDOFF 검증
+
+고위험/장시간 작업에서만 정본 계약을 선택적으로 정의합니다. 선언된 Phase는 출처·해시·필수 조건이 다른 컨텍스트 체크포인트를 거부합니다. HANDOFF에 기록한 지원 CI 운영체제가 실제 워크플로와 다르면 자동 검사에서 실패합니다. 내부 모델 압축을 자동 가로채거나 외부 쓰기 권한을 부여하는 기능은 아닙니다. 자세한 내용은 `docs/task-contracts/README.md`와 `docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`를 참조하세요.

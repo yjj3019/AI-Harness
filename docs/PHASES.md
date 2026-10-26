@@ -18,6 +18,10 @@ Evidence is recorded only through `.claude/workflows/phase-gate.js`. Never write
 
 Each `.phase-evidence/phase-<id>-<step>.json` holds the status, the SHA-256 of its report or log, and the SHA-256 of the previous step's file. A step cannot be recorded until the previous step is PASS. Recording a step clears the steps after it, so a changed result must be re-tested and re-verified.
 
+## Typed context contract (optional)
+
+For long/high-risk work, track reviewed constraints in docs/task-contracts/phase-<id>.json. When a contract exists, phase-gate.js run and check reject a missing or mismatched .phase-evidence/phase-<id>-context.json. See docs/task-contracts/README.md. CLI validation does not automatically intercept Claude/Codex internal compaction or change external tool permissions.
+
 ## Template
 
 Copy into the Phases section below. Code fences are ignored by the runner, so this template is never treated as a real Phase.
