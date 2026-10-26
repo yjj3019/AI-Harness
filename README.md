@@ -210,3 +210,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ---
 
 *compound log를 읽는 에이전트는 시간이 지날수록 더 스마트해집니다.*
+
+## 2026-10-26 외부 자료·스킬 통합 검토
+
+논문·AI 에이전트 Harness 운영 사례·지식 그래프/Second Brain 오픈소스를 실제 저장소의 기존 게이트와 대조한 결과는 [통합 적용 검토](docs/agent-harness-integration-2026-10-26.md)에 있습니다. 추가된 [선택형 evidence-first-harness 스킬](skills/evidence-first-harness/SKILL.md)은 지침 충돌·증거·반례·권한·선택형 지식 그래프를 점검하는 읽기 중심 절차이며, 현재 `/phase-harness`와 훅·CLI를 대체하거나 자동으로 설치하지 않습니다. [수동 회귀 케이스](tests/fixtures/instruction-conflict-regressions.md)로 모델/호스트 업데이트 전후 행동을 비교할 수 있습니다. 실제 모델 품질·비용 향상은 이 문서 변경만으로 검증되지 않습니다.

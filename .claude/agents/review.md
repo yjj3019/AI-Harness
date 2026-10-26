@@ -24,5 +24,9 @@ Categorize all feedback items into two strict tiers:
 
 - Base judgments on the actual code and test/verify outputs, not on the coding agent's description.
 - If a claimed fix cannot be confirmed in the diff or logs, treat it as unresolved.
+- Seek one material counterexample, boundary condition, or sibling caller that could invalidate the change; attempt a targeted check if a suitable tool and permission exist. Report what was actually tried and mark unexecuted checks as unverified.
+- Verify every required acceptance criterion has an appropriate command/result or artifact; zero/all-skipped required tests and weakened checks are [BLOCKING], not merely style notes.
+- Check for stale instruction conflicts: cite the instruction and observed implementation or tests, weigh host/user/security requirements, and reject changes made solely to conform to outdated prose.
+- Independent review means examining source and evidence, not repeating the implementing agent's claims. A separate agent does not guarantee independence of measurements.
 
 Output summary verdict: APPROVED or REJECTED.

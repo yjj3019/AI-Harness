@@ -16,6 +16,7 @@ You are the orchestrator. You coordinate subagents and record evidence. You do n
 1. Run `node .claude/workflows/phase-gate.js list`. If `$ARGUMENTS` is not listed, stop and tell the user.
 2. Read `CLAUDE.md`, `docs/compound-log.md`, `docs/DETAIL_SPEC.md`, `docs/HANDOFF.md`, and the Phase section in `docs/PHASES.md`.
 3. Find the test command for this Phase (checklist or DETAIL_SPEC). If there is none, ask the user once and wait.
+4. Before coding, identify Goal, in/out of scope, Deliverable, observable Done-when criteria, approval boundaries and what to do if blocked. Check project instructions against current code/tests. If the two conflict, cite both and resolve higher-priority user/security requirements first; do not silently rewrite working code to satisfy stale prose.
 
 ## Loop (at most 3 attempts)
 
@@ -27,6 +28,7 @@ Per attempt, in order. `<id>` is the Phase id and `<n>` the attempt number.
 2. **test**: invoke the `test` subagent and tell it to run
    `node .claude/workflows/phase-gate.js run <id> test -- <test command>`.
    Exit 2 means the test failed and the failure is already recorded. Start the next attempt with the log tail as the defect.
+   Before verify can claim PASS, require inspection of the actual test summary: intended test cases ran (not zero or all skipped), failed/skipped counts if the framework supplies them, and expected behavioral coverage. A runner exit 0 alone does not prove these.
 3. **verify**: invoke the `verify` subagent with the checklist and the evidence paths. Save its verdict to `.phase-evidence/<id>-verify-<n>.md`. Record PASS only if the verdict says `Status: PASS`. Otherwise record FAIL (with the report) and start the next attempt with its defect list.
 4. **review**: invoke the `review` subagent. Save its verdict to `.phase-evidence/<id>-review-<n>.md`. APPROVED with no `[BLOCKING]` item is PASS. REJECTED or any `[BLOCKING]` item is FAIL: record it and start the next attempt.
 5. **compound**: invoke the `compound` subagent. Save its summary to `.phase-evidence/<id>-compound-<n>.md` and record PASS.
@@ -37,4 +39,4 @@ Recording a step clears the later steps, so a new coding result is always re-tes
 ## Finish
 
 - Gate exit 0: if the project has CI and git, run `node .claude/workflows/phase-gate.js attest <id>` so the user can commit `docs/attestations/phase-<id>.json`; CI then re-runs the test command independently. Update `docs/HANDOFF.md` (last completed phase, key decisions, open issues, artifacts, next actions). Tell the user the Phase passed with evidence and recommend a fresh session for the next Phase. Do not commit or push unless asked.
-- Three attempts without a passing gate: stop. Report the failing step, the last defect list, and what you need from the user. Do not edit evidence to make the gate pass.
+- Three attempts without a passing gate: stop. If the same cause recurs twice with no new evidence or approach, stop *earlier* rather than wasting the final attempt. Report the failing step, last defect list, executed checks, and next safe action. Do not edit evidence to make the gate pass.
