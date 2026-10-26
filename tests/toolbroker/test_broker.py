@@ -5,6 +5,8 @@ import hashlib
 import hmac
 import json
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -162,6 +164,33 @@ class BrokerTests(unittest.TestCase):
         finally:
             con.close()
         self.assertEqual(b.get_counter(), 0)
+
+    def test_actual_worker_termination_rolls_back_partial_transaction(self):
+        b = self.broker(["fixture.db.increment"])
+        marker = Path(self.tmp.name) / "transaction-open"
+        worker = (
+            "import sqlite3,sys,time,pathlib;"
+            "c=sqlite3.connect(sys.argv[1]);"
+            "c.execute('BEGIN IMMEDIATE');"
+            'c.execute("INSERT INTO counters VALUES (?,?)",("fixture",123));'
+            "pathlib.Path(sys.argv[2]).write_text('open');"
+            "time.sleep(30)"
+        )
+        process = subprocess.Popen([sys.executable, "-c", worker, str(self.db), str(marker)],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            limit = time.time() + 5
+            while not marker.exists() and time.time() < limit and process.poll() is None:
+                time.sleep(0.02)
+            self.assertTrue(marker.exists(), "Worker failed to enter SQLite transaction")
+            process.kill()
+            process.wait(timeout=5)
+            self.assertEqual(b.get_counter(), 0)
+            self.assertEqual(self.send(b)["result"]["counter"], 1)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
 
     def test_actual_broker_http_server_denies_unapproved_write(self):
         b = self.broker(["fixture.db.increment"])
