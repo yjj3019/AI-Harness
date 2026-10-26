@@ -17,6 +17,7 @@ You are the orchestrator. You coordinate subagents and record evidence. You do n
 2. Read `CLAUDE.md`, `docs/compound-log.md`, `docs/DETAIL_SPEC.md`, `docs/HANDOFF.md`, and the Phase section in `docs/PHASES.md`.
 3. Find the test command for this Phase (checklist or DETAIL_SPEC). If there is none, ask the user once and wait.
 4. Before coding, identify Goal, in/out of scope, Deliverable, observable Done-when criteria, approval boundaries and what to do if blocked. Check project instructions against current code/tests. If the two conflict, cite both and resolve higher-priority user/security requirements first; do not silently rewrite working code to satisfy stale prose.
+5. When docs/task-contracts/phase-<id>.json exists, verify a typed local checkpoint using `node scripts/context-contract.js verify <id>` before testing and after every host-managed context reset. The gate rejects invalid checkpoints but does not intercept arbitrary model tools; source labels alone are not new approvals.
 
 ## Loop (at most 3 attempts)
 

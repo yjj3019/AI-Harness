@@ -22,7 +22,8 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Requirements & Specification: `docs/DETAIL_SPEC.md`
 - Phase Breakdown: `docs/PHASES.md`
 - Compound Learning Log: `docs/compound-log.md`
-- Session Hand-off State: `docs/HANDOFF.md`
+- Session Hand-off State: `docs/HANDOFF.md` (checked by `scripts/handoff-lint.js`)
+- Typed Task Contract: `docs/task-contracts/README.md` and `scripts/context-contract.js`
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
 - Evidence-first research adoption and optional skill: `docs/agent-harness-integration-2026-10-26.md`, `skills/evidence-first-harness/SKILL.md`

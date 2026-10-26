@@ -10,12 +10,14 @@ Used for **mandatory Context Reset** at Phase boundaries and whenever context qu
 
 ## Current State
 
-- **Last Completed Phase**: 없음 (하네스 자체 점검 5차, 2026-10-25)
+- **Last Completed Phase**: 없음 (하네스의 CI/E2E 검증과 실제 에이전트 운영 Phase는 별개)
 - **In Progress**: 없음
-- **Key Decisions**: D9 플랫폼 경로 정규화, D10 E2E 시뮬레이션을 기본 검사에 포함
-- **Open Issues**: CI가 ubuntu 단일이라 Windows 회귀를 못 잡는다. macOS 미검증. `rm -rf /home/user` 같은 2단계 깊이 경로는 여전히 가드를 통과한다
-- **Artifacts Produced**: `.gitattributes`, `.claude/required-test-command.json`, `tests/e2e.test.js`, `tests/gate-edge.test.js`, `tests/gate-branches.test.js`. 훅 93/93·게이트 52건(1건 환경 skip) 통과, 라인 커버리지 99.3%
-- **Next Actions**: `windows-latest` CI 잡 추가 → `docs/PHASES.md`에 Phase 1 정의 후 `/phase-harness 1` 실행
+- **Key Decisions**: phase-gate·증거·엄격 테스트 유지, 규칙 계약 선언 시 타입이 있는 컨텍스트 체크포인트 검증
+- **CI platforms**: ubuntu-latest, windows-latest, macos-latest
+- **Latest CI evidence**: 2026-10-27 main feb0938: all eight CI jobs succeeded (Node 22/24, Windows/macOS portability, ToolBroker three hosts, Linux isolation). Updated PR #4 head requires fresh CI verification.
+- **Open Issues**: Claude Code·Codex 실제 호스트 권한 통합 미검증. ToolBroker 서명 승인·DB 멱등성·로컬 HTTP fixture는 구현·테스트됐으나 운영 API/DB 통합과 전체 도구 권한 강제는 별도 검증 필요. Windows POSIX SIGKILL 검증 제외, Bash 정규식 훅은 보안 경계가 아님
+- **Artifacts Produced**: .claude/workflows/phase-gate.js, tests/runtime-recovery.test.js, tests/runtime-isolation-linux.sh, docs/maturity/
+- **Next Actions**: Verify updated PR #4 on all CI hosts before merge; measure actual host permissions and long-session constraint retention separately.
 
 ## Mandatory Procedure
 
