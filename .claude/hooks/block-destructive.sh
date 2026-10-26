@@ -7,7 +7,8 @@ set -u
 
 command -v jq >/dev/null 2>&1 || exit 0
 
-cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
+# Preserve embedded LF on native Windows jq too; text-mode CRLF conversion changes shell syntax.
+cmd=$(jq -br '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
 
 deny() {
