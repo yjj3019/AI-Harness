@@ -58,3 +58,11 @@ jobs:
           fi
       - name: Run full regression on host
         run: bash tests/run-all.sh
+
+  isolation-linux:
+    name: isolation / linux namespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate actual filesystem and network namespace isolation
+        run: bash tests/runtime-isolation-linux.sh
