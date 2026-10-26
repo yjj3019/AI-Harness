@@ -17,8 +17,8 @@ jobs:
         node: [22, 24]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ matrix.node }}
       - name: Run all checks
@@ -44,8 +44,8 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
       - name: Ensure test dependencies
@@ -68,7 +68,7 @@ jobs:
     name: isolation / linux namespace
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Validate actual filesystem and network namespace isolation
         run: bash tests/runtime-isolation-linux.sh
 
@@ -82,8 +82,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.12'
       - name: Deny-default broker, atomic DB and unknown API result regression

@@ -42,6 +42,10 @@ python -m toolbroker.server --db /secure/broker.sqlite --secret-file /secure/key
 
 CI 검사는 실제 네트워크 외부 호출이나 운영 DB 쓰기를 수행하지 않는다.
 
+부분 업로드의 무기한 대기를 방지하기 위해 수신 소켓의 idle read timeout은 기본 5초, 동시 처리 슬롯은 16개다. 초과 연결은 503, 읽기 timeout은 408, 짧은 EOF 본문은 400으로 종료하며 도구를 실행하지 않는다. 이는 절대 wall-clock deadline이나 slow-drip 방어 인증은 아니며 포화 시 health 요청도 503일 수 있다. 외부 응답 대기는 소켓 작업별 timeout이지 전체 요청 deadline이 아니다.
+
+잘린/chunked 응답, HTTP 프로토콜 오류와 NaN/Infinity 같은 비정상 JSON은 승인된 요청이 이미 전송됐을 수 있으므로 durable `UNKNOWN`으로 기록한다. 같은 요청 재제출은 재전송하지 않고 결과 대조를 요구한다.
+
 ## 반드시 충족해야 할 운영 신뢰 경계
 
 1. **분리된 OS 계정 / 서비스**에서 ToolBroker를 실행하고, 코드·설정·비밀키·DB 파일을 Claude/Codex 사용자에게 쓰기/읽기 금지한다. localhost HTTP는 동일 OS 계정의 임의 셸 실행에 대한 강제 정책이 아니므로 필요하면 OS 수준 IPC 접근 제어를 추가한다.

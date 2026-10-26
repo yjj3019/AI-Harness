@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import http.client
 import json
 import re
 import sqlite3
@@ -192,7 +193,14 @@ class Broker:
 
         # The remote provider cannot participate in our transaction. Mark the
         # attempt before sending; uncertain results are NEVER retried automatically.
-        result = self._send_http(payload, request_id)
+        try:
+            result = self._send_http(payload, request_id)
+            # Serialization is part of accepting the response, not a later DB step.
+            # A malformed/non-finite result cannot strand a sent request IN_FLIGHT.
+            result_json = canon(result).decode() if result is not None else None
+        except (http.client.HTTPException, urllib.error.URLError,
+                OSError, ValueError, TypeError, OverflowError, RecursionError):
+            result = None
         if result is None:
             with self._connect() as db:
                 db.execute("UPDATE requests SET state='UNKNOWN' "
@@ -201,7 +209,7 @@ class Broker:
         with self._connect() as db:
             db.execute("UPDATE requests SET state='COMPLETED',result_json=? "
                        "WHERE request_id=? AND state='IN_FLIGHT'",
-                       (canon(result).decode(), request_id))
+                       (result_json, request_id))
         return {"state": "COMPLETED", "replay": False, "result": result}
 
     def _send_http(self, payload: dict, request_id: str) -> dict | None:
@@ -215,12 +223,26 @@ class Broker:
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
         try:
             with opener.open(request, timeout=self.timeout) as response:
+                # A bounded read does not itself reject premature EOF for a fixed
+                # Content-Length. Preserve the declaration before read mutates it.
+                declared_length = response.length
+                if declared_length is not None and declared_length > MAX_BODY:
+                    raise ValueError("provider response exceeds body limit")
                 raw = response.read(MAX_BODY + 1)
+                if declared_length is not None and len(raw) != declared_length:
+                    raise ValueError("incomplete fixed-length provider response")
                 if response.status != 200 or len(raw) > MAX_BODY:
                     return None
-                return {"provider": json.loads(raw)}
+                def reject_nonfinite(value):
+                    raise ValueError("non-finite provider JSON constant: " + value)
+                result = {"provider": json.loads(raw, parse_constant=reject_nonfinite)}
+                # Also reject finite-looking numbers that overflow during parsing
+                # (e.g. 1e400), and any other value not safely persistable as JSON.
+                canon(result)
+                return result
         except (urllib.error.HTTPError, urllib.error.URLError,
-                TimeoutError, OSError, ValueError):
+                http.client.HTTPException, TimeoutError, OSError,
+                ValueError, TypeError, OverflowError, RecursionError):
             return None
 
     def get_counter(self) -> int:

@@ -15,7 +15,7 @@ function environment(root) {
 }
 function gate(root, ...args) {
   return spawnSync(NODE, [GATE, ...args], {
-    cwd: root, encoding: "utf8", env: environment(root), timeout: 10000
+    cwd: root, encoding: "utf8", env: environment(root), timeout: 30000
   });
 }
 function readEvidence(root, step) {
@@ -43,9 +43,10 @@ async function waitChild(child, timeoutMs=9000) {
     new Promise((_,reject) => setTimeout(() => reject(new Error("runner did not stop")), timeoutMs))
   ]);
 }
-test("actual worker SIGKILL leaves FAIL; a new Phase gate process can recover explicitly", {
-  skip: process.platform === "win32" ? "POSIX SIGKILL test; Windows termination is a separate scenario" : false,
-  timeout: 30000
+test("actual worker termination leaves FAIL; a new Phase gate process can recover explicitly", {
+  // Node maps SIGKILL to forceful process termination on Windows; this exercises that host path,
+  // not POSIX signal semantics. The effect and manual recovery assertions apply on either host.
+  timeout: 120000
 }, async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "harness-recovery-"));
   let child, workerPid;
