@@ -206,3 +206,7 @@ Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phas
 ---
 
 *Built as a living harness. Agents that read the compound log get smarter over time.*
+
+## Research adoption (2026-10-26)
+
+The [evidence-first harness integration review](docs/agent-harness-integration-2026-10-26.md) identifies narrowly adoptable patterns from recent papers, agent workflows, and graph/second-brain repositories. The [optional skill](skills/evidence-first-harness/SKILL.md) is a scoped audit guide, not an installed runtime or replacement for the existing phase gate. [Manual adversarial cases](tests/fixtures/instruction-conflict-regressions.md) distinguish static file validation from live model behavior. No speed, quality, or cost improvement is claimed without a controlled host trial.
