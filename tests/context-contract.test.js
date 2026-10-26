@@ -31,6 +31,10 @@ test("no contract remains backwards-compatible",()=>trial(({root})=>{
 test("typed verified checkpoint preserves the two constraints",()=>trial(({root})=>{
   const r=verifyPhaseContext(root,"1");assert.equal(r.ok,true);assert.equal(r.constraint_count,2);
 }));
+test("JSON property ordering does not change verified semantics",()=>trial(({root,summary,writeS})=>{
+  summary.constraints[0]={source:{ref:"conversation:task-1",role:"user"},text:summary.constraints[0].text,id:"no-schema-changes"};
+  writeS();assert.equal(verifyPhaseContext(root,"1").ok,true);
+}));
 test("missing constraint is rejected",()=>trial(({root,summary,writeS})=>{
   summary.constraints.pop();writeS();assert.equal(verifyPhaseContext(root,"1").ok,false);
 }));

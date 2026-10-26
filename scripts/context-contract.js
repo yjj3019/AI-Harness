@@ -55,7 +55,9 @@ function verifyPhaseContext(root, phase) {
   for (const item of summary.constraints) {
     if (!keysEqual(item, ["id", "text", "source"]) ||
         !canonical.has(item.id) || seen.has(item.id) ||
-        JSON.stringify(item) !== JSON.stringify(canonical.get(item.id)))
+        item.text !== canonical.get(item.id).text ||
+        item.source.role !== canonical.get(item.id).source.role ||
+        item.source.ref !== canonical.get(item.id).source.ref)
       return fail("checkpoint altered, dropped or elevated a trusted constraint");
     seen.add(item.id);
   }
