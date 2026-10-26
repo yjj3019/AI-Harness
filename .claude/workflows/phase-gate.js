@@ -588,6 +588,11 @@ function cmdVerifyAttestation(args) {
     const summary = inspectTestSummary(String(r.stdout || "") + "\n" + String(r.stderr || ""), true);
     if (!summary.ok) bad(`strict test summary invalid: ${summary.reason}`);
   }
+  // A passing test may itself rewrite source. Verify the binding again after replay, not
+  // merely before executing the command, before claiming this tree was independently verified.
+  const replayedTree = treeHash();
+  if (replayedTree === null) bad("git is unavailable after attestation replay, so the code tree cannot be compared");
+  if (replayedTree !== att.tree) bad("code changed during attestation replay. Run the phase again and re-attest");
   console.log(`Phase ${phase} attestation verified: tree matches and the test command passes.`);
 }
 

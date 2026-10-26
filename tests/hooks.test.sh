@@ -109,6 +109,41 @@ t $B "" 0 Bash command 'rm --force file.txt'
 t $B "" 0 Bash command 'chmod 777 file.txt'
 t $B "" 0 Bash command 'chmod -R 755 /srv'
 
+echo "== block-destructive: scoped literal command lexing (JSON only) =="
+for c in 'rm -rf /; echo done' 'rm -rf /usr;' 'rm -rf "/"' "rm -rf '/usr'" \
+  'rm -rf "/home/user"' 'rm --recursive --force /etc/nginx' 'rm -rf /root/data' \
+  'rm -rf /var/lib/db' 'rm -rf /usr/local/bin' 'rm -rf /home/user/' \
+  'rm -rf /"usr"' 'rm -rf \/' 'rm -rf -- /home/user' \
+  'echo ok && rm --force --recursive "/home/user"; echo done' \
+  'rm -rf ./build; rm -rf /' 'sudo rm --recursive /home/user' \
+  'chmod -R "777" /srv; echo done' 'chmod --recursive 0777 /srv;' \
+  'echo ok; chmod -v -R 777 /srv'; do
+  t $B "" 2 Bash command "$c"
+done
+for c in 'rm file.txt; grep -r /etc .' 'rm -rf ./build && pwd /' \
+  'rm -rf /tmp/build; pwd /' 'echo "rm -rf /"' \
+  'rm -rf "./build;cache" && pwd /' 'rm file.txt | grep -r /etc .' \
+  'rm file.txt; echo --recursive /home/user' 'rm --force /home/user' \
+  'chmod 755 file; grep -R 777 .' 'chmod -R 755 /srv; echo 777' \
+  'chmod 777 file; echo -R' 'chmod -R 755 /srv && chmod 777 file' \
+  'rm -rf ./home/user' 'rm -rf /tmp/build/home/user'; do
+  t $B "" 0 Bash command "$c"
+done
+t $B "" 2 Bash command $'echo ok\nrm -rf /home/user'
+t $B "" 0 Bash command $'rm file.txt\ngrep -r /etc .'
+
+echo "== block-destructive: Bash line continuations (JSON only, never executed) =="
+t $B "" 2 Bash command $'r\\\nm -rf /home/user'
+t $B "" 2 Bash command $'rm -r\\\nf /home/user'
+t $B "" 2 Bash command $'"r\\\nm" -rf /home/user'
+t $B "" 2 Bash command $'rm "-r\\\nf" /home/user'
+t $B "" 2 Bash command $'rm -rf "/ho\\\nme/user"'
+t $B "" 2 Bash command $'\\\nrm -rf /home/user'
+t $B "" 0 Bash command $'\'r\\\nm\' -rf /home/user'
+t $B "" 0 Bash command $'rm \'-r\\\nf\' /home/user'
+t $B "" 0 Bash command $'rm -rf \'/ho\\\nme/user\''
+t $B "" 0 Bash command $'rm -rf ./bu\\\nild'
+
 echo "== evidence-guard: Windows paths =="
 t $G deny 2 Write file_path 'C:\proj\.phase-evidence\x.json'
 t $G deny 2 Write file_path 'C:/proj/.phase-evidence/x.json'
