@@ -381,6 +381,10 @@ test("a committed required-test-command pin rejects any other attested command",
     const wrong = gate(root, "verify-attestation", "1");
     assert.equal(wrong.status, 2);
     assert.match(wrong.stderr, /differs from the required one/);
+    // An explicit expected command cannot bypass the committed command pin.
+    const bypass = gate(root, "verify-attestation", "1", "--", ...pinned);
+    assert.equal(bypass.status, 2);
+    assert.match(bypass.stderr, /differs from the required one/);
 
     fs.writeFileSync(pin, "not json");
     const broken = gate(root, "verify-attestation", "1");
