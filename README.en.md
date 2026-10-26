@@ -210,3 +210,7 @@ Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phas
 ## Research adoption (2026-10-26)
 
 The [evidence-first harness integration review](docs/agent-harness-integration-2026-10-26.md) identifies narrowly adoptable patterns from recent papers, agent workflows, and graph/second-brain repositories. The [optional skill](skills/evidence-first-harness/SKILL.md) is a scoped audit guide, not an installed runtime or replacement for the existing phase gate. [Manual adversarial cases](tests/fixtures/instruction-conflict-regressions.md) distinguish static file validation from live model behavior. No speed, quality, or cost improvement is claimed without a controlled host trial.
+
+## Strict test-evidence mode
+
+New phases should run `phase-gate.js run <id> test --require-test-summary -- <command>`. The gate validates Node TAP/pytest counts, rejects zero/all-skipped recognized summaries, and enforces the committed pinned test command on the first run. Strict CI attestation replays re-check the counts. Legacy commands with unrecognized output retain compatibility but cannot prove test coverage. The [maturity acceptance matrix](docs/maturity/ACCEPTANCE-2026-10-26.md) distinguishes implemented checks from unverified live-agent and sandbox scenarios.
