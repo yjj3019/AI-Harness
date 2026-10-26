@@ -26,9 +26,9 @@ Per attempt, in order. `<id>` is the Phase id and `<n>` the attempt number.
    `node .claude/workflows/phase-gate.js record <id> coding --status PASS --report .phase-evidence/<id>-coding-<n>.md`.
    If it says it could not finish, record `--status FAIL` and stop the loop.
 2. **test**: invoke the `test` subagent and tell it to run
-   `node .claude/workflows/phase-gate.js run <id> test -- <test command>`.
+   `node .claude/workflows/phase-gate.js run <id> test --require-test-summary -- <test command>`.
    Exit 2 means the test failed and the failure is already recorded. Start the next attempt with the log tail as the defect.
-   Before verify can claim PASS, require inspection of the actual test summary: intended test cases ran (not zero or all skipped), failed/skipped counts if the framework supplies them, and expected behavioral coverage. A runner exit 0 alone does not prove these.
+   Strict mode currently recognizes Node TAP and pytest test counts. Add an explicitly reviewed adapter for unsupported runners instead of disabling proof for a new Phase. Verify expected *behavior*, not only positive counts.
 3. **verify**: invoke the `verify` subagent with the checklist and the evidence paths. Save its verdict to `.phase-evidence/<id>-verify-<n>.md`. Record PASS only if the verdict says `Status: PASS`. Otherwise record FAIL (with the report) and start the next attempt with its defect list.
 4. **review**: invoke the `review` subagent. Save its verdict to `.phase-evidence/<id>-review-<n>.md`. APPROVED with no `[BLOCKING]` item is PASS. REJECTED or any `[BLOCKING]` item is FAIL: record it and start the next attempt.
 5. **compound**: invoke the `compound` subagent. Save its summary to `.phase-evidence/<id>-compound-<n>.md` and record PASS.
