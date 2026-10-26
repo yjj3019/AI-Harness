@@ -19,8 +19,11 @@ function fixture(fn) {
   }
 }
 function call(root,...args) {
+  // An actual nested runner is valid: do not inherit the parent test-runner context.
+  const env={...process.env,PHASE_GATE_ROOT:root};
+  delete env.NODE_TEST_CONTEXT;
   return spawnSync(process.execPath,[gatePath,...args],{
-    cwd:root,encoding:"utf8",env:{...process.env,PHASE_GATE_ROOT:root}
+    cwd:root,encoding:"utf8",env
   });
 }
 function coding(root) {
