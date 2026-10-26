@@ -31,6 +31,6 @@ Analyze the execution result of the completed Phase, extract lessons, bugs, and 
 The log is read in full before every task, so it must stay short.
 
 - When `## Entries` holds more than 30 entries, do one batch cleanup.
-- Promote lessons that were hit at least twice into a rule in `CLAUDE.md`.
+- For repeatedly verified failures, propose a focused regression test, lint rule or change to the owning procedure. Do not auto-promote every repeated note into global `CLAUDE.md`; confirm evidence, owner, impact and review before changing shared policy.
 - Move the oldest entries to `docs/compound-log.archive.md` (create it on first use). The archive is not required reading.
 - Never remove an entry without archiving it.

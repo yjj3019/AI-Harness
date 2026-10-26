@@ -36,7 +36,7 @@ Execute automated tests using objective environment tools (CLI test scripts, bro
 ## Protocol
 
 - Run the project's tests only through the evidence runner:
-  `node .claude/workflows/phase-gate.js run <phase> test -- <command>`
+  `node .claude/workflows/phase-gate.js run <phase> test --require-test-summary -- <command>`
   The runner executes the command, stores the log, and records the real exit code. Do not run tests another way to reach a verdict. Do not write under `.phase-evidence/`.
 - The runner exits 0 when the test passed and 2 when it failed. Report TEST_PASS or TEST_FAIL with the last lines of the output.
 - Browser tools (`mcp__playwright__*`) exist only when the project enabled Playwright MCP (`.mcp.json`, see `.mcp.json.example`). If they are not in your tool list, say so and do not claim browser verification.

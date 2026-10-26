@@ -368,8 +368,12 @@ test("a committed required-test-command pin rejects any other attested command",
     const pin = path.join(root, ".claude", "required-test-command.json");
     fs.mkdirSync(path.dirname(pin), { recursive: true });
     // The pin is committed with the code, so it exists before the phase runs.
-    fs.writeFileSync(pin, JSON.stringify([NODE, "-e", 'console.log("suite"); process.exit(0)']));
-    fullChain(root);
+    const pinned = [NODE, "-e", 'console.log("TAP version 13\\n# tests 1\\n# pass 1\\n# fail 0")'];
+    fs.writeFileSync(pin, JSON.stringify(pinned));
+    recordPass(root, "1", "coding");
+    const testResult = gate(root, "run", "1", "test", "--", ...pinned);
+    assert.equal(testResult.status, 0, testResult.stderr);
+    for (const step of ["verify", "review", "compound"]) recordPass(root, "1", step);
     assert.equal(gate(root, "attest", "1").status, 0);
     assert.equal(gate(root, "verify-attestation", "1").status, 0);
 
@@ -377,6 +381,10 @@ test("a committed required-test-command pin rejects any other attested command",
     const wrong = gate(root, "verify-attestation", "1");
     assert.equal(wrong.status, 2);
     assert.match(wrong.stderr, /differs from the required one/);
+    // An explicit expected command cannot bypass the committed command pin.
+    const bypass = gate(root, "verify-attestation", "1", "--", ...pinned);
+    assert.equal(bypass.status, 2);
+    assert.match(bypass.stderr, /differs from the required one/);
 
     fs.writeFileSync(pin, "not json");
     const broken = gate(root, "verify-attestation", "1");
