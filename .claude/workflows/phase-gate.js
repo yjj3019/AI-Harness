@@ -558,24 +558,28 @@ function cmdVerifyAttestation(args) {
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
   // The required command comes from the command line, else from the committed pin file.
-  const required = expected || loadPinnedCommand(bad);
-  if (required && JSON.stringify(required) !== JSON.stringify(att.argv)) {
+  const pinned = loadPinnedCommand(bad);
+  const required = expected || pinned;
+  if ((required && JSON.stringify(required) !== JSON.stringify(att.argv)) ||
+      (pinned && JSON.stringify(pinned) !== JSON.stringify(att.argv))) {
     bad(`attested command differs from the required one: ${att.argv.join(" ")}`);
   }
+  // An attestation cannot disable count checks when a trusted command pin exists.
+  const strictReplay = att.require_test_summary === true || Boolean(pinned);
   const now = treeHash();
   if (now === null) bad("git is unavailable, so the code tree cannot be compared");
   if (now !== att.tree) bad("code changed after the attestation. Run the phase again and re-attest");
-  const opts = att.require_test_summary
+  const opts = strictReplay
     ? { cwd: ROOT, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }
     : { cwd: ROOT, stdio: "inherit" };
   const r = spawnSync(att.argv[0], att.argv.slice(1), opts);
-  if (att.require_test_summary) {
+  if (strictReplay) {
     if (r.stdout) process.stdout.write(r.stdout);
     if (r.stderr) process.stderr.write(r.stderr);
   }
   if (r.error) bad(`test command failed to start: ${r.error.message}`);
   if (r.status !== 0) bad(`test command exited with ${r.status}`);
-  if (att.require_test_summary) {
+  if (strictReplay) {
     const summary = inspectTestSummary(String(r.stdout || "") + "\n" + String(r.stderr || ""), true);
     if (!summary.ok) bad(`strict test summary invalid: ${summary.reason}`);
   }
