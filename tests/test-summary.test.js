@@ -38,3 +38,24 @@ test("reject incomplete or mismatched TAP totals", () => {
   assert.equal(inspect("TAP version 13\n# tests 1\n# pass 1",true).ok, false);
   assert.equal(inspect(tap(1,2,0),true).ok, false);
 });
+const spec = (total, passed, failed, skipped=0) =>
+  ["✔ some test", "ℹ tests " + total, "ℹ suites 0", "ℹ pass " + passed,
+   "ℹ fail " + failed, "ℹ skipped " + skipped, "ℹ todo 0"].join("\n");
+
+test("accept the Node spec reporter summary (Node 23+ default on pipes)", () => {
+  const s=inspect(spec(3,3,0), true);
+  assert.equal(s.ok, true);
+  assert.equal(s.kind, "spec");
+  assert.equal(s.passed, 3);
+});
+test("reject spec summaries with zero, all-skipped or failing tests", () => {
+  assert.equal(inspect(spec(0,0,0), false).ok, false);
+  assert.equal(inspect(spec(2,0,0,2), true).ok, false);
+  assert.equal(inspect(spec(2,1,1), true).ok, false);
+});
+test("accept a spec summary that carries a variation selector", () => {
+  assert.equal(inspect(spec(2,2,0).replace(/ℹ/g, "ℹ\uFE0F"), true).ok, true);
+});
+test("legacy mode still reports unknown for a spec run without counts", () => {
+  assert.equal(inspect("✔ some test", false).ok, null);
+});
