@@ -1,7 +1,8 @@
 "use strict";
 
 // A bounded test-output inspection gate, not an assertion of test relevance.
-// The test runner itself remains part of the trust boundary.
+// Recognized summaries: TAP (`# tests`), the Node spec reporter (`ℹ tests`, the default for
+// Node >= 23 on pipes), and pytest. The test runner itself remains part of the trust boundary.
 function inspectTestSummary(output, required = false) {
   const text = String(output).replace(/\x1b\[[0-9;]*m/g, "");
   function last(regex) {
@@ -19,6 +20,22 @@ function inspectTestSummary(output, required = false) {
         total < 1 || passed < 1 || failed > 0 || cancelled > 0 ||
         skipped >= total || passed + failed + skipped + cancelled > total) {
       return { ...data, ok: false, reason: "zero, invalid, failed, cancelled or all-skipped TAP tests" };
+    }
+    return { ...data, ok: true };
+  }
+  // Node >= 23 defaults to the spec reporter even when stdout is a pipe, so a strict run whose
+  // command is `node --test ...` shows "ℹ tests 3" instead of TAP. Same acceptance rules apply.
+  const specTotal = last(/^\s*ℹ\uFE0F?\s+tests\s+(\d+)\s*$/gm);
+  if (specTotal !== null) {
+    const passed = last(/^\s*ℹ\uFE0F?\s+pass\s+(\d+)\s*$/gm);
+    const failed = last(/^\s*ℹ\uFE0F?\s+fail\s+(\d+)\s*$/gm);
+    const skipped = last(/^\s*ℹ\uFE0F?\s+skipped\s+(\d+)\s*$/gm) ?? 0;
+    const cancelled = last(/^\s*ℹ\uFE0F?\s+cancelled\s+(\d+)\s*$/gm) ?? 0;
+    const data = { kind: "spec", total: specTotal, passed, failed, skipped, cancelled };
+    if (passed === null || failed === null ||
+        specTotal < 1 || passed < 1 || failed > 0 || cancelled > 0 ||
+        skipped >= specTotal || passed + failed + skipped + cancelled > specTotal) {
+      return { ...data, ok: false, reason: "zero, invalid, failed, cancelled or all-skipped spec tests" };
     }
     return { ...data, ok: true };
   }
