@@ -129,7 +129,9 @@
 | P2 | CI가 저장소에 커밋된 `argv`를 그대로 실행하는데 명령 고정 파일이 없음 | `ci.yml`·`phase-gate.js` 확인 | `.claude/required-test-command.json`(`["bash","tests/run-all.sh"]`) 커밋 |
 | P3 | E2E 배선 검증 부재 | 단위 테스트 30건은 훅 연동을 검증하지 않음 | `tests/e2e.test.js` 3건 추가 (5단계 루프·재시도·실제 훅 연동) |
 
-### 남은 한계
+### 남은 한계 (2026-10-25 당시 기록)
+
+후속 상태: 2026-10-27 현재 Windows/macOS CI와 Node 22/24 검증이 추가돼 단일 OS·macOS 미검증 항목은 해소됐다. `/home/user` 등 보호 경로와 명령 구분 문제는 품질 마무리 브랜치에서 회귀 검사한다. 아래 문장은 당시 관측을 보존하며 현재 상태는 `docs/maturity/CLOSURE-2026-10-27.md`를 참조한다.
 
 - CI는 여전히 `ubuntu-latest` 단일이다. 이번 P1 2건은 정확히 그 사각지대에서 나왔다. `windows-latest` 잡 추가가 다음 조치다.
 - `cygpath`도 `wslpath`도 없는 셸에서는 Windows 경로를 해석하지 못한다(fail-open → verify PASS 거부).

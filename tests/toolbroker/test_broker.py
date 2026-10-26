@@ -15,6 +15,7 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
 from toolbroker import Broker, BrokerError, digest
 from toolbroker.broker import canon
@@ -38,6 +39,7 @@ def approval(op, rid, payload, *, nonce=None, expiry=None):
 
 class Provider(BaseHTTPRequestHandler):
     writes = {}
+    calls = 0
     mode = "normal"
     lock = threading.Lock()
 
@@ -51,6 +53,7 @@ class Provider(BaseHTTPRequestHandler):
         key = self.headers.get("Idempotency-Key")
         value = json.loads(self.rfile.read(int(self.headers["Content-Length"])))["value"]
         with self.lock:
+            type(self).calls += 1
             previous = self.writes.setdefault(key, value)
             if previous != value:
                 self.send_error(409)
@@ -59,12 +62,30 @@ class Provider(BaseHTTPRequestHandler):
         if self.mode == "ack-lost":
             time.sleep(0.3)
         out = canon({"accepted": True, "count": count})
+        if self.mode in ("NaN", "Infinity", "-Infinity", "1e400"):
+            out = ('{"accepted":' + self.mode + '}').encode()
         try:
             self.send_response(200)
+            if self.mode == "truncated-chunk":
+                self.send_header("Transfer-Encoding", "chunked")
+                self.end_headers()
+                # Advertise a longer chunk than actually sent and omit terminator.
+                self.wfile.write(b"20\r\n{\"accepted\":true}")
+                self.wfile.flush()
+                self.close_connection = True
+                return
+            if self.mode == "truncated-length":
+                self.send_header("Content-Length", "200")
+                self.end_headers()
+                # Valid JSON is not sufficient proof of a complete HTTP response.
+                self.wfile.write(b'{"accepted":true}')
+                self.wfile.flush()
+                self.close_connection = True
+                return
             self.send_header("Content-Length", str(len(out)))
             self.end_headers()
             self.wfile.write(out)
-        except (BrokenPipeError, ConnectionResetError):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass
 
 
@@ -206,7 +227,10 @@ class BrokerTests(unittest.TestCase):
                     headers={"Content-Type": "application/json"}, method="POST")
             with self.assertRaises(urllib.error.HTTPError) as error:
                 urllib.request.urlopen(req(), timeout=2)
-            self.assertEqual(error.exception.code, 403)
+            try:
+                self.assertEqual(error.exception.code, 403)
+            finally:
+                error.exception.close()
             self.assertEqual(b.get_counter(), 0)
             fields["approval"] = approval(fields["operation"], fields["request_id"], fields["payload"])
             with urllib.request.urlopen(req(), timeout=2) as result:
@@ -256,6 +280,53 @@ class BrokerTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+    def test_uncertain_provider_responses_are_durable_unknown_without_resend(self):
+        for mode in ("truncated-chunk", "truncated-length", "NaN", "Infinity", "-Infinity", "1e400"):
+            with self.subTest(mode=mode):
+                Provider.mode, Provider.writes, Provider.calls = mode, {}, 0
+                server = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
+                server.daemon_threads = True
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    target = "http://127.0.0.1:" + str(server.server_address[1]) + "/write"
+                    b = self.broker(["fixture.http.post"], url=target)
+                    rid = "uncertain_" + str(len(mode)) + "_" + mode.replace("-", "_")
+                    payload = {"value": "provider already applied this"}
+                    token = approval("fixture.http.post", rid, payload)
+                    with self.assertRaises(BrokerError) as error:
+                        self.send(b, op="fixture.http.post", rid=rid,
+                                  payload=payload, token=token)
+                    self.assertEqual(error.exception.status, 409)
+                    self.assertEqual(error.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
+                    self.assertEqual(b.get_state(rid), "UNKNOWN")
+                    # A fresh broker proves UNKNOWN was persisted rather than held
+                    # only in memory. A retry must not contact the provider again.
+                    reopened = self.broker(["fixture.http.post"], url=target)
+                    self.assertEqual(reopened.get_state(rid), "UNKNOWN")
+                    with self.assertRaises(BrokerError) as retry:
+                        self.send(reopened, op="fixture.http.post", rid=rid,
+                                  payload=payload, token=token)
+                    self.assertEqual(retry.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
+                    self.assertEqual(Provider.calls, 1)
+                    self.assertEqual(Provider.writes, {rid: payload["value"]})
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    thread.join(timeout=2)
+
+    def test_unpersistable_adapter_result_is_unknown_before_result_update(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9001/write")
+        payload = {"value": "once"}
+        token = approval("fixture.http.post", "request_0001", payload)
+        with patch.object(b, "_send_http", return_value={"provider": float("nan")}) as send:
+            for _ in range(2):
+                with self.assertRaises(BrokerError) as error:
+                    self.send(b, op="fixture.http.post", payload=payload, token=token)
+                self.assertEqual(error.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
+                self.assertEqual(b.get_state("request_0001"), "UNKNOWN")
+            send.assert_called_once()
 
     def test_no_arbitrary_destinations_or_user_urls(self):
         for url in ("https://example.com/write", "http://localhost:9001/write",
