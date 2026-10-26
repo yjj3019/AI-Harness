@@ -286,7 +286,7 @@ function cmdRun(args) {
   if (sep < 0 || sep === args.length - 1) usage();
   const head = args.slice(0, sep);
   const cmd = args.slice(sep + 1);
-  const strict = head.length === 3 && head[2] === "--require-test-summary";
+  let strict = head.length === 3 && head[2] === "--require-test-summary";
   if ((head.length !== 2 && !strict) || head[1] !== "test") usage();
   const phase = head[0];
   requirePhase(phase);
@@ -296,6 +296,9 @@ function cmdRun(args) {
   if (pinned && JSON.stringify(pinned) !== JSON.stringify(cmd)) {
     die(2, "ERROR: test command differs from .claude/required-test-command.json");
   }
+  // Projects with a committed command pin implicitly require recognized test counts.
+  // Unpinned legacy projects retain their old no-summary behavior unless opted in.
+  if (pinned) strict = true;
 
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   const logAbs = path.join(EVIDENCE_DIR, `phase-${phase}-test.log`);
