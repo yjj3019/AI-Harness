@@ -40,6 +40,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: The first run and attestation replay had different tree comparison boundaries.
 - **Resolution/Pattern**: Compare pre- and post-run tree snapshots; reject a difference or an unavailable snapshot on only one side, retain explicit legacy unbound behavior when both are unavailable, and test both cases. Endpoint snapshots are not isolation and do not detect temporary changes restored before the second snapshot. Separately record static, fixture and live evidence levels and avoid treating package checks as a live model evaluation.
 
+### [2026-10-28] Evaluation baselines - Separate scorer changes from improvements
+
+- **Issue/Risk**: A changed rubric, case set or normalization can create an apparent improvement without a change in candidate quality.
+- **Root Cause**: Comparing scores across incompatible baselines conflates measurement changes with results.
+- **Resolution/Pattern**: Record baseline revisions and rescore comparable retained outputs or label cross-baseline rounds not comparable. Enforce a test-file count floor to expose substantial suite shrinkage, while recognizing replacements can mask missing suites. A lexical search for network calls is not proof of no egress, particularly when separate components intentionally use loopback networking.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

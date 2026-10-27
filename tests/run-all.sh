@@ -3,6 +3,20 @@
 set -eu
 cd "$(dirname "$0")/.."
 
+echo "== test inventory =="
+# Count only files, not an unmatched glob or a directory named like a suite.
+test_files=()
+for file in tests/*.test.js; do
+  [ -f "$file" ] && test_files+=("$file")
+done
+count=${#test_files[@]}
+floor=15
+echo "test files: $count (floor $floor)"
+if [ "$count" -lt "$floor" ]; then
+  echo "ERROR: test file count $count is below the floor $floor. A suite file was probably removed or renamed; restore it, or adjust the floor in tests/run-all.sh deliberately." >&2
+  exit 2
+fi
+
 echo "== syntax =="
 node --check .claude/workflows/phase-gate.js
 node --check scripts/context-contract.js
@@ -21,6 +35,6 @@ echo "== hooks =="
 bash tests/hooks.test.sh
 
 echo "== phase-gate =="
-node --test tests/*.test.js
+node --test "${test_files[@]}"
 
 echo "ALL CHECKS PASSED"
