@@ -46,6 +46,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Comparing scores across incompatible baselines conflates measurement changes with results.
 - **Resolution/Pattern**: Record baseline revisions and rescore comparable retained outputs or label cross-baseline rounds not comparable. Enforce a test-file count floor to expose substantial suite shrinkage, while recognizing replacements can mask missing suites. A lexical search for network calls is not proof of no egress, particularly when separate components intentionally use loopback networking.
 
+### [2026-10-28] Fixture broker - Preserve uncertain outcomes after adapter exceptions
+
+- **Issue/Risk**: An unexpected adapter exception after a send intent could leave a request IN_FLIGHT rather than explicitly requiring reconciliation.
+- **Root Cause**: The uncertain-outcome handler covered a fixed list of exception types.
+- **Resolution/Pattern**: Treat ordinary adapter and response-serialization exceptions as UNKNOWN after intent is committed, without catching process interrupts or retrying. If the ledger update fails, UNKNOWN persistence is not guaranteed; the previously committed IN_FLIGHT remains the conservative boundary when the ledger is intact.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
