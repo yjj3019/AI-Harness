@@ -11,10 +11,10 @@ Used for **mandatory Context Reset** at Phase boundaries and whenever context qu
 ## Current State
 
 - **Last Completed Phase**: 없음 (하네스의 CI/E2E 검증과 실제 에이전트 운영 Phase는 별개)
-- **In Progress**: fixture 브로커 불확실 결과 처리와 회귀 검증 (작업 브랜치, 미병합)
+- **In Progress**: 없음. phase-gate 트리 해시의 모드·읽기 오류 보강은 호환성과 증거 체인 설계 검토가 남아 보류됨.
 - **Key Decisions**: phase-gate·증거·엄격 테스트 유지, 규칙 계약 선언 시 타입이 있는 컨텍스트 체크포인트 검증, 테스트 증거는 실행 전후 트리 스냅샷으로 바인딩. 테스트 파일 수 하한은 축소 탐지용이며 파일 신원이나 품질 보장이 아님.
 - **CI platforms**: ubuntu-latest, windows-latest, macos-latest
-- **Latest CI evidence**: 2026-10-28 PR #11 head b108220 → squash main ee05823: PR CI and post-merge main CI each succeeded in all eight jobs (Node 22/24, Windows/macOS portability, ToolBroker three hosts, Linux isolation). Subsequent changes require fresh verification.
+- **Latest CI evidence**: 2026-10-28 PR #13 head 4a8b2ad → squash main f42763c: PR CI and post-merge main CI each succeeded in all eight jobs (Node 22/24, Windows/macOS portability, ToolBroker three hosts, Linux isolation). Subsequent changes require fresh verification.
 - **Open Issues**: Claude Code·Codex 실제 호스트 권한 통합 미검증. ToolBroker 서명 승인·DB 멱등성·로컬 HTTP fixture는 구현·테스트됐으나 운영 API/DB 통합과 전체 도구 권한 강제는 별도 검증 필요. Windows worker 자체 강제 종료·수동 복구 fixture는 통과했으나 외부 신호 종료, 즉시 프로세스 트리 정리, POSIX 신호 의미나 자동 복구를 인증하지 않음. Bash lexical 훅은 보안 경계가 아님. phase-gate의 실행 전후 트리 비교는 영구 변경만 탐지하며 일시 복원·ignored 입력·파일 모드·서브모듈·동시 쓰기·읽기 오류는 다루지 못함(격리 아님)
 - **Artifacts Produced**: .claude/workflows/phase-gate.js, tests/phase-gate-run-integrity.test.js, tests/runtime-recovery.test.js, tests/runtime-isolation-linux.sh, docs/maturity/
 - **Next Actions**: Optional document-job contract/checker added (docs/document-jobs.md, scripts/document-job.js); manifest-only, runner and live PDF quality remain unimplemented/unverified. Optional report editor added at skills/evidence-preserving-editor/SKILL.md with six synthetic evaluation cases, package-only tests and an optional blinded evaluation protocol (docs/report-editing-evaluation.md); live model editing quality has NOT been evaluated and no evaluation result exists. These optional workflows were merged in PR #8 and the gate/verify/report-editing changes in PR #9; never infer actual PDF, model or production quality from those merges. External conditions and owner actions remain in docs/maturity/CLOSURE-2026-10-27.md.
