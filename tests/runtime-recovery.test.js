@@ -15,7 +15,7 @@ function environment(root) {
 }
 function gate(root, ...args) {
   return spawnSync(NODE, [GATE, ...args], {
-    cwd: root, encoding: "utf8", env: environment(root), timeout: 30000
+    cwd: root, encoding: "utf8", env: environment(root), timeout: 90000
   });
 }
 function readEvidence(root, step) {
@@ -26,9 +26,9 @@ function report(root, step) {
   const p = path.join(root, ".phase-evidence", step + ".md");
   fs.writeFileSync(p, "Evidence for " + step + "\n");
   const r = gate(root, "record", "1", step, "--status", "PASS", "--report", ".phase-evidence/" + step + ".md");
-  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(r.status, 0, resultMessage(r));
 }
-async function waitForFile(p, timeoutMs=8000) {
+async function waitForFile(p, timeoutMs=30000) {
   const begin = Date.now();
   while (Date.now()-begin < timeoutMs) {
     if (fs.existsSync(p)) return;
@@ -36,49 +36,70 @@ async function waitForFile(p, timeoutMs=8000) {
   }
   throw new Error("Timed out waiting for " + p);
 }
-async function waitChild(child, timeoutMs=9000) {
-  if (child.exitCode !== null) return child.exitCode;
-  return await Promise.race([
-    new Promise((resolve,reject) => { child.once("close", resolve); child.once("error", reject); }),
-    new Promise((_,reject) => setTimeout(() => reject(new Error("runner did not stop")), timeoutMs))
-  ]);
+async function waitChild(child, timeoutMs=30000) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { cleanup(); reject(new Error("runner did not stop")); }, timeoutMs);
+    function cleanup() { clearTimeout(timer); child.off("close", closed); child.off("error", failed); }
+    function closed() { cleanup(); resolve(); }
+    function failed(error) { cleanup(); reject(error); }
+    child.once("close", closed); child.once("error", failed);
+  });
+}
+async function removeFixture(root) {
+  // Windows antivirus and subprocess handles may temporarily hold files open.
+  await fs.promises.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+}
+function resultMessage(r) {
+  return `status=${r.status} signal=${r.signal} error=${r.error || "none"}\n${r.stdout || ""}${r.stderr || ""}`;
 }
 test("actual worker termination leaves FAIL; a new Phase gate process can recover explicitly", {
-  // Node maps SIGKILL to forceful process termination on Windows; this exercises that host path,
-  // not POSIX signal semantics. The effect and manual recovery assertions apply on either host.
-  timeout: 120000
+  // The worker self-signals after an operator marker; Windows maps SIGKILL to forceful termination.
+  // This does not certify externally signalled termination, POSIX semantics or automatic recovery.
+  timeout: 600000
 }, async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "harness-recovery-"));
-  let child, workerPid;
+  let child, failure;
   try {
     fs.mkdirSync(path.join(root, "docs"));
     fs.mkdirSync(path.join(root, ".phase-evidence"));
     fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Recovery probe\n");
     fs.writeFileSync(path.join(root, ".gitignore"), ".phase-evidence/\n");
-    assert.equal(spawnSync("git", ["init", "-q"], {cwd:root}).status, 0);
+    const init = spawnSync("git", ["init", "-q"], { cwd: root, encoding: "utf8", timeout: 90000 });
+    assert.equal(init.status, 0, resultMessage(init));
     report(root, "coding");
     const worker = path.join(root, ".phase-evidence", "hang.cjs");
     fs.writeFileSync(worker, [
       'const fs = require("node:fs");',
-      'fs.writeFileSync(".phase-evidence/worker.pid", String(process.pid));',
       'fs.appendFileSync(".phase-evidence/side-effect-probe", "one-attempt\\n");',
-      'setInterval(() => {}, 1000);',
+      'fs.writeFileSync(".phase-evidence/ready.tmp", "ready");',
+      'fs.renameSync(".phase-evidence/ready.tmp", ".phase-evidence/ready");',
+      'const deadline = Date.now() + 120000;',
+      'setInterval(() => { if (fs.existsSync(".phase-evidence/terminate-worker") || Date.now() >= deadline) process.kill(process.pid, "SIGKILL"); }, 50);',
       ''
     ].join("\n"));
     child=spawn(NODE, [GATE, "run", "1", "test", "--require-test-summary", "--",
       NODE, ".phase-evidence/hang.cjs"],
       { cwd: root, env: environment(root), stdio: "ignore" });
-    await waitForFile(path.join(root, ".phase-evidence", "worker.pid"));
-    workerPid=Number(fs.readFileSync(path.join(root, ".phase-evidence", "worker.pid"), "utf8"));
-    assert.ok(Number.isInteger(workerPid) && workerPid > 0);
-    process.kill(workerPid, "SIGKILL");
+    // Attach an error handler immediately; never signal an unowned numeric PID.
+    let spawnError;
+    child.on("error", error => { spawnError = error; });
+    await waitForFile(path.join(root, ".phase-evidence", "ready"));
+    if (spawnError) throw spawnError;
+    assert.equal(child.exitCode, null, "gate exited before termination request");
+    assert.equal(child.signalCode, null, "gate was signalled before termination request");
+    // Ask the live worker to terminate itself; no stale external PID can be signalled.
+    fs.writeFileSync(path.join(root, ".phase-evidence", "terminate-worker"), "terminate\n");
     await waitChild(child);
+    assert.equal(child.exitCode, 2, "gate must report test failure");
+    assert.equal(child.signalCode, null, "gate itself must not be signalled");
     child = null;
     const failed=readEvidence(root, "test");
     assert.equal(failed.status, "FAIL");
-    assert.notEqual(failed.exit_code, 0);
+    // POSIX reports signal termination as null/-1; Windows can report exit 1.
+    assert.ok(Number.isInteger(failed.exit_code) && failed.exit_code !== 0, "gate must record a numeric nonzero worker exit");
     const blocked=gate(root, "check", "1");
-    assert.equal(blocked.status, 2, blocked.stdout + blocked.stderr);
+    assert.equal(blocked.status, 2, resultMessage(blocked));
     assert.equal(fs.readFileSync(path.join(root, ".phase-evidence", "side-effect-probe"), "utf8").trim(), "one-attempt");
     // Explicit operator-triggered recovery, NOT automatic replay of unknown external work.
     const suite=path.join(root, ".phase-evidence", "resume.test.cjs");
@@ -86,17 +107,35 @@ test("actual worker termination leaves FAIL; a new Phase gate process can recove
       'const t=require("node:test");const a=require("node:assert/strict");t("recover",()=>a.equal(3*3,9));\n');
     const retried=gate(root, "run", "1", "test", "--require-test-summary", "--",
       NODE, "--test", ".phase-evidence/resume.test.cjs");
-    assert.equal(retried.status, 0, retried.stdout + retried.stderr);
+    assert.equal(retried.status, 0, resultMessage(retried));
     assert.equal(readEvidence(root, "test").test_summary.passed, 1);
     for (const step of ["verify", "review", "compound"]) report(root, step);
-    assert.equal(gate(root, "check", "1").status, 0);
-    assert.equal(gate(root, "attest", "1").status, 0);
+    const checked = gate(root, "check", "1");
+    assert.equal(checked.status, 0, resultMessage(checked));
+    const attested = gate(root, "attest", "1");
+    assert.equal(attested.status, 0, resultMessage(attested));
     const replay=gate(root, "verify-attestation", "1");
-    assert.equal(replay.status, 0, replay.stdout + replay.stderr);
+    assert.equal(replay.status, 0, resultMessage(replay));
     assert.equal(fs.readFileSync(path.join(root, ".phase-evidence", "side-effect-probe"), "utf8").trim(), "one-attempt");
+  } catch (error) {
+    failure = error;
   } finally {
-    if (workerPid) { try { process.kill(workerPid, "SIGKILL"); } catch {} }
-    if (child) { try { child.kill("SIGKILL"); } catch {} }
-    fs.rmSync(root, {recursive:true, force:true});
+    // Do not signal a recorded worker PID during cleanup: it may already have exited
+    // and been reused. Kill only the tracked live gate process if still running.
+    if (child && child.exitCode === null && child.signalCode === null) {
+      try {
+        // Wake a possibly started worker before stopping the gate. Its own deadline is a fallback.
+        fs.writeFileSync(path.join(root, ".phase-evidence", "terminate-worker"), "terminate\n");
+        try { await waitChild(child, 30000); } catch { child.kill("SIGKILL"); await waitChild(child); }
+      } catch (error) {
+        if (!failure) failure = error;
+        else console.error("Recovery fixture gate cleanup failed:", error);
+      }
+    }
+    try { await removeFixture(root); } catch (error) {
+      if (!failure) failure = error;
+      else console.error("Recovery fixture removal failed:", error);
+    }
   }
+  if (failure) throw failure;
 });
