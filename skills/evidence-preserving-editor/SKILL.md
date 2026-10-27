@@ -30,7 +30,7 @@ Use the same term for the same item. Reduce empty uses of “혁신적인”, �
 
 ## Verification boundary
 
-Use `docs/report-editing-cases.json` for human or separately authorized model evaluation. For each case, compare all required claims and protected spans; subjective elegance does not excuse a factual change. Record model/version/input/output and reviewer verdict when running a live evaluation. A package test only checks this skill's structure and fixture coverage; it does not prove semantic equivalence or model quality. Do not call a paid model without an approved scope and budget.
+Use `docs/report-editing-cases.json` for human or separately authorized model evaluation. The optional paired, blinded comparison protocol in `docs/report-editing-evaluation.md` specifies preservation vetoes, reviewer independence, privacy, provenance, and inconclusive outcomes; it is not an enforcement gate. For each case, compare all required claims and protected spans; subjective elegance does not excuse a factual change. Record model/version/input/output and reviewer verdict when running a live evaluation. A package test only checks this skill's structure and fixture coverage; it does not prove semantic equivalence or model quality. Do not call a paid model without an approved scope and budget.
 
 ## Attribution
 

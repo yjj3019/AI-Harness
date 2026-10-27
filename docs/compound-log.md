@@ -34,6 +34,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Treating conversion as one local action and trusting aggregate process status.
 - **Resolution/Pattern**: Declare separate capabilities and bounded work, bind result manifests to exact job bytes and input IDs, require complete outcomes and protected-token multisets. Keep offline manifest consistency distinct from actual authorization, artifact hashes, PDF quality and live-engine certification.
 
+### [2026-10-27] Test evidence - Detect persistent mutation during the first run
+
+- **Issue/Risk**: A successful test could persistently change a tracked or unignored input, and the original run recorded only the changed tree as its test evidence.
+- **Root Cause**: The first run and attestation replay had different tree comparison boundaries.
+- **Resolution/Pattern**: Compare pre- and post-run tree snapshots; reject a difference or an unavailable snapshot on only one side, retain explicit legacy unbound behavior when both are unavailable, and test both cases. Endpoint snapshots are not isolation and do not detect temporary changes restored before the second snapshot. Separately record static, fixture and live evidence levels and avoid treating package checks as a live model evaluation.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

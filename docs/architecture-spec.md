@@ -154,6 +154,10 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 | .claude/hooks/ + .claude/settings.json | Guardrails | `block-destructive.sh` (Bash), `evidence-guard.sh auto` (subagents may not write `.phase-evidence/`; registered in settings.json because agent frontmatter hooks are skipped until the workspace is trusted) and `read-tracker.sh` (records evidence files the verify agent opened; verify PASS needs the test log in that record). |
 | tests/ | Regression checks | `bash tests/run-all.sh` runs syntax, frontmatter, hook and phase-gate tests. CI runs the same script. |
 
+### Test tree comparison limits
+
+The test run compares the tree hashes before and after execution and records FAIL for a persistent difference, or if only one hash is available. If neither hash is available, legacy unbound runs remain possible with a diagnostic and the later chain check warns; attestation requires Git and a bound tree. Tracked and unignored generated files that persistently change must be prepared before the run or explicitly excluded only when appropriate. This is accidental drift detection, not isolation or proof of the exact executed bytes: transient changes restored before the second snapshot, ignored/excluded inputs, file modes, submodule contents, concurrent writes, background work and read errors are not fully covered. Use an immutable isolated workspace and controlled inputs when stronger assurance is required.
+
 ## 8. Foundational References
 
 - OpenAI Harness Engineering (2026): https://openai.com/index/harness-engineering/
