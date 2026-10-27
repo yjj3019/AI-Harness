@@ -522,6 +522,9 @@ function cmdAttest(args) {
   if (res.fail) die(2, `ERROR: cannot attest. ${res.fail.step}: ${res.fail.why}`);
   const tree = treeHash();
   if (tree === null) die(2, "ERROR: cannot attest without git. The attestation binds to the code tree");
+  if (typeof res.testEv.tree !== "string" || tree !== res.testEv.tree) {
+    die(2, "ERROR: cannot attest: code tree does not match test evidence. Run the test again");
+  }
   fs.mkdirSync(ATTEST_DIR, { recursive: true });
   const att = {
     schema: SCHEMA,

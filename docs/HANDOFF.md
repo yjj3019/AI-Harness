@@ -11,7 +11,7 @@ Used for **mandatory Context Reset** at Phase boundaries and whenever context qu
 ## Current State
 
 - **Last Completed Phase**: 없음 (하네스의 CI/E2E 검증과 실제 에이전트 운영 Phase는 별개)
-- **In Progress**: 없음. phase-gate 트리 해시의 모드·읽기 오류 보강은 호환성과 증거 체인 설계 검토가 남아 보류됨.
+- **In Progress**: attestation 최종 스냅샷 비교 수정 검증 (작업 브랜치). phase-gate 트리 해시의 모드·읽기 오류 보강은 호환성과 증거 체인 설계 검토가 남아 보류됨.
 - **Key Decisions**: phase-gate·증거·엄격 테스트 유지, 규칙 계약 선언 시 타입이 있는 컨텍스트 체크포인트 검증, 테스트 증거는 실행 전후 트리 스냅샷으로 바인딩. 테스트 파일 수 하한은 축소 탐지용이며 파일 신원이나 품질 보장이 아님.
 - **CI platforms**: ubuntu-latest, windows-latest, macos-latest
 - **Latest CI evidence**: 2026-10-28 PR #13 head 4a8b2ad → squash main f42763c: PR CI and post-merge main CI each succeeded in all eight jobs (Node 22/24, Windows/macOS portability, ToolBroker three hosts, Linux isolation). Subsequent changes require fresh verification.

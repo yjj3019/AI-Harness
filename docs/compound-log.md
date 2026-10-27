@@ -52,6 +52,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: The uncertain-outcome handler covered a fixed list of exception types.
 - **Resolution/Pattern**: Treat ordinary adapter and response-serialization exceptions as UNKNOWN after intent is committed, without catching process interrupts or retrying. If the ledger update fails, UNKNOWN persistence is not guaranteed; the previously committed IN_FLIGHT remains the conservative boundary when the ledger is intact.
 
+### [2026-10-28] Attestation - Compare the final snapshot with tested evidence
+
+- **Issue/Risk**: A tree mutation between chain validation and attestation creation could bind an attestation to a tree that did not match the tested evidence.
+- **Root Cause**: Attestation took a second snapshot but did not compare it to the evidence's tree hash.
+- **Resolution/Pattern**: Require a bound test hash and equality with the final snapshot before writing. This closes that comparison gap, not concurrent mutation after the snapshot or the existing tree hash's documented exclusions and read-error limitations.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
