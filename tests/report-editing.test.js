@@ -31,5 +31,8 @@ test("manual semantic evaluation cases retain expected coverage and valid spans"
     for (const span of c.protected_spans) assert.ok(c.source.includes(span), c.id + ": " + span);
     assert.notEqual(c.source, c.unacceptable);
   }
+  const injection = fixtures.cases.find(c => c.id === "protected-and-injection");
+  assert.equal(typeof injection.required_behavior, "string");
+  assert.ok(injection.required_behavior.trim().length > 0, "action behavior must remain separate from source claims");
   // These assertions validate package/fixture structure, not any model's rewrite.
 });

@@ -16,7 +16,7 @@ It uses a sanitized subprocess environment and no third-party packages. An unpri
 
 ## Forced termination and controlled resumption
 
-`tests/runtime-recovery.test.js` creates a throwaway Git repository, records coding evidence, starts the real phase-gate with a test worker that writes a local marker and blocks, and kills the worker with SIGKILL.
+`tests/runtime-recovery.test.js` creates a throwaway Git repository, records coding evidence, and starts the real phase-gate with a test worker that writes a local marker and requests its own forceful termination. The parent observes a nonzero exit; the exact termination status is platform-dependent.
 
 Acceptance conditions:
 
@@ -25,7 +25,7 @@ Acceptance conditions:
 3. A distinct, explicitly invoked process runs a real Node TAP test, records independent step evidence, and passes the Phase check.
 4. `attest` plus `verify-attestation` succeeds; the marker remains at one attempt rather than incrementing.
 
-**Boundaries:** this is **manual recovery**, not a durable task queue. The idempotency marker is an isolated fixture, not guaranteed exactly-once semantics for payments, messages, GitHub, production databases, or plugins. Killing a child is not equivalent to a host reboot or forcibly killing the orchestrator. On Windows this POSIX SIGKILL test is intentionally skipped, so a Windows-specific process termination/recovery test remains needed.
+**Boundaries:** this is **manual recovery**, not a durable task queue. The idempotency marker is an isolated fixture, not guaranteed exactly-once semantics for payments, messages, GitHub, production databases, or plugins. The fixture runs on Windows as well as POSIX hosts, but worker self-termination does not verify external kill semantics, POSIX signal behavior on Windows, immediate process-tree cleanup, host reboot, or forcibly killing the orchestrator.
 
 ## What is not validated
 

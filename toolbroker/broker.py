@@ -198,8 +198,9 @@ class Broker:
             # Serialization is part of accepting the response, not a later DB step.
             # A malformed/non-finite result cannot strand a sent request IN_FLIGHT.
             result_json = canon(result).decode() if result is not None else None
-        except (http.client.HTTPException, urllib.error.URLError,
-                OSError, ValueError, TypeError, OverflowError, RecursionError):
+        except Exception:
+            # Any adapter or response-serialization failure after intent is
+            # committed may follow a send. Do not catch process interrupts.
             result = None
         if result is None:
             with self._connect() as db:

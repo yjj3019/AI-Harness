@@ -328,6 +328,40 @@ class BrokerTests(unittest.TestCase):
                 self.assertEqual(b.get_state("request_0001"), "UNKNOWN")
             send.assert_called_once()
 
+    def test_unexpected_adapter_exception_is_durable_unknown_without_resend(self):
+        url = "http://127.0.0.1:9001/write"
+        b = self.broker(["fixture.http.post"], url=url)
+        payload = {"value": "once"}
+        token = approval("fixture.http.post", "request_0001", payload)
+        with patch.object(Broker, "_send_http", side_effect=RuntimeError("adapter failed")) as send:
+            with self.assertRaises(BrokerError) as error:
+                self.send(b, op="fixture.http.post", payload=payload, token=token)
+            self.assertEqual((error.exception.status, error.exception.code),
+                             (409, "OUTCOME_UNKNOWN_RECONCILE"))
+            reopened = self.broker(["fixture.http.post"], url=url)
+            self.assertEqual(reopened.get_state("request_0001"), "UNKNOWN")
+            with self.assertRaises(BrokerError) as retry:
+                self.send(reopened, op="fixture.http.post", payload=payload, token=token)
+            self.assertEqual(retry.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
+            send.assert_called_once_with(payload, "request_0001")
+
+    def test_adapter_process_interrupts_are_not_swallowed(self):
+        for interrupt in (KeyboardInterrupt, SystemExit):
+            with self.subTest(interrupt=interrupt):
+                rid = "interrupt_" + interrupt.__name__
+                b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9001/write")
+                payload = {"value": "once"}
+                token = approval("fixture.http.post", rid, payload)
+                with patch.object(Broker, "_send_http", side_effect=interrupt) as send:
+                    with self.assertRaises(interrupt):
+                        self.send(b, op="fixture.http.post", rid=rid, payload=payload, token=token)
+                    reopened = self.broker(["fixture.http.post"], url="http://127.0.0.1:9001/write")
+                    self.assertEqual(reopened.get_state(rid), "IN_FLIGHT")
+                    with self.assertRaises(BrokerError) as retry:
+                        self.send(reopened, op="fixture.http.post", rid=rid, payload=payload, token=token)
+                    self.assertEqual(retry.exception.code, "REQUEST_IN_FLIGHT")
+                    send.assert_called_once_with(payload, rid)
+
     def test_no_arbitrary_destinations_or_user_urls(self):
         for url in ("https://example.com/write", "http://localhost:9001/write",
                     "http://127.0.0.1:9001/not-allowlisted"):
