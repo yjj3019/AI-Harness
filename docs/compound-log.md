@@ -22,6 +22,18 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Global last-counter parsing, pre-execution-only verification, and incomplete uncertain-response exception classification.
 - **Resolution/Pattern**: Validate every complete result block and exact count accounting, verify the tree after replay, persist UNKNOWN for unclassifiable sent requests, and test interrupted uploads/provider responses. Keep host authorization and live-model certification separate from fixtures.
 
+### [2026-10-27] Report editing - Preserve evidence before style
+
+- **Issue/Risk**: A prose rewrite can erase skips, uncertainty, conditions or the distinction between fixture and production results.
+- **Root Cause**: Optimizing stylistic patterns without comparing supported claims in both directions.
+- **Resolution/Pattern**: Add an opt-in evidence-preserving editor with protected spans and Korean semantic evaluation cases. Keep package checks separate from live-model quality evaluation; do not modify evidence or completion gates for prose style.
+
+### [2026-10-27] Document jobs - Do not aggregate partial conversion as success
+
+- **Issue/Risk**: A worker exit 0 can hide missing files, damaged formula tokens, unreviewed layout, or implicit external document transfer.
+- **Root Cause**: Treating conversion as one local action and trusting aggregate process status.
+- **Resolution/Pattern**: Declare separate capabilities and bounded work, bind result manifests to exact job bytes and input IDs, require complete outcomes and protected-token multisets. Keep offline manifest consistency distinct from actual authorization, artifact hashes, PDF quality and live-engine certification.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

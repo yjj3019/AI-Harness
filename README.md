@@ -35,6 +35,20 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 7. **Context Reset & Hand-off** — 컨텍스트가 참히면 `docs/HANDOFF.md`로 상태를 넘기고 새 세션 시작.
 8. **Surgical Changes & Simplicity** — 필요한 것만 수정. 최소 견고한 솔루션 선호 (Karpathy 스타일).
 
+## 선택형 보고서 편집
+
+보고서·PR 설명을 다듬을 때만 [evidence-preserving-editor](skills/evidence-preserving-editor/SKILL.md)를 명시적으로 사용할 수 있습니다. Humanizer에서 참고한 명료한 문장·중복 제거 원칙에 사실 보존을 우선합니다. 수치·skip·불확실성·검증 범위와 코드·명령·링크는 보존하며, 실행·권한·증거 게이트는 변경하지 않습니다. 전역 설치나 자동 실행은 하지 않습니다.
+
+예: “evidence-preserving-editor 지침에 따라 이 보고서 문장만 편집하고, 검증 한계와 수치는 유지해줘.”
+
+[평가 사례](docs/report-editing-cases.json)는 사람 또는 별도 승인된 모델 평가용입니다. CI는 패키지 구조와 사례 정합성만 검사하며 재작성 품질이나 의미 동등성을 보증하지 않습니다.
+
+## 선택형 문서 변환 계약
+
+PDFMathTranslate 분석을 바탕으로 [문서 변환 계약](docs/document-jobs.md)과 [오프라인 manifest 검사기](scripts/document-job.js)를 추가했습니다. 파일 읽기·출력 쓰기·외부 텍스트 전송·캐시·자산/패키지 준비를 분리하며, 입력별 누락·부분 실패·수식 토큰 누락/중복·미검증 결과를 전체 성공으로 집계하지 않습니다.
+
+검사기는 JSON 선언의 일관성만 확인합니다. 번역 엔진·실행기·권한 강제·실제 PDF/해시/시각 품질 검증은 포함하지 않습니다. 설치·유료 호출·PDF 업로드는 자동 실행하지 않습니다.
+
 ## 디렉토리 구조
 
 ```
