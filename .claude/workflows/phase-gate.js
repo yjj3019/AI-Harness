@@ -306,6 +306,7 @@ function cmdRun(args) {
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   const logAbs = path.join(EVIDENCE_DIR, `phase-${phase}-test.log`);
   const fd = fs.openSync(logAbs, "w");
+  const treeBefore = treeHash();
   let result;
   try {
     result = spawnSync(cmd[0], cmd.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd] });
@@ -315,17 +316,25 @@ function cmdRun(args) {
   if (result.error) fs.appendFileSync(logAbs, `\n[phase-gate] failed to start: ${result.error.message}\n`);
   const exitCode = typeof result.status === "number" ? result.status : -1;
   const summary = inspectTestSummary(fs.readFileSync(logAbs, "utf8"), strict);
+  const treeAfter = treeHash();
+  // Both unavailable preserves legacy no-git behavior; only one unavailable must fail.
+  const treeOk = treeBefore === treeAfter;
+  const treeDiagnostic = treeBefore === null && treeAfter === null
+    ? "code tree unavailable before and after; tree not bound"
+    : !treeOk && (treeBefore === null || treeAfter === null)
+      ? "code tree unavailable before or after test; cannot compare"
+      : !treeOk ? "code changed during test" : "code tree unchanged";
   // A detected zero/all-skipped/failing summary is always FAIL. A missing summary
   // also fails for new strict invocations; older projects retain legacy behavior.
-  const status = exitCode === 0 && summary.ok !== false ? "PASS" : "FAIL";
-  fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n[phase-gate] test_summary: ${JSON.stringify(summary)}\n`);
+  const status = exitCode === 0 && summary.ok !== false && treeOk ? "PASS" : "FAIL";
+  fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n[phase-gate] test_summary: ${JSON.stringify(summary)}\n[phase-gate] tree: ${treeDiagnostic}\n`);
 
   writeEvidence(phase, "test", {
     status,
     command: cmd.join(" "),
     argv: cmd,
     exit_code: exitCode,
-    tree: treeHash(),
+    tree: treeAfter,
     require_test_summary: strict,
     test_summary: summary,
     artifacts: [artifactFor(toRel(logAbs), true)],
@@ -385,7 +394,7 @@ function validateChain(phase) {
       } else if (ev.tree !== null) {
         warnings.push("git is unavailable here, so the code tree could not be compared");
       } else {
-        warnings.push("code tree is not bound (git was unavailable when the test ran)");
+        warnings.push("code tree is not bound (the tree hash was unavailable when the test ran)");
       }
       testEv = ev;
     }
