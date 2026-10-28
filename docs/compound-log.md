@@ -58,6 +58,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Attestation took a second snapshot but did not compare it to the evidence's tree hash.
 - **Resolution/Pattern**: Require a bound test hash and equality with the final snapshot before writing. This closes that comparison gap, not concurrent mutation after the snapshot or the existing tree hash's documented exclusions and read-error limitations.
 
+### [2026-10-28] Package readiness - Validate definitions and exact hook wiring
+
+- **Issue/Risk**: Missing skills or local references escaped general lint; hook-name substring matching and non-object settings could make doctor report readiness without the required wiring.
+- **Root Cause**: Partial inventories and presence-only checks did not validate the actual definition or event/matcher/command contract.
+- **Resolution/Pattern**: Add a bounded package checker to the existing CI entry point and validate exact hook wiring plus repository-contained executable files. Test empty inventories, metadata, broken links, external symlinks, malformed settings and lookalike commands. Keep static readiness distinct from live host authorization and document the supported metadata syntax.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

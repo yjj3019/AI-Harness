@@ -6,6 +6,8 @@ This repository synthesizes a complete harness methodology for Claude Code (and 
 
 > **한글**: [README.md](./README.md)
 
+Cursor/plugins adoption: [pinned-source review, 2026-10-28](docs/cursor-plugins-review-2026-10-28.md). `node scripts/package-lint.js` checks agent/command/skill metadata and simple relative file links, also through `bash tests/run-all.sh`. `phase-gate.js doctor` checks exact hook events, matchers, commands and repository-contained executable files. These checks cover this repository's single-line metadata and hook template; they do not validate all YAML syntax or certify live host permissions.
+
 ## Why Harness Engineering?
 
 As coding agents become capable of multi-hour autonomous work, the limiting factor is no longer raw model intelligence. It is the **harness** — the scaffolding of rules, feedback loops, tools, context management, and verification that keeps the agent on track.
@@ -51,7 +53,7 @@ AI-Harness/
 │   ├── compound-log.md                 # Accumulated lessons
 │   ├── DECISIONS.md                    # Design decisions (Korean)
 │   └── SUPPLEMENTS.md                  # Gap analysis, defects, supplementary repo map (Korean)
-├── tests/                              # 93 hook assertions, 52 gate tests (bash tests/run-all.sh)
+├── tests/                              # Hook, gate and package regressions (counts in runner output)
 ├── .github/workflows/ci.yml            # Runs the checks in CI
 ├── .gitattributes                      # LF for .sh/.js, so a Windows checkout matches CI
 ├── .mcp.json.example                   # Playwright MCP example (copy to .mcp.json to enable)

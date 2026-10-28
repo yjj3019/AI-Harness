@@ -67,7 +67,7 @@ AI-Harness/
 │   ├── compound-log.md                 # 축적 교훈 로그
 │   ├── DECISIONS.md                    # 설계 결정 기록
 │   └── SUPPLEMENTS.md                  # 현황 분석, 결함, 보강 저장소 맵
-├── tests/                              # 훅 93건·게이트 52건 검증 (bash tests/run-all.sh)
+├── tests/                              # 훅·게이트·패키지 회귀 (현재 건수는 실행 출력 참조)
 ├── .github/workflows/ci.yml            # 위 검증을 CI에서 실행
 ├── .gitattributes                      # .sh·.js는 LF 고정 (Windows 체크아웃에서도 CI와 동일)
 ├── .mcp.json.example                   # Playwright MCP 예시 (활성화는 .mcp.json으로 복사)
@@ -208,6 +208,8 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 가장 빠른 시작은 이 저장소의 `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-gate.js`, `.claude/commands/phase-harness.md`를 복사한 뒤 해당 프로젝트의 Phase만 채우는 것입니다. 증거 쓰기 제한까지 쓰려면 `.claude/agents/`, `.claude/hooks/`, `.claude/settings.json`도 함께 복사합니다.
 
 ## 추가 자료
+
+- [Cursor plugins 비교·적용 분석](docs/cursor-plugins-review-2026-10-28.md) — 고정 커밋의 구조·검증·호스트 이식성과 채택/제외 이유. `node scripts/package-lint.js`는 정의·단순 상대 링크를 검사하며 `bash tests/run-all.sh`에도 포함됩니다. `phase-gate.js doctor`는 필수 훅의 정확한 이벤트·matcher·명령과 저장소 안 실행 파일을 확인합니다. 전체 YAML 문법이나 실제 호스트 권한 강제를 인증하지는 않습니다.
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서 (하네스 정의, 실패 모드, 참고 자료 포함)
 - [docs/external-patterns.md](./docs/external-patterns.md) — 외부 저장소에서 추출한 보편 패턴 (Superpowers, Anthropic cwc, Ralph, Huntley, Ponytail, Karpathy)
