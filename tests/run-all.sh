@@ -21,6 +21,7 @@ echo "== syntax =="
 node --check .claude/workflows/phase-gate.js
 node --check scripts/context-contract.js
 node --check scripts/handoff-lint.js
+node --check scripts/package-lint.js
 for h in .claude/hooks/*.sh tests/*.sh; do bash -n "$h"; done
 jq empty .claude/settings.json
 echo "ok"
@@ -30,6 +31,7 @@ node scripts/handoff-lint.js
 
 echo "== frontmatter =="
 bash tests/agents-lint.sh
+node scripts/package-lint.js
 
 echo "== hooks =="
 bash tests/hooks.test.sh
