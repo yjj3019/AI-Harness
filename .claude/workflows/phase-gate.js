@@ -482,24 +482,36 @@ function cmdDoctor() {
   let st = null;
   try {
     st = JSON.parse(fs.readFileSync(settingsFile, "utf8"));
+    if (!st || typeof st !== "object" || Array.isArray(st)) throw new Error("settings must be an object");
   } catch {
-    bad(".claude/settings.json is missing or not valid JSON; no guard is registered");
+    st = null;
+    bad(".claude/settings.json is missing or not a valid JSON object; no guard is registered");
   }
   if (st) {
-    const cmds = Object.values(st.hooks || {}).flatMap((groups) => groups.flatMap((g) => (g.hooks || []).map((h) => h.command || "")));
-    for (const want of ["evidence-guard.sh", "block-destructive.sh", "read-tracker.sh"]) {
-      const c = cmds.find((x) => x.includes(want));
-      if (!c) {
+    const required = [
+      ["PreToolUse", "Write|Edit|MultiEdit|NotebookEdit|Bash", "evidence-guard.sh", " auto"],
+      ["PreToolUse", "Bash", "block-destructive.sh", ""],
+      ["PostToolUse", "Read", "read-tracker.sh", ""],
+    ];
+    for (const [event, matcher, want, args] of required) {
+      const groups = st.hooks && st.hooks[event];
+      const command = '"${CLAUDE_PROJECT_DIR}/.claude/hooks/' + want + '"' + args;
+      const registered = Array.isArray(groups) && groups.some(g => g && g.matcher === matcher &&
+        Array.isArray(g.hooks) && g.hooks.some(h => h && h.type === "command" && h.command === command));
+      if (!registered) {
         bad(`${want} is not registered in .claude/settings.json`);
-        continue;
+        bad(`${want}: expected ${event} matcher ${matcher} and exact command ${command}; path must be quoted`);
+      } else {
+        ok(`${want} registered`);
       }
-      if (!c.startsWith('"${CLAUDE_PROJECT_DIR}/')) bad(`${want}: the command path must be quoted, or a project path with a space disables the hook`);
-      else ok(`${want} registered`);
       const f = path.join(ROOT, ".claude", "hooks", want);
       try {
+        const relative = path.relative(fs.realpathSync(ROOT), fs.realpathSync(f));
+        if (relative === ".." || relative.startsWith(".." + path.sep) || path.isAbsolute(relative) || !fs.statSync(f).isFile())
+          throw new Error("not a repository file");
         fs.accessSync(f, fs.constants.X_OK);
       } catch {
-        bad(`${toRel(f)} is missing or not executable`);
+        bad(`${toRel(f)} is missing or not executable, or not a repository file`);
       }
     }
   }
