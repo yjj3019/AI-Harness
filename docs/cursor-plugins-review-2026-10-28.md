@@ -43,7 +43,7 @@ AI-Harness의 [phase-gate.js](../.claude/workflows/phase-gate.js)는 모델 호�
 
 **Major: 정의·참조 누락.** 기존 tests/agents-lint.sh는 agent/command만 검사하고 빈 glob을 실패시키지 않는다. skill과 사라진 파일 링크는 일반 검사에서 빠졌다. [package-lint.js](../scripts/package-lint.js)를 [run-all.sh](../tests/run-all.sh)에 추가하고 기존 Bash 안전 검사는 유지했다.
 
-- agent/command/skill inventory가 비면 실패. 필수5개 역할과 phase 명령 누락도 실패.
+- agent/command/skill inventory가 비면 실패. 필수 5개 역할과 phase 명령 누락도 실패.
 - 닫힌 frontmatter, 본문·description 필요. agent/skill의 name은 파일/디렉터리와 일치. command name은 기존처럼 선택.
 - 필수 키 중복·빈 인용 값·지원하지 않는 블록 값을 거부.
 - 단순 inline 상대 링크는 저장소 안 일반 파일이어야 함. realpath로 외부 탈출·symlink 거부.
@@ -60,7 +60,7 @@ AI-Harness의 [phase-gate.js](../.claude/workflows/phase-gate.js)는 모델 호�
 ## 제외·유보한 이식
 
 - marketplace·대규모 adapter·Cursor 모델 slug/Task API/Bun hook: 현재 수요와 호스트 호환성·데이터 접근 계약이 없음.
-- PR마다10개 live lane·perf 요구: 비용과 적합성이 작업마다 다르므로 실제 UI/성능 수용 기준이 있는 Phase에서만 선택.
+- PR마다 10개 live lane·perf 요구: 비용과 적합성이 작업마다 다르므로 실제 UI/성능 수용 기준이 있는 Phase에서만 선택.
 - 자동 Stop 메모리·commit: 민감 정보나 무관한 수정의 지속 저장 위험. 기존 검증된 compound 절차 유지.
 - upstream CI 복제: 명시적 permissions가 없고 npm 의존성이 전부 고정돼 있지 않음. 기존 contents: read와 action SHA pin 유지.
 - upstream validator 코드 복사: source containment와 Claude manifest 전체 schema 검사에 공백. 원칙만 독립 구현, upstream 코드 vendoring 없음.
@@ -78,6 +78,8 @@ bash tests/run-all.sh
 python -m unittest discover -s tests/toolbroker -p 'test_*.py' -v
 ~~~
 
-실제 실행 결과와 미검증 범위는 PR·HANDOFF에 기록한다. 패키지 정합성은 모델의 의미 이해·live 안전성 인증이 아니다. 실제 호스트 권한·운영 API/DB·실모델 평가는 여전히 미검증이다.
+소스 head ea6a1c2의 [PR CI](https://github.com/yjj3019/AI-Harness/actions/runs/40619910988)는 8개 작업 모두 성공했다. Linux Node24와 Windows 전체 검사 로그는 각각 177/177 통과·skip 0과 ALL CHECKS PASSED를 기록했다. 로컬 Windows Node24 추가 회귀는 41/41, Python3.14 ToolBroker는 24/24 통과했다. 중단된 초기 로컬 묶음 실행과 CI로 대체한 로컬 전체 실행은 성공 건수에 포함하지 않는다. 최종 문서 커밋은 별도 CI 대상이며 PR에서 확인한다.
+
+패키지 정합성은 모델의 의미 이해·live 안전성 인증이 아니다. 실제 호스트 권한·운영 API/DB·실모델 평가는 여전히 미검증이다.
 
 후속 후보는 agent tools 전체 schema/allowlist 검사, 복잡한 링크 parser, 다중 호스트 adapter와 live 평가다. 기존 Bash 도구 목록 검사는 모든 YAML 들여쓰기 변형을 해석하지 못하므로 권한 경계로 취급하지 않는다. 이번에는 runtime 증거 형식·attestation·도구 권한 정책을 변경하지 않았다.
