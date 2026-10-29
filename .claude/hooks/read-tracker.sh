@@ -64,8 +64,18 @@ case "$real" in
 esac
 [ -f "$real" ] || exit 0
 
-sha=$(sha256sum "$real" | cut -d' ' -f1)
 rel=${real#"$root"/}
-jq -nc --arg p "$rel" --arg s "$sha" --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  '{path:$p, sha256:$s, at:$t, agent_type:"verify"}' >>"$dir/.reads.jsonl" 2>/dev/null || true
+# Only gate-produced test log names map unambiguously to a phase epoch.
+case "$rel" in
+  .phase-evidence/phase-*-test.log) phase=${rel#.phase-evidence/phase-}; phase=${phase%-test.log} ;;
+  *) exit 0 ;;
+esac
+case "$phase" in ''|*[!A-Za-z0-9._-]*) exit 0 ;; esac
+token_file="$dir/phase-$phase-read-token"
+token=$(cat "$token_file" 2>/dev/null) || exit 0
+[[ $token =~ ^[a-f0-9]{64}$ ]] || exit 0
+sha=$(sha256sum "$real" | cut -d' ' -f1)
+[ "$(cat "$token_file" 2>/dev/null)" = "$token" ] || exit 0
+jq -nc --arg p "$rel" --arg s "$sha" --arg phase "$phase" --arg token "$token" --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{path:$p, sha256:$s, phase:$phase, token:$token, at:$t, agent_type:"verify"}' >>"$dir/.reads.jsonl" 2>/dev/null || true
 exit 0
