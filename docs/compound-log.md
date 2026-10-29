@@ -82,6 +82,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: The same catch path handled missing paths and all filesystem read failures.
 - **Resolution/Pattern**: Abort on filesystem inspection/read errors except missing initial lstat, preserving the historical tracked-deletion behavior. Successful hashes retain their format, so legacy evidence cannot establish historical snapshot completeness; rerun and re-attest when that matters. Git enumeration failures, absent paths and snapshot races remain limitations, not isolation guarantees.
 
+### [2026-10-30] Test summaries - Recognize standalone expected outcomes
+
+- **Issue/Risk**: An xfailed-only or xpassed-only pytest block could be ignored when another block passed, masking an all-skipped or unexpected-pass result.
+- **Root Cause**: The pytest block detector omitted outcomes the later counter parser already understood.
+- **Resolution/Pattern**: Recognize standalone xfailed and xpassed summaries, pytest long-duration suffixes and decorated zero-test lines; test those forms in both output orders. Quiet pytest summaries without separators and deselected-only summaries remain unrecognized; output parsing is an untrusted, bounded heuristic rather than proof of test quality.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

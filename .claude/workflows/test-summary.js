@@ -36,7 +36,7 @@ function inspectTestSummary(output, required = false) {
     }
     // A summary must not borrow counters across another runner's output or intervening logs.
     if (line.trim()) finish();
-    const py = /^\s*=+\s+([^\r\n]*\b(?:passed|failed|skipped|errors?)\b[^\r\n]*?)\s+in\s+[\d.]+s\s*=+\s*$/.exec(line);
+    const py = /^\s*=+\s+([^\r\n]*\b(?:passed|failed|skipped|errors?|xfailed|xpassed)\b[^\r\n]*?)\s+in\s+\d+(?:\.\d+)?s(?:\s+\((?:\d+ days?, )?\d+:\d{2}:\d{2}\))?\s*=+\s*$/.exec(line);
     if (py) {
       const counts = { passed: 0, failed: 0, skipped: 0, errors: 0 }, seen = new Set();
       let invalid = false;
@@ -67,7 +67,7 @@ function inspectTestSummary(output, required = false) {
   }
   finish();
   // Even an explicit zero-test message alongside a valid summary must fail closed.
-  if (/(?:^|\n)\s*(?:no tests ran|0 tests?\s+(?:passed|executed|run)|0 passing)\b/i.test(text)) {
+  if (/(?:^|\n)[ \t]*(?:=+[ \t]+)?(?:no tests ran|0 tests?\s+(?:passed|executed|run)|0 passing)\b/i.test(text)) {
     return { ok: false, reason: "test output states zero tests" };
   }
   const rejected = summaries.find(summary => !summary.ok);
