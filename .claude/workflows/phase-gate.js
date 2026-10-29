@@ -36,6 +36,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 const { inspectTestSummary } = require("./test-summary.js");
@@ -643,18 +644,42 @@ function cmdVerifyAttestation(args) {
   if (now && typeof now === "object") bad(`cannot snapshot code tree: ${now.error}`);
   if (now === null) bad("git is unavailable, so the code tree cannot be compared");
   if (now !== att.tree) bad("code changed after the attestation. Run the phase again and re-attest");
-  const opts = strictReplay
-    ? { cwd: ROOT, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }
-    : { cwd: ROOT, stdio: "inherit" };
-  const r = spawnSync(att.argv[0], att.argv.slice(1), opts);
+  let r, output;
   if (strictReplay) {
-    if (r.stdout) process.stdout.write(r.stdout);
-    if (r.stderr) process.stderr.write(r.stderr);
+    let dir, fd;
+    try {
+      // Keep replay output outside this worktree, including when TMPDIR points inside it.
+      const repo = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: ROOT, encoding: "utf8" });
+      if (repo.error || repo.status !== 0) throw new Error("cannot locate repository root");
+      const repoRoot = fs.realpathSync(repo.stdout.replace(/\r?\n$/, ""));
+      const tempRoot = fs.realpathSync(os.tmpdir());
+      const rel = path.relative(repoRoot, tempRoot);
+      if (!rel || (rel !== ".." && !rel.startsWith(".." + path.sep) && !path.isAbsolute(rel))) {
+        throw new Error("temporary directory is inside the repository");
+      }
+      dir = fs.mkdtempSync(path.join(tempRoot, "phase-gate-replay-"));
+      fd = fs.openSync(path.join(dir, "output.log"), "wx", 0o600);
+      r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd] });
+      fs.closeSync(fd);
+      fd = undefined;
+      if (r.error) throw new Error(`test command failed to start: ${r.error.message}`);
+      // Like run, this uses unbounded disk space and reads the complete output into memory.
+      output = fs.readFileSync(path.join(dir, "output.log"), "utf8");
+    } catch (err) {
+      r = { error: err };
+    } finally {
+      try { if (fd !== undefined) fs.closeSync(fd); } catch (err) { r = { error: err }; }
+      try { if (dir) fs.rmSync(dir, { recursive: true, force: true }); } catch (err) { r = { error: err }; }
+    }
+    if (r.error) bad(`replay output or start error: ${r.error.message}`);
+    process.stdout.write(output);
+  } else {
+    r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: "inherit" });
   }
   if (r.error) bad(`test command failed to start: ${r.error.message}`);
   if (r.status !== 0) bad(`test command exited with ${r.status}`);
   if (strictReplay) {
-    const summary = inspectTestSummary(String(r.stdout || "") + "\n" + String(r.stderr || ""), true);
+    const summary = inspectTestSummary(output, true);
     if (!summary.ok) bad(`strict test summary invalid: ${summary.reason}`);
   }
   // A passing test may itself rewrite source. Verify the binding again after replay, not
