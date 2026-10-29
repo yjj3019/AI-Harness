@@ -261,25 +261,75 @@ class BrokerTests(unittest.TestCase):
             thread.join(timeout=2)
 
     def test_timeout_after_provider_write_is_unknown_and_never_auto_retried(self):
-        Provider.mode, Provider.writes = "ack-lost", {}
-        server = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
+        import http.client
+        import socket
+
+        applied = threading.Event()
+        release = threading.Event()
+        finished = threading.Event()
+        timed_out = threading.Event()
+
+        class HeldResponseProvider(Provider):
+            mode, writes, calls = "normal", {}, 0
+
+            def send_response(self, *args, **kwargs):
+                # Provider.do_POST has already recorded the write at this point.
+                applied.set()
+                if not release.wait(5):
+                    return
+                super().send_response(*args, **kwargs)
+
+            def do_POST(self):
+                try:
+                    super().do_POST()
+                finally:
+                    finished.set()
+
+        # unittest runs these fixtures sequentially; this temporary class patch is
+        # process-wide and must not overlap other HTTP tests in the same process.
+        original_getresponse = http.client.HTTPConnection.getresponse
+
+        def observe_getresponse(connection, *args, **kwargs):
+            if not applied.wait(5):
+                raise AssertionError("provider did not apply write")
+            try:
+                return original_getresponse(connection, *args, **kwargs)
+            except socket.timeout:
+                timed_out.set()
+                raise
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), HeldResponseProvider)
         server.daemon_threads = True
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
             target = "http://127.0.0.1:" + str(server.server_address[1]) + "/write"
-            b = self.broker(["fixture.http.post"], url=target, timeout=0.05)
-            with self.assertRaises(BrokerError) as error:
-                self.send(b, op="fixture.http.post", payload={"value": "uncertain"})
+            b = self.broker(["fixture.http.post"], url=target, timeout=0.2)
+            payload = {"value": "uncertain"}
+            token = approval("fixture.http.post", "request_0001", payload)
+            with patch.object(http.client.HTTPConnection, "getresponse", observe_getresponse):
+                with self.assertRaises(BrokerError) as error:
+                    self.send(b, op="fixture.http.post", payload=payload, token=token)
+            self.assertTrue(applied.is_set())
+            self.assertTrue(timed_out.is_set(), "expected a real socket response timeout")
             self.assertEqual(error.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
             self.assertEqual(b.get_state("request_0001"), "UNKNOWN")
-            with self.assertRaises(BrokerError):
-                self.send(b, op="fixture.http.post", payload={"value": "uncertain"})
-            self.assertEqual(Provider.writes, {"request_0001": "uncertain"})
+            reopened = self.broker(["fixture.http.post"], url=target)
+            self.assertEqual(reopened.get_state("request_0001"), "UNKNOWN")
+            with patch.object(reopened, "_send_http", wraps=reopened._send_http) as resend:
+                with self.assertRaises(BrokerError) as retry:
+                    self.send(reopened, op="fixture.http.post", payload=payload, token=token)
+                resend.assert_not_called()
+            self.assertEqual(retry.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
+            self.assertEqual(HeldResponseProvider.calls, 1)
+            self.assertEqual(HeldResponseProvider.writes, {"request_0001": "uncertain"})
         finally:
+            release.set()
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+            if applied.is_set():
+                self.assertTrue(finished.wait(2), "provider handler did not finish")
 
     def test_uncertain_provider_responses_are_durable_unknown_without_resend(self):
         for mode in ("truncated-chunk", "truncated-length", "NaN", "Infinity", "-Infinity", "1e400"):
