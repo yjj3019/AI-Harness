@@ -70,6 +70,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Partial inventories and presence-only checks did not validate the actual definition or event/matcher/command contract.
 - **Resolution/Pattern**: Add a bounded package checker to the existing CI entry point and validate exact hook wiring plus repository-contained executable files. Test empty inventories, metadata, broken links, external symlinks, malformed settings and lookalike commands. Keep static readiness distinct from live host authorization and document the supported metadata syntax.
 
+### [2026-10-30] Fixture timeout - Synchronize on the effect, not sleep durations
+
+- **Issue/Risk**: A short client timeout could fire before the loopback provider applied its write, making the post-effect timeout test intermittent or ambiguous.
+- **Root Cause**: Wall-clock sleeps did not establish ordering, and deduplicated fixture state could conceal a repeated call.
+- **Resolution/Pattern**: Use bounded events to hold the response after the fixture effect, observe the actual socket timeout, reopen the ledger and assert the precise retry error and provider call count. This is fixture evidence, not a live-provider guarantee.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
