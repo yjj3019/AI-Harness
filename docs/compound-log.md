@@ -106,6 +106,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Fixture state was checked without call count and rollback tests did not enter the broker's execution path.
 - **Resolution/Pattern**: Count loopback requests and inject a fault immediately after the broker counter update; reopen and verify both ledger and counter rolled back before retry and replay. Close inspection connections explicitly (SQLite connection context managers do not close them); this tests fixture exception handling, not crash-at-commit or live-provider exactly-once behavior.
 
+### [2026-10-30] Replay output - Preserve observed stream order
+
+- **Issue/Risk**: Strict replay could accept an incomplete interleaved summary after concatenating stdout and stderr, or reject a valid large output at the capture buffer limit.
+- **Root Cause**: Replay used separate bounded pipes while the original run wrote both streams to one file descriptor.
+- **Resolution/Pattern**: Capture both streams to a temporary file for strict replay and inspect the merged bytes. Snapshot and summary heuristics remain non-isolating; disk and full-output memory use are unbounded, and abrupt termination can leave temporary data.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

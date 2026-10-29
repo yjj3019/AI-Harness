@@ -160,7 +160,7 @@ When read tracking is armed, a fresh phase-specific generation rejects read sign
 
 ### Test summary limits
 
-Test counts are inferred from selected TAP, Node spec and pytest output formats, including supported quiet summaries; the text is not authenticated and can be printed by unrelated commands. Silent runs (for example very quiet pytest), collection-only output and unsupported summary formats can be hidden alongside a recognized passing block. Strict summary mode alone does not prove every command ran meaningful tests. Use controlled runner-level evidence for stronger assurance.
+Test counts are inferred from selected TAP, Node spec and pytest output formats, including supported quiet summaries; the text is not authenticated and can be printed by unrelated commands. Silent runs (for example very quiet pytest), collection-only output and unsupported summary formats can be hidden alongside a recognized passing block. Strict summary mode alone does not prove every command ran meaningful tests. Strict attestation replay captures stdout and stderr into one temporary file, like the original run, then reads the entire output into memory; disk and memory use are not bounded, and abrupt termination can leave temporary output; Windows temporary-file confidentiality depends on inherited directory ACLs. Observed writes to a shared descriptor do not ensure deterministic ordering across processes or protect inherited descriptors. Use controlled runner-level evidence and resource limits for stronger assurance.
 
 ### Test tree comparison limits
 
