@@ -76,6 +76,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Wall-clock sleeps did not establish ordering, and deduplicated fixture state could conceal a repeated call.
 - **Resolution/Pattern**: Use bounded events to hold the response after the fixture effect, observe the actual socket timeout, reopen the ledger and assert the precise retry error and provider call count. This is fixture evidence, not a live-provider guarantee.
 
+### [2026-10-30] Tree snapshots - Do not equate read errors with deletion
+
+- **Issue/Risk**: Silently skipping an unreadable file could produce a partial tree hash and hide persistent source changes.
+- **Root Cause**: The same catch path handled missing paths and all filesystem read failures.
+- **Resolution/Pattern**: Abort on filesystem inspection/read errors except missing initial lstat, preserving the historical tracked-deletion behavior. Successful hashes retain their format, so legacy evidence cannot establish historical snapshot completeness; rerun and re-attest when that matters. Git enumeration failures, absent paths and snapshot races remain limitations, not isolation guarantees.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
