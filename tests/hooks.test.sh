@@ -160,6 +160,7 @@ RT=".claude/hooks/read-tracker.sh"
 tmp=$(mktemp -d)
 mkdir -p "$tmp/.phase-evidence" "$tmp/src"
 echo log >"$tmp/.phase-evidence/phase-1-test.log"
+printf '%064d\n' 1 >"$tmp/.phase-evidence/phase-1-read-token"
 echo code >"$tmp/src/a.js"
 rt() { # rt <agent_type-or-empty> <file>
   jq -n --arg a "$1" --arg f "$2" '{tool_name:"Read", tool_input:{file_path:$f}} + (if $a == "" then {} else {agent_id:"x1", agent_type:$a} end)' \
@@ -175,7 +176,7 @@ n=$(wc -l <"$tmp/.phase-evidence/.reads.jsonl" | tr -d "[:space:]")
 want=$(sha256sum "$tmp/.phase-evidence/phase-1-test.log" | cut -d' ' -f1)
 total=$((total + 2))
 [ "$n" = 2 ] || { fails=$((fails + 1)); echo "FAIL read-tracker: want 2 records (verify, evidence only), got $n"; }
-jq -e --arg s "$want" -s 'all(.[]; .path == ".phase-evidence/phase-1-test.log" and .sha256 == $s)' "$tmp/.phase-evidence/.reads.jsonl" >/dev/null \
+jq -e --arg s "$want" -s 'all(.[]; .path == ".phase-evidence/phase-1-test.log" and .sha256 == $s and .phase == "1" and (.token | test("^[a-f0-9]{64}$")))' "$tmp/.phase-evidence/.reads.jsonl" >/dev/null \
   || { fails=$((fails + 1)); echo "FAIL read-tracker: record path or sha256 wrong"; }
 rm -rf "$tmp"
 

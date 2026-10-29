@@ -239,9 +239,22 @@ function readTrackingArmed() {
   }
 }
 
+function readTokenFile(phase) {
+  return path.join(EVIDENCE_DIR, `phase-${phase}-read-token`);
+}
+
+// Epochs distinguish identical logs across test runs and verify attempts. This is
+// an operational guardrail, not protection from evidence tampering or concurrent runs.
+function rotateReadToken(phase) {
+  fs.writeFileSync(readTokenFile(phase), crypto.randomBytes(32).toString("hex") + "\n");
+}
+
 function requireEvidenceRead(phase) {
   if (!readTrackingArmed()) return;
   const t = loadEvidence(phase, "test");
+  let token;
+  try { token = fs.readFileSync(readTokenFile(phase), "utf8").trim(); } catch { token = ""; }
+  if (!/^[a-f0-9]{64}$/.test(token)) die(2, "ERROR: missing read epoch; run the test again");
   const wanted = (t.ev && Array.isArray(t.ev.artifacts) ? t.ev.artifacts : []).map((a) => ({ path: a.path, sha256: a.sha256 }));
   let reads = [];
   try {
@@ -253,8 +266,9 @@ function requireEvidenceRead(phase) {
   } catch {
     // no log, or a damaged line: treated as no proof
   }
-  const missing = wanted.filter((w) => !reads.some((r) => r && r.path === w.path && r.sha256 === w.sha256));
+  const missing = wanted.filter((w) => !reads.some((r) => r && r.phase === phase && r.token === token && r.agent_type === "verify" && r.path === w.path && r.sha256 === w.sha256));
   if (wanted.length === 0 || missing.length > 0) {
+    rotateReadToken(phase);
     die(
       2,
       "ERROR: verify PASS needs proof that the verify agent opened the test artifacts" +
@@ -278,6 +292,8 @@ function cmdRecord(args) {
   const artifacts = opts.report ? [artifactFor(opts.report, false)] : [];
   const prev = prevLink(phase, step);
   if (step === "verify" && status === "PASS") requireEvidenceRead(phase);
+  // Consume the current signal before publishing a verdict; a failed write requires a new read.
+  if (step === "verify") rotateReadToken(phase);
   writeEvidence(phase, step, { status, artifacts, prev });
   console.log(`Recorded phase ${phase} ${step}: ${status}`);
 }
@@ -291,6 +307,13 @@ function cmdRun(args) {
   if ((head.length !== 2 && !strict) || head[1] !== "test") usage();
   const phase = head[0];
   requirePhase(phase);
+  // Even a rejected rerun invalidates prior test and verify evidence.
+  fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
+  rotateReadToken(phase);
+  for (const step of STEPS.slice(1)) {
+    const f = evidenceFile(phase, step);
+    if (fs.existsSync(f)) fs.unlinkSync(f);
+  }
   const context = verifyPhaseContext(ROOT, phase);
   if (!context.ok) die(2, "ERROR: required context contract: " + context.reason);
   const prev = prevLink(phase, "test");
@@ -329,6 +352,8 @@ function cmdRun(args) {
   const status = exitCode === 0 && summary.ok !== false && treeOk ? "PASS" : "FAIL";
   fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n[phase-gate] test_summary: ${JSON.stringify(summary)}\n[phase-gate] tree: ${treeDiagnostic}\n`);
 
+  // Reads made while the test command was running do not count.
+  rotateReadToken(phase);
   writeEvidence(phase, "test", {
     status,
     command: cmd.join(" "),

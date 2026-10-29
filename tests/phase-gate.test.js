@@ -320,7 +320,8 @@ function arm(root) {
 
 function logRead(root, rel, sha) {
   const real = sha || crypto.createHash("sha256").update(fs.readFileSync(path.join(root, rel))).digest("hex");
-  fs.appendFileSync(path.join(root, ".phase-evidence", ".reads.jsonl"), JSON.stringify({ path: rel, sha256: real, agent_type: "verify" }) + "\n");
+  const token = fs.readFileSync(path.join(root, ".phase-evidence", "phase-1-read-token"), "utf8").trim();
+  fs.appendFileSync(path.join(root, ".phase-evidence", ".reads.jsonl"), JSON.stringify({ path: rel, sha256: real, phase: "1", token, agent_type: "verify" }) + "\n");
 }
 
 function verifyPass(root) {
@@ -347,6 +348,44 @@ test("verify PASS is accepted after the test log was read; a stale hash or other
     assert.equal(verifyPass(root).status, 2);
     logRead(root, ".phase-evidence/phase-1-test.log");
     assert.equal(verifyPass(root).status, 0);
+  }));
+
+test("actual read hook binds identical reruns, phases, and failed verify attempts", () =>
+  withRoot((root) => {
+    arm(root);
+    const bash = process.env.HARNESS_BASH || "bash";
+    const hook = path.resolve(__dirname, "../.claude/hooks/read-tracker.sh");
+    const read = (phase, agent = "verify") => {
+      const input = JSON.stringify({ tool_name: "Read", agent_type: agent, tool_input: { file_path: path.join(root, `.phase-evidence/phase-${phase}-test.log`) } });
+      const r = spawnSync(bash, [hook], { input, env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: "utf8" });
+      assert.equal(r.status, 0, r.stderr);
+    };
+    for (const phase of ["1", "2"]) {
+      recordPass(root, phase, "coding");
+      assert.equal(runTest(root, phase).status, 0);
+    }
+    read("2");
+    assert.equal(verifyPass(root).status, 2);
+    read("1", "coding");
+    assert.equal(verifyPass(root).status, 2);
+    read("1");
+    assert.equal(verifyPass(root).status, 0);
+    const log = fs.readFileSync(path.join(root, ".phase-evidence/phase-1-test.log"));
+    assert.equal(runTest(root, "1").status, 0);
+    assert.deepEqual(fs.readFileSync(path.join(root, ".phase-evidence/phase-1-test.log")), log);
+    assert.equal(verifyPass(root).status, 2);
+    read("1");
+    assert.equal(gate(root, "record", "1", "verify", "--status", "FAIL").status, 0);
+    assert.equal(verifyPass(root).status, 2);
+    read("1");
+    assert.equal(verifyPass(root).status, 0);
+    assert.equal(runTest(root, "1", 3).status, 2);
+    assert.equal(runTest(root, "1").status, 0);
+    assert.equal(verifyPass(root).status, 2);
+    const reads = path.join(root, ".phase-evidence/.reads.jsonl");
+    fs.appendFileSync(reads, "not json\n");
+    read("1");
+    assert.equal(verifyPass(root).status, 2);
   }));
 
 test("a verify FAIL record needs no read proof, and unarmed projects are not blocked", () => {

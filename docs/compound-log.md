@@ -58,6 +58,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Attestation took a second snapshot but did not compare it to the evidence's tree hash.
 - **Resolution/Pattern**: Require a bound test hash and equality with the final snapshot before writing. This closes that comparison gap, not concurrent mutation after the snapshot or the existing tree hash's documented exclusions and read-error limitations.
 
+### [2026-10-30] Verify reads - Limit reuse of previously logged signals
+
+- **Issue/Risk**: Identical test-log bytes allowed an older verifier read record to satisfy a later test run.
+- **Root Cause**: Read records were matched by path and hash without a phase-specific generation.
+- **Resolution/Pattern**: Scope recorded read signals to a fresh generation to reject previously recorded signals in sequential use. A delayed post-read hook can still attribute an older read to the new generation; concurrent operations are not isolated. Treat the hook as a guardrail, not proof of full-file review, comprehension or isolation. A simulated hook event in a disposable fixture reproduced the stale-read case; it did not validate live agent integration.
+
 ### [2026-10-28] Package readiness - Validate definitions and exact hook wiring
 
 - **Issue/Risk**: Missing skills or local references escaped general lint; hook-name substring matching and non-object settings could make doctor report readiness without the required wiring.
