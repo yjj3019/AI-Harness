@@ -100,6 +100,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: The legacy unbound fallback also applied to previously bound evidence.
 - **Resolution/Pattern**: Require comparison when evidence contains a tree hash; retain explicit warnings for unbound null or absent tree fields and reject other invalid types. This does not resolve dual Git enumeration failures at the original run or provide isolation or writer authentication.
 
+### [2026-10-30] Broker fixture - Verify transaction and actual resend boundaries
+
+- **Issue/Risk**: Provider-side deduplication could hide a second HTTP call, while raw SQLite rollback did not exercise the broker request ledger and counter transaction together.
+- **Root Cause**: Fixture state was checked without call count and rollback tests did not enter the broker's execution path.
+- **Resolution/Pattern**: Count loopback requests and inject a fault immediately after the broker counter update; reopen and verify both ledger and counter rolled back before retry and replay. Close inspection connections explicitly (SQLite connection context managers do not close them); this tests fixture exception handling, not crash-at-commit or live-provider exactly-once behavior.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
