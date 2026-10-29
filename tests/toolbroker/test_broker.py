@@ -186,6 +186,48 @@ class BrokerTests(unittest.TestCase):
             con.close()
         self.assertEqual(b.get_counter(), 0)
 
+    def test_broker_counter_update_fault_rolls_back_and_retry_applies_once(self):
+        b = self.broker(["fixture.db.increment"])
+        payload = {"amount": 7}
+        token = approval("fixture.db.increment", "request_0001", payload)
+        original_connect = sqlite3.connect
+        observed = []
+
+        class FaultAfterCounterUpdate(sqlite3.Connection):
+            def execute(self, sql, parameters=()):
+                cursor = super().execute(sql, parameters)
+                if sql.startswith("UPDATE counters SET value=value+"):
+                    observed.append((self.in_transaction,
+                                     super().execute("SELECT value FROM counters WHERE resource='fixture'").fetchone()[0],
+                                     super().execute("SELECT state FROM requests WHERE request_id=?",
+                                                     ("request_0001",)).fetchone()[0]))
+                    raise sqlite3.OperationalError("injected after counter update")
+                return cursor
+
+        def faulting_connect(*args, **kwargs):
+            return original_connect(*args, factory=FaultAfterCounterUpdate, **kwargs)
+
+        with patch("toolbroker.broker.sqlite3.connect", side_effect=faulting_connect):
+            with self.assertRaisesRegex(sqlite3.OperationalError, "injected after counter update"):
+                self.send(b, payload=payload, token=token)
+        self.assertEqual(observed, [(True, 7, "IN_FLIGHT")])
+        reopened = self.broker(["fixture.db.increment"])
+        self.assertEqual(reopened.get_counter(), 0)
+        self.assertIsNone(reopened.get_state("request_0001"))
+        db = sqlite3.connect(self.db)
+        try:
+            self.assertIsNone(db.execute("SELECT value FROM counters WHERE resource='fixture'").fetchone())
+        finally:
+            db.close()
+        first = self.send(reopened, payload=payload, token=token)
+        replay = self.send(reopened, payload=payload, token=token)
+        self.assertFalse(first["replay"])
+        self.assertTrue(replay["replay"])
+        self.assertEqual(first["result"], {"counter": 7})
+        self.assertEqual(replay["result"], first["result"])
+        self.assertEqual(reopened.get_counter(), 7)
+        self.assertEqual(reopened.get_state("request_0001"), "COMPLETED")
+
     def test_actual_worker_termination_rolls_back_partial_transaction(self):
         b = self.broker(["fixture.db.increment"])
         marker = Path(self.tmp.name) / "transaction-open"
@@ -242,7 +284,7 @@ class BrokerTests(unittest.TestCase):
             thread.join(timeout=2)
 
     def test_fixed_loopback_http_post_is_replayed_locally_not_sent_twice(self):
-        Provider.mode, Provider.writes = "normal", {}
+        Provider.mode, Provider.writes, Provider.calls = "normal", {}, 0
         server = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
         server.daemon_threads = True
         thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -251,9 +293,13 @@ class BrokerTests(unittest.TestCase):
             target = "http://127.0.0.1:" + str(server.server_address[1]) + "/write"
             b = self.broker(["fixture.http.post"], url=target)
             first = self.send(b, op="fixture.http.post", payload={"value": "once"})
-            again = self.send(b, op="fixture.http.post", payload={"value": "once"})
+            with patch.object(b, "_send_http", wraps=b._send_http) as resend:
+                again = self.send(b, op="fixture.http.post", payload={"value": "once"})
+                resend.assert_not_called()
             self.assertFalse(first["replay"])
             self.assertTrue(again["replay"])
+            self.assertEqual(first["result"], again["result"])
+            self.assertEqual(Provider.calls, 1)
             self.assertEqual(Provider.writes, {"request_0001": "once"})
         finally:
             server.shutdown()
