@@ -86,7 +86,13 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 
 - **Issue/Risk**: An xfailed-only or xpassed-only pytest block could be ignored when another block passed, masking an all-skipped or unexpected-pass result.
 - **Root Cause**: The pytest block detector omitted outcomes the later counter parser already understood.
-- **Resolution/Pattern**: Recognize standalone xfailed and xpassed summaries, pytest long-duration suffixes and decorated zero-test lines; test those forms in both output orders. Quiet pytest summaries without separators and deselected-only summaries remain unrecognized; output parsing is an untrusted, bounded heuristic rather than proof of test quality.
+- **Resolution/Pattern**: Recognize standalone xfailed and xpassed summaries, pytest long-duration suffixes and decorated zero-test lines; test those forms in both output orders. Output parsing is an untrusted, bounded heuristic rather than proof of test quality; see the later quiet-output entry.
+
+### [2026-10-30] Test summaries - Quiet output and deselection
+
+- **Issue/Risk**: A quiet pytest summary or deselection-only result could be ignored beside a passing block, while mixed passes and deselections were rejected.
+- **Root Cause**: The detector required separator lines and lacked a deselection policy.
+- **Resolution/Pattern**: Inspect anchored quiet summaries and treat deselection as a validated diagnostic rather than an executed test. Summary text is forgeable, collect-only output is not execution evidence, and a silent run after a passing block remains invisible; use trusted runner-level evidence when completeness matters.
 
 ## Template for New Entries
 

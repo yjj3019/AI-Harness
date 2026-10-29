@@ -36,13 +36,14 @@ function inspectTestSummary(output, required = false) {
     }
     // A summary must not borrow counters across another runner's output or intervening logs.
     if (line.trim()) finish();
-    const py = /^\s*=+\s+([^\r\n]*\b(?:passed|failed|skipped|errors?|xfailed|xpassed)\b[^\r\n]*?)\s+in\s+\d+(?:\.\d+)?s(?:\s+\((?:\d+ days?, )?\d+:\d{2}:\d{2}\))?\s*=+\s*$/.exec(line);
+    const py = /^\s*=+\s+([^\r\n]*\b(?:passed|failed|skipped|errors?|xfailed|xpassed|deselected|warnings?)\b[^\r\n]*?)\s+in\s+\d+(?:\.\d+)?s(?:\s+\((?:\d+ days?, )?\d+:\d{2}:\d{2}\))?\s*=+\s*$/.exec(line)
+      || /^\s*(\d+\s+(?:passed|failed|skipped|errors?|xfailed|xpassed|deselected|warnings?)\b[^\r\n]*?)\s+in\s+\d+(?:\.\d+)?s(?:\s+\((?:\d+ days?, )?\d+:\d{2}:\d{2}\))?\s*$/.exec(line);
     if (py) {
       const counts = { passed: 0, failed: 0, skipped: 0, errors: 0 }, seen = new Set();
       let invalid = false;
       for (const token of py[1].split(",")) {
-        // Warnings are diagnostics, not test outcomes; expected failures are skipped work.
-        const auxiliary = /^\s*(\d+)\s+(warnings?|xfailed|xpassed)\s*$/.exec(token);
+        // Warnings and deselections are not executed tests; expected failures are skipped work.
+        const auxiliary = /^\s*(\d+)\s+(warnings?|deselected|xfailed|xpassed)\s*$/.exec(token);
         if (auxiliary) {
           const value = Number(auxiliary[1]);
           if (!safe(value) || seen.has(auxiliary[2])) invalid = true;

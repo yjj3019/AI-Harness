@@ -128,6 +128,25 @@ test("pytest long-duration and decorated zero summaries cannot be masked", () =>
   }
   assert.equal(inspect("=== 2 passed, 1 xfailed in 90061.50s (1 day, 1:01:01) ===", true).ok, true);
 });
+test("quiet pytest summaries and deselection are independently validated", () => {
+  const good = [tap(1,1,0), spec(1,1,0), "=== 1 passed in 0.01s ==="];
+  const bad = ["1 failed in 0.01s", "1 xpassed in 0.01s", "1 xfailed in 0.01s",
+    "3 deselected in 0.01s", "=== 3 deselected in 0.01s ===",
+    "1 warning in 0.01s", "1 warning, 1 error in 0.01s",
+    "1 passed, 2 deselected, 1 deselected in 0.01s", "1 passed, unknown in 0.01s",
+    "1 passed, 9007199254740992 deselected in 0.01s"];
+  for (const pass of good) for (const fail of bad) for (const text of [`${pass}\n${fail}`, `${fail}\n${pass}`]) {
+    assert.equal(inspect(text, true).ok, false, text);
+  }
+  const summary = inspect("2 passed, 3 deselected, 1 xfailed in 0.02s", true);
+  assert.equal(summary.ok, true);
+  assert.equal(summary.total, 3);
+  assert.equal(summary.passed, 2);
+  assert.equal(summary.skipped, 1);
+  assert.equal(inspect("1 passed in 0.01s", true).ok, true);
+  assert.equal(inspect("1 passed", true).ok, false);
+  assert.equal(inspect("1 passed in 0.01s\ncache refresh failed in 1s\n2 files skipped in 0.05s", true).ok, true);
+});
 test("multiple valid summaries aggregate with an explicit kind", () => {
   const s=inspect(tap(2,1,0,1)+"\n"+spec(2,2,0)+"\n=== 3 passed in 0.01s ===",true);
   assert.equal(s.ok,true);assert.equal(s.kind,"multiple");
