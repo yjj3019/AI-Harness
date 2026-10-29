@@ -64,6 +64,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Read records were matched by path and hash without a phase-specific generation.
 - **Resolution/Pattern**: Scope recorded read signals to a fresh generation to reject previously recorded signals in sequential use. A delayed post-read hook can still attribute an older read to the new generation; concurrent operations are not isolated. Treat the hook as a guardrail, not proof of full-file review, comprehension or isolation. A simulated hook event in a disposable fixture reproduced the stale-read case; it did not validate live agent integration.
 
+### [2026-10-28] Package readiness - Validate definitions and exact hook wiring
+
+- **Issue/Risk**: Missing skills or local references escaped general lint; hook-name substring matching and non-object settings could make doctor report readiness without the required wiring.
+- **Root Cause**: Partial inventories and presence-only checks did not validate the actual definition or event/matcher/command contract.
+- **Resolution/Pattern**: Add a bounded package checker to the existing CI entry point and validate exact hook wiring plus repository-contained executable files. Test empty inventories, metadata, broken links, external symlinks, malformed settings and lookalike commands. Keep static readiness distinct from live host authorization and document the supported metadata syntax.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

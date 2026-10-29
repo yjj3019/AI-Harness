@@ -26,6 +26,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Typed Task Contract: `docs/task-contracts/README.md` and `scripts/context-contract.js`
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
+- Cursor plugins comparison and package checks: `docs/cursor-plugins-review-2026-10-28.md`, `scripts/package-lint.js`
 - Evidence-first research adoption and optional skill: `docs/agent-harness-integration-2026-10-26.md`, `skills/evidence-first-harness/SKILL.md`
 - Optional document conversion contract (manifest-only, no engine/permission enforcement): `docs/document-jobs.md`, `scripts/document-job.js`
 - Optional report editing (explicit opt-in, no gate changes): `skills/evidence-preserving-editor/SKILL.md`; evaluation cases: `docs/report-editing-cases.json`
