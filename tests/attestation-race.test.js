@@ -8,7 +8,7 @@ const { spawnSync } = require("node:child_process");
 
 const GATE = path.resolve(__dirname, "../.claude/workflows/phase-gate.js");
 
-function fixture(fn, unbound = false) {
+function fixture(fn, unbound = false, evidenceTree = "unchanged") {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "attestation-race-"));
   const env = { ...process.env, PHASE_GATE_ROOT: root };
   delete env.NODE_TEST_CONTEXT;
@@ -47,6 +47,14 @@ cp.spawnSync = function(command, args, options) {
     const record = (step) => gate("control", "record", "1", step, "--status", "PASS", "--report", report);
     pass(record("coding"));
     pass(gate(unbound ? "always-unavailable" : "control", "run", "1", "test", "--", process.execPath, "-e", "process.exit(0)"));
+    if (evidenceTree !== "unchanged") {
+      // Synthetic historical/malformed evidence fixture, linked by later record calls.
+      const file = path.join(root, ".phase-evidence", "phase-1-test.json");
+      const evidence = JSON.parse(fs.readFileSync(file, "utf8"));
+      if (evidenceTree === "missing") delete evidence.tree;
+      else evidence.tree = evidenceTree;
+      fs.writeFileSync(file, JSON.stringify(evidence));
+    }
     for (const step of ["verify", "review", "compound"]) pass(record(step));
     fn({ root, gate, pass });
   } finally {
@@ -85,12 +93,63 @@ test("attest rejects unbound evidence when git becomes available after validatio
   }, true);
 });
 
-test("attest rejects a mismatching tree when validation cannot obtain a hash", () => {
+test("check rejects bound evidence when the current tree is unavailable", () => {
+  fixture(({ root, gate }) => {
+    const evidence = JSON.parse(fs.readFileSync(path.join(root, ".phase-evidence", "phase-1-test.json"), "utf8"));
+    assert.equal(typeof evidence.tree, "string");
+    const result = gate("first-unavailable", "check", "1");
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /\[FAIL\]\s+test: Git tree snapshot unavailable.*could not be compared/);
+    assert.doesNotMatch(result.stdout, /\[WARN\]/);
+  });
+});
+
+test("check accepts an unchanged bound tree", () => {
+  fixture(({ gate, pass }) => {
+    const result = gate("control", "check", "1");
+    pass(result);
+    assert.match(result.stdout, /Phase 1 COMPLETED/);
+    assert.doesNotMatch(result.stdout, /\[WARN\]/);
+  });
+});
+
+test("check warns for explicitly unbound evidence when the tree remains unavailable", () => {
+  fixture(({ root, gate, pass }) => {
+    const evidence = JSON.parse(fs.readFileSync(path.join(root, ".phase-evidence", "phase-1-test.json"), "utf8"));
+    assert.equal(evidence.tree, null);
+    const result = gate("always-unavailable", "check", "1");
+    pass(result);
+    assert.match(result.stdout, /\[WARN\]\s+code tree is not bound/);
+    const available = gate("control", "check", "1");
+    assert.equal(available.status, 2, available.stdout + available.stderr);
+    assert.match(available.stderr, /test evidence has no code tree hash/);
+  }, true);
+});
+
+test("check warns for synthetic older evidence without a tree field", () => {
+  fixture(({ gate, pass }) => {
+    const result = gate("always-unavailable", "check", "1");
+    pass(result);
+    assert.match(result.stdout, /older evidence has no tree field/);
+  }, true, "missing");
+});
+
+for (const invalid of [42, false, [], {}]) {
+  test(`check rejects invalid tree field ${JSON.stringify(invalid)} when unavailable`, () => {
+    fixture(({ gate }) => {
+      const result = gate("always-unavailable", "check", "1");
+      assert.equal(result.status, 2, result.stdout + result.stderr);
+      assert.match(result.stderr, /invalid test evidence code tree hash/);
+    }, true, invalid);
+  });
+}
+
+test("attest rejects bound evidence when validation cannot obtain a hash", () => {
   fixture(({ root, gate }) => {
     fs.writeFileSync(path.join(root, "app.js"), "changed\n");
     const result = gate("first-unavailable", "attest", "1");
     assert.equal(result.status, 2, result.stdout + result.stderr);
-    assert.match(result.stderr, /code tree does not match test evidence/);
+    assert.match(result.stderr, /cannot attest\. test: Git tree snapshot unavailable.*could not be compared/);
     assert.equal(fs.existsSync(path.join(root, "docs", "attestations", "phase-1.json")), false);
   });
 });

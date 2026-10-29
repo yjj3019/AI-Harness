@@ -430,8 +430,12 @@ function validateChain(phase) {
       if (now !== null) {
         if (typeof ev.tree !== "string") return fail("test evidence has no code tree hash. Run the test again");
         if (ev.tree !== now) return fail("code changed after the test ran. Run the test again");
-      } else if (ev.tree !== null) {
-        warnings.push("git is unavailable here, so the code tree could not be compared");
+      } else if (typeof ev.tree === "string") {
+        return fail("Git tree snapshot unavailable, so the bound code tree could not be compared");
+      } else if (ev.tree !== null && ev.tree !== undefined) {
+        return fail("invalid test evidence code tree hash");
+      } else if (ev.tree === undefined) {
+        warnings.push("code tree is not bound (older evidence has no tree field)");
       } else {
         warnings.push("code tree is not bound (the tree hash was unavailable when the test ran)");
       }

@@ -94,6 +94,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: The detector required separator lines and lacked a deselection policy.
 - **Resolution/Pattern**: Inspect anchored quiet summaries and treat deselection as a validated diagnostic rather than an executed test. Summary text is forgeable, collect-only output is not execution evidence, and a silent run after a passing block remains invisible; use trusted runner-level evidence when completeness matters.
 
+### [2026-10-30] Bound evidence - Do not silently downgrade comparison
+
+- **Issue/Risk**: Chain check could succeed with a warning when Git was unavailable even though the test evidence had a tree hash, leaving the current tree unverified.
+- **Root Cause**: The legacy unbound fallback also applied to previously bound evidence.
+- **Resolution/Pattern**: Require comparison when evidence contains a tree hash; retain explicit warnings for unbound null or absent tree fields and reject other invalid types. This does not resolve dual Git enumeration failures at the original run or provide isolation or writer authentication.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
