@@ -106,6 +106,28 @@ test("all pytest summaries are inspected, not just the last one", () => {
     assert.equal(inspect(bad + "\n=== 2 passed in 0.02s ===",true).ok,false);
   }
 });
+test("standalone pytest xfailed and xpassed blocks cannot be masked", () => {
+  const pass = "=== 2 passed in 0.02s ===";
+  for (const outcome of ["xfailed", "xpassed"]) {
+    const bad = `=== 1 ${outcome} in 0.01s ===`;
+    for (const text of [bad, `${bad}\n${pass}`, `${pass}\n${bad}`]) {
+      const result = inspect(text, true);
+      assert.equal(result.ok, false, text);
+      assert.equal(result.kind, "pytest");
+      assert.equal(result.total, 1);
+      assert.equal(result[outcome === "xfailed" ? "skipped" : "failed"], 1);
+    }
+  }
+});
+test("pytest long-duration and decorated zero summaries cannot be masked", () => {
+  const good = "=== 1 passed in 0.02s ===";
+  for (const bad of ["=== 1 xfailed in 65.01s (0:01:05) ===",
+    "=== 1 xpassed in 90061.50s (1 day, 1:01:01) ===",
+    "=== 1 failed in 65.01s (0:01:05) ===", "=== no tests ran in 0.01s ==="]) {
+    for (const text of [`${bad}\n${good}`, `${good}\n${bad}`]) assert.equal(inspect(text, true).ok, false, text);
+  }
+  assert.equal(inspect("=== 2 passed, 1 xfailed in 90061.50s (1 day, 1:01:01) ===", true).ok, true);
+});
 test("multiple valid summaries aggregate with an explicit kind", () => {
   const s=inspect(tap(2,1,0,1)+"\n"+spec(2,2,0)+"\n=== 3 passed in 0.01s ===",true);
   assert.equal(s.ok,true);assert.equal(s.kind,"multiple");
