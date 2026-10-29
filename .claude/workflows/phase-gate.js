@@ -97,13 +97,19 @@ function treeHash() {
   for (const f of files) {
     const abs = path.join(ROOT, f);
     let content;
+    let st;
     try {
-      const st = fs.lstatSync(abs);
+      st = fs.lstatSync(abs);
+    } catch (err) {
+      if (err.code === "ENOENT") continue; // missing listed path, including tracked deletions and races
+      return { error: `lstat ${f}: ${err.code || err.message}` };
+    }
+    try {
       if (st.isSymbolicLink()) content = Buffer.from("symlink:" + fs.readlinkSync(abs));
       else if (st.isFile()) content = fs.readFileSync(abs);
       else continue;
-    } catch {
-      continue; // deleted but still listed
+    } catch (err) {
+      return { error: `read ${f}: ${err.code || err.message}` };
     }
     h.update(`${f}\0${sha256(content)}\n`);
   }
@@ -330,6 +336,10 @@ function cmdRun(args) {
   const logAbs = path.join(EVIDENCE_DIR, `phase-${phase}-test.log`);
   const fd = fs.openSync(logAbs, "w");
   const treeBefore = treeHash();
+  if (treeBefore && typeof treeBefore === "object") {
+    fs.closeSync(fd);
+    die(2, `ERROR: cannot snapshot code tree before test: ${treeBefore.error}`);
+  }
   let result;
   try {
     result = spawnSync(cmd[0], cmd.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd] });
@@ -340,6 +350,9 @@ function cmdRun(args) {
   const exitCode = typeof result.status === "number" ? result.status : -1;
   const summary = inspectTestSummary(fs.readFileSync(logAbs, "utf8"), strict);
   const treeAfter = treeHash();
+  if (treeAfter && typeof treeAfter === "object") {
+    die(2, `ERROR: cannot snapshot code tree after test: ${treeAfter.error}`);
+  }
   // Both unavailable preserves legacy no-git behavior; only one unavailable must fail.
   const treeOk = treeBefore === treeAfter;
   const treeDiagnostic = treeBefore === null && treeAfter === null
@@ -413,6 +426,7 @@ function validateChain(phase) {
         }
       }
       const now = treeHash();
+      if (now && typeof now === "object") return fail(`cannot snapshot code tree: ${now.error}`);
       if (now !== null) {
         if (typeof ev.tree !== "string") return fail("test evidence has no code tree hash. Run the test again");
         if (ev.tree !== now) return fail("code changed after the test ran. Run the test again");
@@ -453,7 +467,7 @@ function cmdCheck(args) {
     console.error(`\nPhase ${phase} is NOT complete.`);
     process.exit(2);
   }
-  console.log(`\nPhase ${phase} COMPLETED with full evidence.`);
+  console.log(`\nPhase ${phase} COMPLETED under the evidence checks; historical tree-read completeness is not established.`);
   console.log("Next: update docs/HANDOFF.md and start a fresh session for the next Phase.");
   process.exit(0);
 }
@@ -558,6 +572,7 @@ function cmdAttest(args) {
   const res = validateChain(phase);
   if (res.fail) die(2, `ERROR: cannot attest. ${res.fail.step}: ${res.fail.why}`);
   const tree = treeHash();
+  if (tree && typeof tree === "object") die(2, `ERROR: cannot snapshot code tree for attestation: ${tree.error}`);
   if (tree === null) die(2, "ERROR: cannot attest without git. The attestation binds to the code tree");
   if (typeof res.testEv.tree !== "string" || tree !== res.testEv.tree) {
     die(2, "ERROR: cannot attest: code tree does not match test evidence. Run the test again");
@@ -621,6 +636,7 @@ function cmdVerifyAttestation(args) {
   // An attestation cannot disable count checks when a trusted command pin exists.
   const strictReplay = att.require_test_summary === true || Boolean(pinned);
   const now = treeHash();
+  if (now && typeof now === "object") bad(`cannot snapshot code tree: ${now.error}`);
   if (now === null) bad("git is unavailable, so the code tree cannot be compared");
   if (now !== att.tree) bad("code changed after the attestation. Run the phase again and re-attest");
   const opts = strictReplay
@@ -640,6 +656,7 @@ function cmdVerifyAttestation(args) {
   // A passing test may itself rewrite source. Verify the binding again after replay, not
   // merely before executing the command, before claiming this tree was independently verified.
   const replayedTree = treeHash();
+  if (replayedTree && typeof replayedTree === "object") bad(`cannot snapshot code tree after replay: ${replayedTree.error}`);
   if (replayedTree === null) bad("git is unavailable after attestation replay, so the code tree cannot be compared");
   if (replayedTree !== att.tree) bad("code changed during attestation replay. Run the phase again and re-attest");
   console.log(`Phase ${phase} attestation verified: tree matches and the test command passes.`);
