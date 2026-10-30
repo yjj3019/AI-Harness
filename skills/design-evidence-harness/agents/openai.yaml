@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design Evidence Harness"
+  short_description: "Evidence-first visual design guidance"
+  default_prompt: "Use $design-evidence-harness to create and verify the requested visual artifact."
+policy:
+  allow_implicit_invocation: false
