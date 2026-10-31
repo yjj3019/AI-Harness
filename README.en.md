@@ -8,6 +8,8 @@ This repository synthesizes a complete harness methodology for Claude Code (and 
 
 Cursor/plugins adoption: [pinned-source review, 2026-10-28](docs/cursor-plugins-review-2026-10-28.md). `node scripts/package-lint.js` checks agent/command/skill metadata and simple relative file links, also through `bash tests/run-all.sh`. `phase-gate.js doctor` checks exact hook events, matchers, commands and repository-contained executable files. These checks cover this repository's single-line metadata and hook template; they do not validate all YAML syntax or certify live host permissions.
 
+The optional [design evidence harness](skills/design-evidence-harness/SKILL.md) adapts the MIT-licensed huashu-design workflow for visual artifacts while preserving the requested format and reporting unavailable checks. Ask the agent explicitly to read the file; repository `skills/` does not automatically register a Claude Code skill. Codex's explicit-only policy applies only when this skill is discovered from a supported skill location. No upstream assets, runtime, or exporter are installed, and package checks do not certify design quality.
+
 ## Why Harness Engineering?
 
 As coding agents become capable of multi-hour autonomous work, the limiting factor is no longer raw model intelligence. It is the **harness** — the scaffolding of rules, feedback loops, tools, context management, and verification that keeps the agent on track.
