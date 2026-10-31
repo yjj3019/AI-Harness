@@ -43,6 +43,14 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 
 [평가 사례](docs/report-editing-cases.json)는 사람 또는 별도 승인된 모델 평가용입니다. CI는 패키지 구조와 사례 정합성만 검사하며 재작성 품질이나 의미 동등성을 보증하지 않습니다.
 
+## 선택형 디자인 검증 스킬
+
+[design-evidence-harness](skills/design-evidence-harness/SKILL.md)는 사용자가 명시적으로 요청할 때 적용하는 디자인·산출물 검증 절차입니다. 기존 브랜드와 요청한 산출물 형식을 우선하고, HTML 상호작용·편집 가능한 PPTX·차트·동영상 등은 해당 형식에 맞게 검증합니다. 검사할 수 없는 항목은 미검증으로 보고합니다. 원본 [huashu-design](https://github.com/alchaincyf/huashu-design/tree/4fc7bfdbd5ec3fa2d43ce7a6433de60976a5e4b1)의 MIT 고지를 포함하며 원본 자산·스크립트는 가져오지 않았습니다.
+
+예: “`skills/design-evidence-harness/SKILL.md`를 읽고 이 PPTX의 편집성과 화면별 레이아웃을 검증해줘.” 저장소의 `skills/`는 Claude Code의 네이티브 스킬 자동 등록 경로가 아니므로 이 예처럼 파일을 명시해 호출합니다. Codex가 해당 스킬을 지원 경로에서 읽는 경우에만 자동 호출 비활성화 설정이 적용됩니다. 별도 호스트에 수동으로 설치한 경우의 자동 호출 여부는 해당 호스트 설정에 따릅니다.
+
+이 스킬은 지침이며 렌더러나 권한 강제가 아닙니다. 로컬 패키지 검사는 실제 시각 품질·모델 동작을 인증하지 않습니다.
+
 ## 선택형 문서 변환 계약
 
 PDFMathTranslate 분석을 바탕으로 [문서 변환 계약](docs/document-jobs.md)과 [오프라인 manifest 검사기](scripts/document-job.js)를 추가했습니다. 파일 읽기·출력 쓰기·외부 텍스트 전송·캐시·자산/패키지 준비를 분리하며, 입력별 누락·부분 실패·수식 토큰 누락/중복·미검증 결과를 전체 성공으로 집계하지 않습니다.
