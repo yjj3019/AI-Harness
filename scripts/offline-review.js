@@ -23,6 +23,37 @@ function parseArgs(args) {
   return result;
 }
 function hash(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
+// v1: HMAC-SHA256 with a 32-byte key over the UTF-8 domain string below,
+// a NUL separator, then the UTF-8 case ID. The low bit of byte 0 selects A.
+const ALLOCATION_ALGORITHM = 'hmac-sha256-case-id-v1';
+function replayAssignment(seed, id, algorithm = ALLOCATION_ALGORITHM) {
+  if (algorithm !== ALLOCATION_ALGORITHM) throw new Error('Unsupported allocation algorithm');
+  if (typeof seed !== 'string' || !/^[0-9a-f]{64}$/.test(seed)) throw new Error('Seed must be 32 bytes encoded as lowercase hex');
+  if (typeof id !== 'string' || !id || !id.isWellFormed()) throw new Error('Invalid case ID');
+  const digest = crypto.createHmac('sha256', Buffer.from(seed, 'hex'))
+    .update('offline-review:allocation:v1\0', 'utf8').update(id, 'utf8').digest();
+  const first = digest[0] & 1;
+  return { id, A: first + 1, B: 2 - first };
+}
+// Bound each JSON input independently; follow symlinks but inspect the opened FD.
+const MAX_JSON_BYTES = 16 * 1024 * 1024;
+function readJsonBytes(file) {
+  const fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NONBLOCK || 0));
+  try {
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile()) throw new Error('JSON input must be a regular file');
+    if (stat.size > MAX_JSON_BYTES) throw new Error('JSON input exceeds 16 MiB');
+    const buffer = Buffer.allocUnsafe(MAX_JSON_BYTES + 1);
+    let used = 0;
+    while (used < buffer.length) {
+      const n = fs.readSync(fd, buffer, used, buffer.length - used, null);
+      if (!n) break;
+      used += n;
+    }
+    if (used > MAX_JSON_BYTES) throw new Error('JSON input exceeds 16 MiB');
+    return buffer.subarray(0, used);
+  } finally { fs.closeSync(fd); }
+}
 function parseJson(bytes, description) {
   let text;
   try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); }
@@ -32,7 +63,7 @@ function parseJson(bytes, description) {
 function generate(args) {
   const opts = parseArgs(args);
   if (!opts) { console.log(usage); return; }
-  const caseBytes = fs.readFileSync(CASES);
+  const caseBytes = readJsonBytes(CASES);
   const caseDocument = parseJson(caseBytes, 'Case file');
   if (!caseDocument || !Array.isArray(caseDocument.cases) || !caseDocument.cases.length) throw new Error('Invalid case file');
   const ids = new Set();
@@ -41,21 +72,23 @@ function generate(args) {
     ids.add(item.id);
   }
   const inputs = [opts['--candidate-1'], opts['--candidate-2']].map((file, index) => {
-    const bytes = fs.readFileSync(file);
+    const bytes = readJsonBytes(file);
     const value = parseJson(bytes, `Candidate ${index + 1}`);
     if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== ids.size || Object.keys(value).some(id => !ids.has(id)) || [...ids].some(id => !Object.hasOwn(value, id) || (typeof value[id] !== 'string' || !value[id].trim()))) throw new Error(`Candidate ${index + 1} must contain exactly the case IDs with nonempty string values`);
     return { bytes, value };
   });
+  const seed = crypto.randomBytes(32).toString('hex');
   const assignments = [];
   const cases = caseDocument.cases.map(item => {
-    const first = crypto.randomInt(2);
-    assignments.push({ id: item.id, A: first + 1, B: 2 - first });
+    const assignment = replayAssignment(seed, item.id);
+    const first = assignment.A - 1;
+    assignments.push(assignment);
     // Explicit allowlist: never copy candidate filenames or arbitrary input metadata.
     return { id: item.id, source: item.source, required_claims: item.required_claims, required_behavior: item.required_behavior, protected_spans: item.protected_spans, candidates: { A: inputs[first].value[item.id], B: inputs[1 - first].value[item.id] } };
   });
   const packet = { schema_version: 1, privacy_caveat: privacy, cases };
   const packetBytes = Buffer.from(JSON.stringify(packet, null, 2) + '\n');
-  const key = { schema_version: 1, privacy_caveat: privacy, randomization: 'crypto.randomInt(2) independently per case; no reproducible seed', case_sha256: hash(caseBytes), packet_sha256: hash(packetBytes), inputs: inputs.map((input, i) => ({ candidate: i + 1, sha256: hash(input.bytes) })), assignments };
+  const key = { schema_version: 1, privacy_caveat: privacy, randomization: { algorithm: ALLOCATION_ALGORITHM, seed }, case_sha256: hash(caseBytes), packet_sha256: hash(packetBytes), inputs: inputs.map((input, i) => ({ candidate: i + 1, sha256: hash(input.bytes) })), assignments };
   // Reserve both names exclusively before writing. Roll back only files we created.
   const created = [];
   try {
@@ -78,4 +111,4 @@ function generate(args) {
 if (require.main === module) {
   try { generate(process.argv.slice(2)); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { generate };
+module.exports = { generate, replayAssignment };

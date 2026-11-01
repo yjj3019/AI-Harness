@@ -5,11 +5,13 @@ const path = require("node:path");
 // Repository conventions only: single-line name/description and simple inline links,
 // not a general YAML/Markdown parser or a host permission check.
 function checkPackage(root) {
-  root = fs.realpathSync(root);
+  // Native realpath expands Windows 8.3 short names (for example RUNNER~1); mixing a short spelling with a
+  // long one would compute a spurious ".." and reject a legitimate file.
+  root = fs.realpathSync.native(root);
   const errors = [];
   let checked = 0;
   function localFile(file) {
-    const relative = path.relative(root, fs.realpathSync(file));
+    const relative = path.relative(root, fs.realpathSync.native(file));
     if (relative === ".." || relative.startsWith(".." + path.sep) || path.isAbsolute(relative))
       throw new Error("file resolves outside repository");
     if (!fs.statSync(file).isFile()) throw new Error("not a regular file");

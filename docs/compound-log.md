@@ -136,6 +136,24 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: File discovery is not an independently protected list of required phase IDs; no phases are currently defined, so zero is legitimate but proves none complete.
 - **Resolution/Pattern**: Report the discovered count and provide an explicit nonempty required-ID check. Protect the policy, workflow, verifier and command pin independently; replay executes code and must be authorized and isolated. A later failure cannot undo earlier replay effects.
 
+### [2026-10-31] Blind comparison - Record reproducible allocation privately
+
+- **Issue/Risk**: A random A/B packet without a recorded seed could not satisfy the paired protocol's reproducibility requirement; a packet alone does not prove reviewer independence or authentic output provenance.
+- **Root Cause**: Independent random choices were recorded only as assignments, while the protocol required a replayable method and seed.
+- **Resolution/Pattern**: Generate a private 32-byte random seed and derive each assignment using a versioned HMAC over its valid Unicode case ID; retain seed and key separately, record packet/input hashes and independently preserve them before review. Windows key privacy depends on directory ACLs; crashes can leave partial files, and blinded review and action evidence remain separate duties.
+
+### [2026-11-01] Gate mutation PoC - Attribute failures to targeted assertions
+
+- **Issue/Risk**: An unrelated assertion or zero matching tests could appear to kill a gate mutant; long Windows suites also timed out during a broad baseline.
+- **Root Cause**: A nonzero status and generic assertion count did not establish the targeted test or assertion site, and broad suites included unrelated fixture requirements.
+- **Resolution/Pattern**: Use an exact focused test name, require the expected assertion site and retain TAP diagnostics, first run an unmodified baseline, and stop on infrastructure errors. A timeout is not a kill and does not guarantee descendant cleanup; TAP remains trusted local evidence, not a sandbox or proof of all branches.
+
+### [2026-11-01] Security review - Bound reads and preserve write ownership
+
+- **Issue/Risk**: Slow-drip local clients held broker slots past an inactivity timeout; predictable gate log paths could follow pre-existing links; direct gate edits were outside an evidence guard's declared coverage. A smoke test could misinterpret unrelated filesystem errors as read-only enforcement.
+- **Root Cause**: Per-read deadlines, open-by-name truncation, lexical guard coverage, and a missing positive control did not match the intended claims.
+- **Resolution/Pattern**: Use a monotonic request-input deadline, exclusively created staging files, explicit direct-edit guards, matched filesystem controls and mount-state checks; add bounded JSON inputs. Review ownership on error paths and retain platform and race limitations. These are local safeguards, not a sandbox or host authorization certification; actual host/model checks remain separate.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

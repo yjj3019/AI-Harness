@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Behavior tests for the hooks. Inputs are JSON strings only; nothing is executed.
 set -u
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
+command -v jq >/dev/null 2>&1 || { echo 'hooks: jq is required' >&2; exit 1; }
 
 fails=0
 total=0
@@ -143,6 +144,26 @@ t $B "" 0 Bash command $'\'r\\\nm\' -rf /home/user'
 t $B "" 0 Bash command $'rm \'-r\\\nf\' /home/user'
 t $B "" 0 Bash command $'rm -rf \'/ho\\\nme/user\''
 t $B "" 0 Bash command $'rm -rf ./bu\\\nild'
+
+echo "== evidence-guard: direct phase-gate edits (JSON only) =="
+for tool in Write Edit MultiEdit NotebookEdit; do
+  field=file_path
+  [ "$tool" != NotebookEdit ] || field=notebook_path
+  for mode in deny test; do
+    for path in 'phase-gate.js' './.claude/workflows/phase-gate.js' '/tmp/x/PHASE-GATE.JS' \
+      'C:\proj\.claude\workflows\phase-gate.js' 'C:/proj/Phase-Gate.js' \
+      'C:\proj\phase-gate.js. ' 'C:/proj/phase-gate.js:stream' \
+      'phase-gate.js::$DATA' 'phase-gate.js. :stream'; do
+      t "$G" "$mode" 2 "$tool" "$field" "$path"
+    done
+    for path in 'phase-gate.js.bak' 'my-phase-gate.js' 'phase-gateXjs' 'phase-gate.js/other'; do
+      t "$G" "$mode" 0 "$tool" "$field" "$path"
+    done
+  done
+  ta coding 2 "$tool" "$field" '.claude/workflows/phase-gate.js'
+  ta test 2 "$tool" "$field" '.claude/workflows/phase-gate.js'
+  ta '' 0 "$tool" "$field" '.claude/workflows/phase-gate.js'
+done
 
 echo "== evidence-guard: Windows paths =="
 t $G deny 2 Write file_path 'C:\proj\.phase-evidence\x.json'
