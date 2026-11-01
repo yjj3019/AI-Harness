@@ -47,7 +47,7 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 
 [로컬 평가 PoC 안내](docs/local-evaluation-poc.md)는 외부 모델이나 추가 패키지 없이 사용하는 두 도구를 설명합니다.
 
-- **블라인드 패킷 준비**: [offline-review.js](scripts/offline-review.js)는 미리 준비한 두 후보의 JSON 출력으로 사례별 A/B 검토 패킷과 별도 비공개 대응표를 만듭니다. 자동 채점이나 모델 호출은 하지 않습니다. 후보 출처·의미 보존·비용·행동 증거는 별도로 확인해야 합니다. 배정 seed와 방식은 비공개 대응표에 기록되어 재현할 수 있지만, 이것만으로 독립 평가나 블라인드 유지가 보장되지는 않습니다. [평가 프로토콜](docs/report-editing-evaluation.md)을 함께 따르세요.
+- **블라인드 패킷 준비**: [offline-review.js](scripts/offline-review.js)는 미리 준비한 두 후보의 JSON 출력으로 사례별 A/B 검토 패킷과 별도 비공개 대응표를 만듭니다. 자동 채점이나 모델 호출은 하지 않습니다. 배정 seed와 방식은 비공개 대응표에 기록되며 동일 입력과 seed로 배정을 재현할 수 있습니다. 후보 출처·의미 보존·비용·행동 증거와 독립 평가·블라인드 유지는 별도로 확인하고 [평가 프로토콜](docs/report-editing-evaluation.md)을 따르세요.
 - **표적 변이 PoC**: `node scripts/mutation-probe.js`는 테스트 요약 파서의 세 변이를, `node scripts/gate-mutation-probe.js`는 게이트의 트리 비교·명령 고정·해시 체인 변이를 임시 복사본에서 검사합니다. StrykerJS 설치 없이 수동 실행하며 전체 게이트나 보안을 인증하지 않습니다. 임시 디렉터리는 샌드박스가 아닙니다.
 
 두 도구 모두 실제 모델의 효과나 운영 환경을 검증한 결과가 아닙니다. [호스트 격리 검증 계획](docs/host-verification-plan.md)은 사전 승인·대조군·복구를 요구하는 미실행 계획입니다. 사용 전 안내 문서의 개인정보·권한·검증 한계를 확인하세요.
@@ -161,7 +161,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 1. `CLAUDE.md` 읽기.
 2. `docs/compound-log.md` 검토.
 3. `docs/PHASES.md`에 단계 정의, `docs/DETAIL_SPEC.md`에 요구사항 작성.
-4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id>`.
+4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id> --require-bound-tree`.
 5. 컨텍스트가 저하되면 `docs/HANDOFF.md`에 상태를 기록하고 새 세션 시작.
 
 ## 다른 프로젝트에 적용하는 방법
@@ -179,8 +179,8 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
    - 체크리스트 항목이 관찰 가능한 증거로 확인 가능
 3. 이식 시 `.claude/workflows/phase-gate.js`, `.claude/workflows/test-summary.js`, `scripts/context-contract.js`, `.claude/commands/phase-harness.md`와 필요한 에이전트·설정을 함께 검토합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로 남깁니다. `check`는 누락되거나 검증 조건에 맞지 않는 증거를 거부하지만, 해시 체인은 같은 권한을 가진 작성자에 대한 인증이나 OS 격리가 아닙니다.
    ```bash
-   node .claude/workflows/phase-gate.js run 1 test -- npm test
-   node .claude/workflows/phase-gate.js check 1
+   node .claude/workflows/phase-gate.js run 1 test --require-test-summary --require-bound-tree -- npm test
+   node .claude/workflows/phase-gate.js check 1 --require-bound-tree
    ```
 
 ### Default-FAIL 계약 추가 (권장)
@@ -250,7 +250,11 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 엄격한 테스트 증거 검사
 
-신규 Phase는 `phase-gate.js run <id> test --require-test-summary -- <command>`를 사용합니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+신규 Phase는 `phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <command>`와 `phase-gate.js check <id> --require-bound-tree`를 사용합니다. 바인딩 옵션은 호출별 요구이며 검증자도 check에 독립적으로 지정해야 합니다. 옵션 없는 기존 호출은 Git을 확인할 수 없을 때 미바인딩 증거를 경고와 함께 허용할 수 있습니다. 기존 해시만으로 과거 실행이 엄격 모드였거나 스냅샷이 완전했다고 증명할 수 없습니다. 과거 스냅샷의 완전성이 중요하면 현재 규칙으로 테스트를 다시 실행하고 attestation도 재발급하세요. Attest와 재실행 검증은 바인딩된 트리를 요구하지만, 기존 해시의 과거 읽기 완전성을 복구하지는 않습니다. 스냅샷 비교는 OS 격리가 아니며 ignored 입력, 파일 모드와 검사 사이에 복원된 변경 등을 보장하지 않습니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+
+### 필수 attestation 목록 검사 (선택형)
+
+현재 CI는 발견된 attestation을 재실행하지만, Phase가 없으면 0개를 검사할 수 있습니다. 특정 Phase가 필수라면 신뢰할 수 있는 관리자가 보관한 비어 있지 않은 JSON ID 배열(예: `["1", "2"]`)을 명시해 `node scripts/verify-attestation-inventory.js <manifest.json>`을 실행할 수 있습니다. 목록의 모든 Phase가 정의되고 파일이 존재해야 하며 각 attestation 재검증이 성공해야 합니다. 이 도구는 현재 CI에 자동 연결되지 않습니다. PR 작성자가 바꿀 수 없는 별도 정책·필수 워크플로와 검증기 보호가 필요하며, 이 저장소만으로 GitHub 보호가 적용됐다고 주장할 수 없습니다. 현재 저장소의 명령 pin은 `bash tests/run-all.sh`이지만 pin이 없거나 변경되면 attestation이 명령을 선택할 수 있습니다. pin이 있어도 저장소 코드를 상속된 환경에서 실제 실행합니다. 검증기·pin·Phase 정의도 보호하고, replay를 별도 승인된 격리 환경에서 수행하세요. 순차 검증 중 뒤의 실패는 앞선 실행의 효과를 되돌리지 않습니다.
 
 ## ToolBroker 멱등성/승인 참조 구현 (선택형)
 

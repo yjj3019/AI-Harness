@@ -55,7 +55,10 @@ function readJsonBytes(file) {
   } finally { fs.closeSync(fd); }
 }
 function parseJson(bytes, description) {
-  try { return JSON.parse(bytes.toString('utf8')); } catch { throw new Error(`${description} is not valid JSON`); }
+  let text;
+  try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); }
+  catch { throw new Error(`${description} is not valid UTF-8`); }
+  try { return JSON.parse(text); } catch { throw new Error(`${description} is not valid JSON`); }
 }
 function generate(args) {
   const opts = parseArgs(args);
