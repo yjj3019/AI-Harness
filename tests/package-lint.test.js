@@ -9,6 +9,15 @@ const { checkPackage } = require("../scripts/package-lint.js");
 const source = path.resolve(__dirname, "..");
 const skill = "skills/example/SKILL.md";
 
+// Windows exposes 8.3 short names (for example RUNNER~1) for long directories; fs.realpathSync keeps the
+// spelling it was given while a junction target resolves to its long form.
+function shortPath(p) {
+  const r = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
+    "(New-Object -ComObject Scripting.FileSystemObject).GetFolder($env:HARNESS_SHORT_TARGET).ShortPath"],
+    { encoding: "utf8", env: { ...process.env, HARNESS_SHORT_TARGET: p } });
+  return (r.stdout || "").trim();
+}
+
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "package-lint-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -106,6 +115,21 @@ test("symlink escape fails before reading the target", t => {
   fs.symlinkSync(outside, path.join(root, "linked"), process.platform === "win32" ? "junction" : "dir");
   write(skill, "---\nname: example\ndescription: Example\n---\n[escape](../../linked/guide.md)\n");
   assert.ok(checkPackage(root).errors.some(error => error.includes("outside repository")));
+});
+
+test("a short-named root still accepts a file reached through a junction", { skip: process.platform !== "win32" && "8.3 short names exist only on Windows" }, t => {
+  const { root } = fixture(t);
+  const short = shortPath(root);
+  if (!short || short.toLowerCase() === root.toLowerCase()) {
+    t.skip("volume does not generate 8.3 short names");
+    return;
+  }
+  fs.mkdirSync(path.join(root, "realdir"));
+  fs.writeFileSync(path.join(root, "realdir/guide.md"), "# Guide\n");
+  fs.symlinkSync(path.join(root, "realdir"), path.join(root, "linked"), "junction");
+  fs.appendFileSync(path.join(root, skill), "[inside](../../linked/guide.md)\n");
+  const result = checkPackage(short);
+  assert.equal(result.ok, true, result.errors.join("\n"));
 });
 
 test("CLI returns 2 for invalid definitions, not a vacuous success", t => {

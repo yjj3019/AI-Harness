@@ -101,6 +101,30 @@ test("strict replay rejects temp inside repository addressed by its 8.3 short na
   });
 });
 
+// The containment verdict must not depend on how the same directory is spelled: a trailing separator and a
+// dot-dot hop name the same directory as the plain spelling, so all of them must be judged identically.
+test("containment verdict ignores how the same temp path is spelled", () => {
+  fixture(({ repo, outside, gate, replayDirs }) => {
+    fs.mkdirSync(path.join(outside, "sub"));
+    const inside = path.join(repo, "inside-temp");
+    fs.mkdirSync(path.join(inside, "sub"), { recursive: true });
+    for (const spelling of [inside + path.sep, path.join(inside, ".", "sub", "..")]) {
+      const r = gate(["verify-attestation", "1"], { TMPDIR: spelling, TMP: spelling, TEMP: spelling });
+      assert.equal(r.status, 2, `spelling ${spelling}: ${r.stderr}`);
+      assert.match(r.stderr, /temporary directory is inside the repository/);
+      assert.deepEqual(replayDirs(inside), []);
+    }
+    // An outside directory spelled indirectly is still outside, so the replay is allowed to run.
+    for (const spelling of [outside + path.sep, path.join(outside, "sub", "..")]) {
+      const r = gate(["verify-attestation", "1"], { TMPDIR: spelling, TMP: spelling, TEMP: spelling, REPLAY_FAIL: "1" });
+      assert.equal(r.status, 2, `spelling ${spelling}: ${r.stderr}`);
+      assert.match(r.stderr, /test command exited with 7/);
+      assert.doesNotMatch(r.stderr, /temporary directory is inside the repository/);
+      assert.deepEqual(replayDirs(outside), []);
+    }
+  });
+});
+
 test("strict replay rejects temp inside repository with trailing-space root", { skip: process.platform === "win32" && "Windows does not support trailing-space directory names" }, () => {
   fixture(({ repo, marker, gate, replayDirs }) => {
     const inside = path.join(repo, "inside-temp");
