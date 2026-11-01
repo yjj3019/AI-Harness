@@ -1,10 +1,12 @@
 """Opt-in loopback-only HTTP tool endpoint. No approval-signing API is exposed."""
 import argparse
+import io
 import json
 import math
 import os
 import stat
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from .broker import Broker, BrokerError
@@ -55,7 +57,38 @@ class ToolServer(ThreadingHTTPServer):
             self._slots.release()
 
 
+class DeadlineReader(io.RawIOBase):
+    """Enforce one monotonic deadline across every buffered socket read."""
+
+    def __init__(self, sock, deadline, idle_timeout):
+        super().__init__()
+        self.sock = sock
+        self.deadline = deadline
+        self.idle_timeout = idle_timeout
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("request deadline exceeded")
+        self.sock.settimeout(min(self.idle_timeout, remaining))
+        return self.sock.recv_into(buffer)
+
+
 class Handler(BaseHTTPRequestHandler):
+    def setup(self):
+        super().setup()
+        self.rfile.close()
+        self.request_deadline = time.monotonic() + self.server.read_timeout
+        self.rfile = io.BufferedReader(DeadlineReader(
+            self.connection, self.request_deadline, self.server.read_timeout))
+
+    def check_deadline(self):
+        if time.monotonic() >= self.request_deadline:
+            raise TimeoutError("request deadline exceeded")
+
     def handle_one_request(self):
         # BaseHTTPRequestHandler silently closes on header timeouts. Keep its parsing
         # and method dispatch, but provide an explicit bounded 408 for partial headers.
@@ -72,6 +105,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if not self.parse_request():
                 return
+            self.check_deadline()
             method = getattr(self, "do_" + self.command, None)
             if method is None:
                 self.send_error(501)
@@ -88,6 +122,8 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
     def respond(self, code, body):
+        # Reads may have reduced the socket timeout to the remaining deadline.
+        self.connection.settimeout(self.server.read_timeout)
         data = json.dumps(body, separators=(",", ":")).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
@@ -118,6 +154,7 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < size <= 8192 or content_type != "application/json":
                 raise BrokerError(400, "INVALID_REQUEST")
             raw = self.rfile.read(size)
+            self.check_deadline()
             if len(raw) != size:
                 raise BrokerError(400, "TRUNCATED_BODY")
             body = json.loads(raw)

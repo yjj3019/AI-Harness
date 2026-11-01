@@ -4,12 +4,12 @@ Verified scope: **OS subprocess isolation + controlled manual recovery from a ki
 
 ## Isolation (Linux only)
 
-`bash tests/runtime-isolation-linux.sh` builds a temporary chroot in private mount and network namespaces, mounts system libraries read-only and binds one scratch work directory. It asserts:
+`bash tests/runtime-isolation-linux.sh` builds a temporary chroot in private mount and network namespaces, attempts to make system library binds read-only and binds one scratch work directory. It is a bounded smoke test, not certification of all nested mounts or a production host policy. It asserts:
 
 - A permitted workspace write succeeds.
 - A host-protected canary is invisible and remains unmodified; a link toward the host path cannot escape.
-- Writes under the system library mount fail.
-- Direct IPv4 socket connection has no route (ENETUNREACH/EHOSTUNREACH).
+- The system-library bind subtree is checked for read-only mount flags; this does not prove every filesystem write path is blocked.
+- The chosen direct IPv4 socket connection reports no route (ENETUNREACH/EHOSTUNREACH). No matched outside-namespace connectivity control is performed, so this alone does not establish that the namespace caused the denial.
 - When namespace creation is prohibited, execution fails closed with ISOLATION_BLOCKED, rather than falling back to an unisolated shell.
 
 It uses a sanitized subprocess environment and no third-party packages. An unprivileged namespace is preferred; the GitHub Linux runner can use sudo to create namespaces if supported. The script is a **smoke test**. It does not prove protection against a compromised privileged host, user namespace/kernel exploits, side-channel leakage, or the Claude Code sandbox configuration.

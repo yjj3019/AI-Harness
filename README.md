@@ -8,7 +8,7 @@
 
 ## 왜 Harness Engineering인가?
 
-코드 에이전트가 수 시간 자율 실행이 가능해지면서 제약 요인은 모델 지능이 아닐 “하네스(harness)”가 되었습니다. 하네스는 에이전트가 경로를 이탈하지 않고 안전하게 작업하도록 만드는 규칙, 피드백 루프, 도구, 컨텍스트 관리, 검증 시스템입니다.
+코드 에이전트가 장시간 작업할 때는 모델의 능력뿐 아니라 이를 뒷받침하는 “하네스(harness)”도 중요합니다. 하네스는 에이전트가 경로를 이탈하지 않고 안전하게 작업하도록 만드는 규칙, 피드백 루프, 도구, 컨텍스트 관리, 검증 시스템입니다.
 
 **정확한 정의**: 하네스는 Code Agent와 *직접 연관된* 도구·규칙·행동으로 구성됩니다.  
 예: `CLAUDE.md` 규칙, 독립 검증 에이전트, 증거 게이트, compound learning log.  
@@ -41,7 +41,16 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 
 예: “evidence-preserving-editor 지침에 따라 이 보고서 문장만 편집하고, 검증 한계와 수치는 유지해줘.”
 
-[평가 사례](docs/report-editing-cases.json)는 사람 또는 별도 승인된 모델 평가용입니다. CI는 패키지 구조와 사례 정합성만 검사하며 재작성 품질이나 의미 동등성을 보증하지 않습니다.
+[평가 사례](docs/report-editing-cases.json)는 합성 fixture이며 사람 또는 별도 승인된 모델 평가용입니다. CI는 패키지 구조와 사례 정합성만 검사하며 재작성 품질이나 의미 동등성을 보증하지 않습니다.
+
+### 로컬 비교 평가와 변이 테스트 (선택형)
+
+[로컬 평가 PoC 안내](docs/local-evaluation-poc.md)는 외부 모델이나 추가 패키지 없이 사용하는 두 도구를 설명합니다.
+
+- **블라인드 패킷 준비**: [offline-review.js](scripts/offline-review.js)는 미리 준비한 두 후보의 JSON 출력으로 사례별 A/B 검토 패킷과 별도 비공개 대응표를 만듭니다. 자동 채점이나 모델 호출은 하지 않습니다. 후보 출처·의미 보존·비용·행동 증거는 별도로 확인해야 합니다. 배정 seed와 방식은 비공개 대응표에 기록되어 재현할 수 있지만, 이것만으로 독립 평가나 블라인드 유지가 보장되지는 않습니다. [평가 프로토콜](docs/report-editing-evaluation.md)을 함께 따르세요.
+- **표적 변이 PoC**: `node scripts/mutation-probe.js`는 테스트 요약 파서의 세 변이를, `node scripts/gate-mutation-probe.js`는 게이트의 트리 비교·명령 고정·해시 체인 변이를 임시 복사본에서 검사합니다. StrykerJS 설치 없이 수동 실행하며 전체 게이트나 보안을 인증하지 않습니다. 임시 디렉터리는 샌드박스가 아닙니다.
+
+두 도구 모두 실제 모델의 효과나 운영 환경을 검증한 결과가 아닙니다. [호스트 격리 검증 계획](docs/host-verification-plan.md)은 사전 승인·대조군·복구를 요구하는 미실행 계획입니다. 사용 전 안내 문서의 개인정보·권한·검증 한계를 확인하세요.
 
 ## 선택형 디자인 검증 스킬
 
@@ -101,7 +110,7 @@ AI-Harness/
 
 ## Ralph Wiggum Loop
 
-심슨즈 캐릭터 Ralph Wiggum의 이름을 띄 자율 반복 루프입니다. Geoffrey Huntley가 2025년에 제안한 간단한 bash 루프입니다:
+심슨즈 캐릭터 Ralph Wiggum의 이름을 딴 자율 반복 루프입니다. Geoffrey Huntley가 2025년에 제안한 간단한 bash 루프입니다:
 
 ```bash
 while :; do cat PROMPT.md | claude-code ; done
@@ -168,7 +177,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 2. `docs/PHASES.md`를 만들고 각 Phase를 다음 기준으로 작성합니다.
    - 한 번에 사람이 직접 돌려볼 수 있는 크기
    - 체크리스트 항목이 관찰 가능한 증거로 확인 가능
-3. `.claude/workflows/phase-gate.js`와 `.claude/commands/phase-harness.md`를 복사합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로만 남깁니다. 손으로 쓴 JSON은 `check`에서 거부되고, 증거가 없으면 실패합니다.
+3. 이식 시 `.claude/workflows/phase-gate.js`, `.claude/workflows/test-summary.js`, `scripts/context-contract.js`, `.claude/commands/phase-harness.md`와 필요한 에이전트·설정을 함께 검토합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로 남깁니다. `check`는 누락되거나 검증 조건에 맞지 않는 증거를 거부하지만, 해시 체인은 같은 권한을 가진 작성자에 대한 인증이나 OS 격리가 아닙니다.
    ```bash
    node .claude/workflows/phase-gate.js run 1 test -- npm test
    node .claude/workflows/phase-gate.js check 1
@@ -213,7 +222,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 - 모델이 좋아질수록 하네스를 줄이세요. 주기적으로 “이 규칙이 아직 필요한가?”를 확인합니다.
 - 특정 시나리오 문서는 넣지 마세요. 메커니즘만 남기고 프로젝트별 내용은 해당 프로젝트 안에 둡니다.
 
-가장 빠른 시작은 이 저장소의 `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-gate.js`, `.claude/commands/phase-harness.md`를 복사한 뒤 해당 프로젝트의 Phase만 채우는 것입니다. 증거 쓰기 제한까지 쓰려면 `.claude/agents/`, `.claude/hooks/`, `.claude/settings.json`도 함께 복사합니다.
+다른 프로젝트에 이식할 때는 `docs/PHASES.md`, `docs/HANDOFF.md`, 게이트와 위에 명시한 의존 모듈, 명령·에이전트·훅 설정을 함께 검토하고 대상 환경에서 검증하세요. 훅과 지침은 실수 방지 장치이며 실제 호스트 권한이나 샌드박스를 대체하지 않습니다.
 
 ## 추가 자료
 

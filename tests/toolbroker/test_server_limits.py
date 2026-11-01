@@ -1,5 +1,6 @@
 """Loopback-only HTTP resource-limit regressions; no production-safety assertion."""
 import http.client
+import select
 import socket
 import threading
 import time
@@ -126,6 +127,36 @@ class ServerLimitTests(unittest.TestCase):
                 self.assertLess(time.monotonic(), deadline)
                 time.sleep(0.01)
             self.assertEqual(broker.calls, 0)
+
+    def test_slow_drip_has_absolute_deadline_and_releases_slot(self):
+        prefixes = (b"GET /hea", b"GET /health HTTP/1.1\r\nHost: local",
+                    b"POST /v1/tools/execute HTTP/1.1\r\nHost: localhost\r\n"
+                    b"Content-Type: application/json\r\nContent-Length: 100\r\n\r\n{")
+        for prefix in prefixes:
+            with self.subTest(prefix=prefix), running_server(
+                    read_timeout=0.6, max_connections=1) as (server, broker):
+                with connect(server) as sock:
+                    sock.sendall(prefix)
+                    start = time.monotonic()
+                    # Continue sending well inside the inactivity timeout until the
+                    # server responds, but cap the test even with broken code.
+                    while not select.select([sock], [], [], 0.1)[0]:
+                        self.assertLess(time.monotonic() - start, 2)
+                        sock.sendall(b"x")
+                    reply = receive_all(sock)
+                    self.assertIn(b" 408 ", reply)
+                    self.assertIn(b"REQUEST_TIMEOUT", reply)
+                    self.assertIn(b"Connection: close", reply)
+                    self.assertLess(time.monotonic() - start, 1.8)
+                deadline = time.monotonic() + 2
+                while True:
+                    status, _ = health(server)
+                    if status == 200:
+                        break
+                    self.assertEqual(status, 503)
+                    self.assertLess(time.monotonic(), deadline)
+                    time.sleep(0.01)
+                self.assertEqual(broker.calls, 0)
 
     def test_invalid_limits_fail_before_binding(self):
         for timeout in (0, -1, float("inf"), float("nan"), None, True):
