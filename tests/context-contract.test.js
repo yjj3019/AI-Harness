@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const {spawnSync}=require("node:child_process");
 const {verifyPhaseContext,digest}=require("../scripts/context-contract.js");
 function trial(fn) {
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"harness-context-"));
@@ -24,6 +25,47 @@ function trial(fn) {
     fn({root,contract,summary,writeC,writeS,file});
   } finally {fs.rmSync(root,{recursive:true,force:true});}
 }
+for (const [kind,limit] of [["contract",2*1024*1024],["checkpoint",8*1024*1024]]) {
+  test(`${kind} byte limit accepts exact boundary and rejects one byte over`,()=>trial(({root,file})=>{
+    const target=kind === "contract" ? file : path.join(root,".phase-evidence/phase-1-context.json");
+    const content=fs.readFileSync(target);
+    fs.writeFileSync(target,Buffer.concat([content,Buffer.alloc(limit-content.length,0x20)]));
+    if (kind === "contract") {
+      const checkpoint=path.join(root,".phase-evidence/phase-1-context.json");
+      const summary=JSON.parse(fs.readFileSync(checkpoint));
+      summary.contract_sha256=digest(fs.readFileSync(target));
+      fs.writeFileSync(checkpoint,JSON.stringify(summary));
+    }
+    assert.equal(verifyPhaseContext(root,"1").ok,true);
+    fs.appendFileSync(target," ");
+    assert.equal(verifyPhaseContext(root,"1").reason,kind === "contract" ? "unreadable authoritative contract" : "missing or invalid typed context checkpoint");
+  }));
+  test(`${kind} rejects directory and FIFO without blocking`,{timeout:5000},()=>trial(({root,file})=>{
+    const target=kind === "contract" ? file : path.join(root,".phase-evidence/phase-1-context.json");
+    fs.unlinkSync(target); fs.mkdirSync(target);
+    assert.equal(verifyPhaseContext(root,"1").ok,false);
+    fs.rmdirSync(target);
+    if (process.platform !== "win32") {
+      const result=spawnSync("mkfifo",[target],{timeout:1000});
+      assert.equal(result.status,0);
+      const child=spawnSync(process.execPath,[path.join(__dirname,"../scripts/context-contract.js"),"verify","1"],
+        {env:{...process.env,PHASE_GATE_ROOT:root},timeout:2000,encoding:"utf8"});
+      assert.equal(child.error,undefined);
+      assert.equal(child.status,2);
+    }
+  }));
+}
+test("previously valid large observation ref is rejected only beyond checkpoint cap",()=>trial(({root,summary,writeS})=>{
+  const limit=8*1024*1024;
+  summary.observations.push({text:"observed",source:{role:"tool",ref:"x"}});
+  const base=Buffer.byteLength(JSON.stringify(summary,null,2));
+  summary.observations[0].source.ref="x".repeat(limit-base+1);
+  writeS();
+  assert.equal(fs.statSync(path.join(root,".phase-evidence/phase-1-context.json")).size,limit);
+  assert.equal(verifyPhaseContext(root,"1").ok,true);
+  summary.observations[0].source.ref+="x"; writeS();
+  assert.deepEqual(verifyPhaseContext(root,"1"),{ok:false,reason:"missing or invalid typed context checkpoint"});
+}));
 test("no contract remains backwards-compatible",()=>trial(({root})=>{
   assert.equal(verifyPhaseContext(root,"2").ok,true);
   assert.equal(verifyPhaseContext(root,"2").enabled,false);

@@ -13,7 +13,32 @@ function keysEqual(object, expected) {
     JSON.stringify(Object.keys(object).sort()) === JSON.stringify(expected.slice().sort());
 }
 function digest(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
-function readJson(file) { return JSON.parse(fs.readFileSync(file, "utf8")); }
+// Generous limits accommodate escaped Unicode and pretty-printed valid contracts while
+// bounding parsing and hashing. Observation refs were previously unbounded, so a
+// schema-valid checkpoint can exceed the cap; it now gets the existing invalid error.
+const CONTRACT_MAX_BYTES = 2 * 1024 * 1024;
+const CHECKPOINT_MAX_BYTES = 8 * 1024 * 1024;
+function readBounded(file, maxBytes) {
+  // Pre-check avoids opening known special files; O_NONBLOCK prevents FIFO opens from
+  // hanging if a path is swapped before open. fstat checks the actual opened object.
+  if (!fs.statSync(file).isFile()) throw new Error("not a regular file");
+  const fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NONBLOCK || 0));
+  try {
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile() || stat.size > maxBytes) throw new Error("invalid file size or type");
+    const chunks = [];
+    let total = 0;
+    while (total <= maxBytes) {
+      const buffer = Buffer.allocUnsafe(Math.min(64 * 1024, maxBytes + 1 - total));
+      const count = fs.readSync(fd, buffer, 0, buffer.length, null);
+      if (!count) break;
+      chunks.push(buffer.subarray(0, count));
+      total += count;
+    }
+    if (total > maxBytes) throw new Error("file exceeds byte limit");
+    return Buffer.concat(chunks, total);
+  } finally { fs.closeSync(fd); }
+}
 function fail(reason) { return { ok: false, reason }; }
 function validateContract(contract, phase) {
   if (!keysEqual(contract, ["schema", "phase", "constraints"]) ||
@@ -36,14 +61,18 @@ function validateContract(contract, phase) {
 function verifyPhaseContext(root, phase) {
   if (typeof phase !== "string" || !PHASE_ID_RE.test(phase)) return fail("invalid phase identifier");
   const contractPath = path.join(root, "docs", "task-contracts", "phase-" + phase + ".json");
-  if (!fs.existsSync(contractPath)) return { ok: true, enabled: false };
+  try { fs.lstatSync(contractPath); }
+  catch (error) {
+    if (error.code === "ENOENT") return { ok: true, enabled: false };
+    return fail("unreadable authoritative contract");
+  }
   let contract, original, summary;
-  try { original = fs.readFileSync(contractPath); contract = JSON.parse(original.toString("utf8")); }
+  try { original = readBounded(contractPath, CONTRACT_MAX_BYTES); contract = JSON.parse(original.toString("utf8")); }
   catch { return fail("unreadable authoritative contract"); }
   const invalid = validateContract(contract, phase);
   if (invalid) return fail(invalid);
   const summaryPath = path.join(root, ".phase-evidence", "phase-" + phase + "-context.json");
-  try { summary = readJson(summaryPath); }
+  try { summary = JSON.parse(readBounded(summaryPath, CHECKPOINT_MAX_BYTES).toString("utf8")); }
   catch { return fail("missing or invalid typed context checkpoint"); }
   if (!keysEqual(summary, ["schema", "phase", "contract_sha256", "constraints", "observations"]) ||
       summary.schema !== 1 || summary.phase !== phase ||
