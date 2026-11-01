@@ -154,6 +154,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Per-read deadlines, open-by-name truncation, lexical guard coverage, and a missing positive control did not match the intended claims.
 - **Resolution/Pattern**: Use a monotonic request-input deadline, exclusively created staging files, explicit direct-edit guards, matched filesystem controls and mount-state checks; add bounded JSON inputs. Review ownership on error paths and retain platform and race limitations. These are local safeguards, not a sandbox or host authorization certification; actual host/model checks remain separate.
 
+### [2026-11-02] Cross-platform fixtures - Compare filesystem identity
+
+- **Issue/Risk**: A macOS CI test failed because a temporary root was reported as `/var/...` while the child process reported the same cwd as `/private/var/...`.
+- **Root Cause**: The test compared path spellings rather than the resolved filesystem location.
+- **Resolution/Pattern**: Compare canonical cwd identity while still checking the exact root argument and command arguments. Local Windows regression alone does not establish macOS success; require the updated PR CI result.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
