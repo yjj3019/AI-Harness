@@ -28,7 +28,12 @@ jobs:
       - name: Verify phase attestations
         run: |
           shopt -s nullglob
-          for f in docs/attestations/phase-*.json; do
+          attestations=(docs/attestations/phase-*.json)
+          echo "Attestation files found: ${#attestations[@]} (optional discovery, not a required-phase policy)"
+          if [ "${#attestations[@]}" -eq 0 ]; then
+            echo "No attestations verified; this does not prove any phase is complete."
+          fi
+          for f in "${attestations[@]}"; do
             id=${f#docs/attestations/phase-}; id=${id%.json}
             node .claude/workflows/phase-gate.js verify-attestation "$id"
           done
