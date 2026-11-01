@@ -29,12 +29,16 @@ const cp = require('node:child_process');
 const fs = require('node:fs');
 const original = cp.spawnSync;
 let calls = 0;
+let unavailable = false;
 cp.spawnSync = function(command, args, options) {
+  if (command === 'git' && args[0] === 'rev-parse' && args[1] === '--is-inside-work-tree' && unavailable)
+    return { status: 1, stdout: '', stderr: '' };
   if (command === 'git' && args[0] === 'ls-files') {
     calls++;
     const mode = process.env.INJECT_MODE;
     if (mode === 'mutate' && calls === 2) fs.writeFileSync('app.js', 'changed\\n');
-    if (mode === 'always-unavailable' || (mode === 'first-unavailable' && calls === 1))
+    unavailable = mode === 'always-unavailable' || (mode === 'first-unavailable' && calls === 1);
+    if (unavailable)
       return { status: 1, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0) };
     fs.appendFileSync('.phase-evidence/calls', String(calls) + '\\n');
   }

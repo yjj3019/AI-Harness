@@ -8,7 +8,7 @@
 
 ## 왜 Harness Engineering인가?
 
-코드 에이전트가 수 시간 자율 실행이 가능해지면서 제약 요인은 모델 지능이 아닐 “하네스(harness)”가 되었습니다. 하네스는 에이전트가 경로를 이탈하지 않고 안전하게 작업하도록 만드는 규칙, 피드백 루프, 도구, 컨텍스트 관리, 검증 시스템입니다.
+코드 에이전트가 장시간 작업할 때는 모델의 능력뿐 아니라 이를 뒷받침하는 “하네스(harness)”도 중요합니다. 하네스는 에이전트가 경로를 이탈하지 않고 안전하게 작업하도록 만드는 규칙, 피드백 루프, 도구, 컨텍스트 관리, 검증 시스템입니다.
 
 **정확한 정의**: 하네스는 Code Agent와 *직접 연관된* 도구·규칙·행동으로 구성됩니다.  
 예: `CLAUDE.md` 규칙, 독립 검증 에이전트, 증거 게이트, compound learning log.  
@@ -41,7 +41,16 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 
 예: “evidence-preserving-editor 지침에 따라 이 보고서 문장만 편집하고, 검증 한계와 수치는 유지해줘.”
 
-[평가 사례](docs/report-editing-cases.json)는 사람 또는 별도 승인된 모델 평가용입니다. CI는 패키지 구조와 사례 정합성만 검사하며 재작성 품질이나 의미 동등성을 보증하지 않습니다.
+[평가 사례](docs/report-editing-cases.json)는 합성 fixture이며 사람 또는 별도 승인된 모델 평가용입니다. CI는 패키지 구조와 사례 정합성만 검사하며 재작성 품질이나 의미 동등성을 보증하지 않습니다.
+
+### 로컬 비교 평가와 변이 테스트 (선택형)
+
+[로컬 평가 PoC 안내](docs/local-evaluation-poc.md)는 외부 모델이나 추가 패키지 없이 사용하는 두 도구를 설명합니다.
+
+- **블라인드 패킷 준비**: [offline-review.js](scripts/offline-review.js)는 미리 준비한 두 후보의 JSON 출력으로 사례별 A/B 검토 패킷과 별도 비공개 대응표를 만듭니다. 자동 채점이나 모델 호출은 하지 않습니다. 후보 출처·의미 보존·비용·행동 증거는 별도로 확인해야 합니다. 현재 배정은 재현 가능한 seed를 기록하지 않으므로 [정식 평가 프로토콜](docs/report-editing-evaluation.md)의 seed 요구를 단독으로 충족하지 않습니다.
+- **표적 변이 PoC**: `node scripts/mutation-probe.js`는 임시 복사본에서 테스트 요약 파서의 세 변이에 대해 기존 테스트를 실행합니다. StrykerJS 설치 없이 수동 실행하며 전체 게이트나 보안을 인증하지 않습니다. 임시 디렉터리는 샌드박스가 아닙니다.
+
+두 도구 모두 실제 모델의 효과나 운영 환경을 검증한 결과가 아닙니다. 사용 전 안내 문서의 개인정보·권한·검증 한계를 확인하세요.
 
 ## 선택형 디자인 검증 스킬
 
@@ -101,7 +110,7 @@ AI-Harness/
 
 ## Ralph Wiggum Loop
 
-심슨즈 캐릭터 Ralph Wiggum의 이름을 띄 자율 반복 루프입니다. Geoffrey Huntley가 2025년에 제안한 간단한 bash 루프입니다:
+심슨즈 캐릭터 Ralph Wiggum의 이름을 딴 자율 반복 루프입니다. Geoffrey Huntley가 2025년에 제안한 간단한 bash 루프입니다:
 
 ```bash
 while :; do cat PROMPT.md | claude-code ; done
@@ -152,7 +161,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 1. `CLAUDE.md` 읽기.
 2. `docs/compound-log.md` 검토.
 3. `docs/PHASES.md`에 단계 정의, `docs/DETAIL_SPEC.md`에 요구사항 작성.
-4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id>`.
+4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id> --require-bound-tree`.
 5. 컨텍스트가 저하되면 `docs/HANDOFF.md`에 상태를 기록하고 새 세션 시작.
 
 ## 다른 프로젝트에 적용하는 방법
@@ -168,10 +177,10 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 2. `docs/PHASES.md`를 만들고 각 Phase를 다음 기준으로 작성합니다.
    - 한 번에 사람이 직접 돌려볼 수 있는 크기
    - 체크리스트 항목이 관찰 가능한 증거로 확인 가능
-3. `.claude/workflows/phase-gate.js`와 `.claude/commands/phase-harness.md`를 복사합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로만 남깁니다. 손으로 쓴 JSON은 `check`에서 거부되고, 증거가 없으면 실패합니다.
+3. 이식 시 `.claude/workflows/phase-gate.js`, `.claude/workflows/test-summary.js`, `scripts/context-contract.js`, `.claude/commands/phase-harness.md`와 필요한 에이전트·설정을 함께 검토합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로 남깁니다. `check`는 누락되거나 검증 조건에 맞지 않는 증거를 거부하지만, 해시 체인은 같은 권한을 가진 작성자에 대한 인증이나 OS 격리가 아닙니다.
    ```bash
-   node .claude/workflows/phase-gate.js run 1 test -- npm test
-   node .claude/workflows/phase-gate.js check 1
+   node .claude/workflows/phase-gate.js run 1 test --require-test-summary --require-bound-tree -- npm test
+   node .claude/workflows/phase-gate.js check 1 --require-bound-tree
    ```
 
 ### Default-FAIL 계약 추가 (권장)
@@ -213,7 +222,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 - 모델이 좋아질수록 하네스를 줄이세요. 주기적으로 “이 규칙이 아직 필요한가?”를 확인합니다.
 - 특정 시나리오 문서는 넣지 마세요. 메커니즘만 남기고 프로젝트별 내용은 해당 프로젝트 안에 둡니다.
 
-가장 빠른 시작은 이 저장소의 `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-gate.js`, `.claude/commands/phase-harness.md`를 복사한 뒤 해당 프로젝트의 Phase만 채우는 것입니다. 증거 쓰기 제한까지 쓰려면 `.claude/agents/`, `.claude/hooks/`, `.claude/settings.json`도 함께 복사합니다.
+다른 프로젝트에 이식할 때는 `docs/PHASES.md`, `docs/HANDOFF.md`, 게이트와 위에 명시한 의존 모듈, 명령·에이전트·훅 설정을 함께 검토하고 대상 환경에서 검증하세요. 훅과 지침은 실수 방지 장치이며 실제 호스트 권한이나 샌드박스를 대체하지 않습니다.
 
 ## 추가 자료
 
@@ -241,7 +250,11 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 엄격한 테스트 증거 검사
 
-신규 Phase는 `phase-gate.js run <id> test --require-test-summary -- <command>`를 사용합니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+신규 Phase는 `phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <command>`와 `phase-gate.js check <id> --require-bound-tree`를 사용합니다. 바인딩 옵션은 호출별 요구이며 검증자도 check에 독립적으로 지정해야 합니다. 옵션 없는 기존 호출은 Git을 확인할 수 없을 때 미바인딩 증거를 경고와 함께 허용할 수 있습니다. 기존 해시만으로 과거 실행이 엄격 모드였거나 스냅샷이 완전했다고 증명할 수 없습니다. 과거 스냅샷의 완전성이 중요하면 현재 규칙으로 테스트를 다시 실행하고 attestation도 재발급하세요. Attest와 재실행 검증은 바인딩된 트리를 요구하지만, 기존 해시의 과거 읽기 완전성을 복구하지는 않습니다. 스냅샷 비교는 OS 격리가 아니며 ignored 입력, 파일 모드와 검사 사이에 복원된 변경 등을 보장하지 않습니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+
+### 필수 attestation 목록 검사 (선택형)
+
+현재 CI는 발견된 attestation을 재실행하지만, Phase가 없으면 0개를 검사할 수 있습니다. 특정 Phase가 필수라면 신뢰할 수 있는 관리자가 보관한 비어 있지 않은 JSON ID 배열(예: `["1", "2"]`)을 명시해 `node scripts/verify-attestation-inventory.js <manifest.json>`을 실행할 수 있습니다. 목록의 모든 Phase가 정의되고 파일이 존재해야 하며 각 attestation 재검증이 성공해야 합니다. 이 도구는 현재 CI에 자동 연결되지 않습니다. PR 작성자가 바꿀 수 없는 별도 정책·필수 워크플로와 검증기 보호가 필요하며, 이 저장소만으로 GitHub 보호가 적용됐다고 주장할 수 없습니다. 현재 저장소의 명령 pin은 `bash tests/run-all.sh`이지만 pin이 없거나 변경되면 attestation이 명령을 선택할 수 있습니다. pin이 있어도 저장소 코드를 상속된 환경에서 실제 실행합니다. 검증기·pin·Phase 정의도 보호하고, replay를 별도 승인된 격리 환경에서 수행하세요. 순차 검증 중 뒤의 실패는 앞선 실행의 효과를 되돌리지 않습니다.
 
 ## ToolBroker 멱등성/승인 참조 구현 (선택형)
 

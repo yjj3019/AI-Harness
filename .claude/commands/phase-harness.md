@@ -27,13 +27,13 @@ Per attempt, in order. `<id>` is the Phase id and `<n>` the attempt number.
    `node .claude/workflows/phase-gate.js record <id> coding --status PASS --report .phase-evidence/<id>-coding-<n>.md`.
    If it says it could not finish, record `--status FAIL` and stop the loop.
 2. **test**: invoke the `test` subagent and tell it to run
-   `node .claude/workflows/phase-gate.js run <id> test --require-test-summary -- <test command>`.
-   Exit 2 means the test failed and the failure is already recorded. Start the next attempt with the log tail as the defect.
+   `node .claude/workflows/phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <test command>`.
+   Exit 2 means the run failed; a snapshot error can stop it before evidence is recorded. Read stderr and the log, and treat a missing tree as blocked rather than relaxing the requirement.
    Strict mode currently recognizes Node TAP and pytest test counts. Add an explicitly reviewed adapter for unsupported runners instead of disabling proof for a new Phase. Verify expected *behavior*, not only positive counts.
 3. **verify**: invoke the `verify` subagent with the checklist and the evidence paths. Save its verdict to `.phase-evidence/<id>-verify-<n>.md`. Record PASS only if the verdict says `Status: PASS`. Otherwise record FAIL (with the report) and start the next attempt with its defect list.
 4. **review**: invoke the `review` subagent. Save its verdict to `.phase-evidence/<id>-review-<n>.md`. APPROVED with no `[BLOCKING]` item is PASS. REJECTED or any `[BLOCKING]` item is FAIL: record it and start the next attempt.
 5. **compound**: invoke the `compound` subagent. Save its summary to `.phase-evidence/<id>-compound-<n>.md` and record PASS.
-6. **gate**: run `node .claude/workflows/phase-gate.js check <id>`. Exit 0 ends the loop. Any other result counts as a failed attempt; read stderr for the failing step.
+6. **gate**: run `node .claude/workflows/phase-gate.js check <id> --require-bound-tree`. Exit 0 ends the loop. Any other result counts as a failed attempt; read stderr for the failing step. The verifier must independently require this flag: evidence does not record whether the original run used it. Existing bound evidence alone does not prove historical snapshot completeness.
 
 Recording a step clears the later steps, so a new coding result is always re-tested and re-verified.
 
