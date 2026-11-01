@@ -9,6 +9,24 @@ const count = v => Number.isSafeInteger(v) && v > 0;
 const hash = v => typeof v === "string" && /^[a-f0-9]{64}$/.test(v);
 const id = v => typeof v === "string" && /^[a-zA-Z0-9_-]{1,64}$/.test(v);
 const digest = v => crypto.createHash("sha256").update(v).digest("hex");
+// Limit each manifest independently and inspect the opened FD, not the path.
+const MAX_JSON_BYTES = 16 * 1024 * 1024;
+function readJsonBytes(file) {
+  const fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NONBLOCK || 0));
+  try {
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile() || stat.size > MAX_JSON_BYTES) throw new Error("invalid manifest file");
+    const buffer = Buffer.allocUnsafe(MAX_JSON_BYTES + 1);
+    let used = 0;
+    while (used < buffer.length) {
+      const n = fs.readSync(fd, buffer, used, buffer.length - used, null);
+      if (!n) break;
+      used += n;
+    }
+    if (used > MAX_JSON_BYTES) throw new Error("manifest too large");
+    return buffer.subarray(0, used);
+  } finally { fs.closeSync(fd); }
+}
 function validateJob(j) {
   if (!exact(j, ["schema", "job_id", "engine", "capabilities", "limits", "inputs"]) || j.schema !== 1 || !id(j.job_id)) return "invalid job schema/id";
   if (!exact(j.engine, ["name", "version", "endpoint"]) || !text(j.engine.name) || !text(j.engine.version) || !text(j.engine.endpoint)) return "invalid engine identity";
@@ -62,8 +80,8 @@ function main() {
     console.error("Usage: node scripts/document-job.js verify <job.json> <result.json>"); process.exitCode = 1; return;
   }
   try {
-    const bytes = fs.readFileSync(process.argv[3]);
-    const result = verifyResult(JSON.parse(bytes.toString("utf8")), JSON.parse(fs.readFileSync(process.argv[4], "utf8")), digest(bytes));
+    const bytes = readJsonBytes(process.argv[3]);
+    const result = verifyResult(JSON.parse(bytes.toString("utf8")), JSON.parse(readJsonBytes(process.argv[4]).toString("utf8")), digest(bytes));
     console.log(JSON.stringify(result)); process.exitCode = result.ok ? 0 : 2;
   } catch { console.log(JSON.stringify({ ok: false, reason: "unreadable or invalid JSON manifests" })); process.exitCode = 2; }
 }

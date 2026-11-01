@@ -335,36 +335,90 @@ function cmdRun(args) {
 
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   const logAbs = path.join(EVIDENCE_DIR, `phase-${phase}-test.log`);
-  const fd = fs.openSync(logAbs, "w");
   const treeBefore = treeHash();
   if (treeBefore && typeof treeBefore === "object") {
-    fs.closeSync(fd);
     die(2, `ERROR: cannot snapshot code tree before test: ${treeBefore.error}`);
   }
-  let result;
+  // Create a new inode exclusively, then replace the directory entry, never opening
+  // the predictable log for writing. Existing symlinks and hardlinks are not followed.
+  // This assumes the evidence directory is trusted against concurrent manipulation.
+  const tempLog = path.join(EVIDENCE_DIR, `.phase-gate-${crypto.randomBytes(16).toString("hex")}.tmp`);
+  let fd;
+  let ownsTempLog = false;
+  let result, exitCode, summary, treeAfter, status, operationError, cleanupError;
+  // The child can seek the shared descriptor. Append at the current file size,
+  // not its shared offset, and handle partial writes.
+  const appendLog = (text) => {
+    const data = Buffer.from(text);
+    let pos = fs.fstatSync(fd).size;
+    let written = 0;
+    while (written < data.length) {
+      const n = fs.writeSync(fd, data, written, data.length - written, pos);
+      if (!n) throw new Error("short write to test log");
+      written += n;
+      pos += n;
+    }
+  };
   try {
+    fd = fs.openSync(tempLog, "wx+", 0o600);
+    ownsTempLog = true;
     result = spawnSync(cmd[0], cmd.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd] });
+    if (result.error) appendLog(`\n[phase-gate] failed to start: ${result.error.message}\n`);
+    exitCode = typeof result.status === "number" ? result.status : -1;
+    // Read using explicit offsets: the child shares the descriptor's file position.
+    const content = Buffer.alloc(fs.fstatSync(fd).size);
+    let offset = 0;
+    while (offset < content.length) {
+      const n = fs.readSync(fd, content, offset, content.length - offset, offset);
+      if (!n) throw new Error("short read of test log");
+      offset += n;
+    }
+    summary = inspectTestSummary(content.toString("utf8"), strict);
+    treeAfter = treeHash();
+    if (treeAfter && typeof treeAfter === "object") {
+      const err = new Error(`cannot snapshot code tree after test: ${treeAfter.error}`);
+      err.phaseGateExitCode = 2;
+      throw err;
+    }
+    // Both unavailable preserves legacy no-git behavior; only one unavailable must fail.
+    const treeOk = treeBefore === treeAfter;
+    const treeDiagnostic = treeBefore === null && treeAfter === null
+      ? "code tree unavailable before and after; tree not bound"
+      : !treeOk && (treeBefore === null || treeAfter === null)
+        ? "code tree unavailable before or after test; cannot compare"
+        : !treeOk ? "code changed during test" : "code tree unchanged";
+    // A detected zero/all-skipped/failing summary is always FAIL. A missing summary
+    // also fails for new strict invocations; older projects retain legacy behavior.
+    status = exitCode === 0 && summary.ok !== false && treeOk ? "PASS" : "FAIL";
+    // Keep an unterminated final test-output line separate from the metadata.
+    const separator = content.length && content[content.length - 1] !== 0x0a ? "\n" : "";
+    appendLog(`${separator}[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n[phase-gate] test_summary: ${JSON.stringify(summary)}\n[phase-gate] tree: ${treeDiagnostic}\n`);
+    const closingFd = fd;
+    fd = undefined;
+    fs.closeSync(closingFd);
+    fs.renameSync(tempLog, logAbs);
+    ownsTempLog = false;
+  } catch (err) {
+    operationError = err;
   } finally {
-    fs.closeSync(fd);
+    if (fd !== undefined) {
+      try { fs.closeSync(fd); } catch (err) { cleanupError = err; }
+    }
+    if (ownsTempLog) {
+      try { fs.unlinkSync(tempLog); } catch (err) {
+        if (err.code !== "ENOENT") {
+          if (cleanupError) console.error(`ERROR: temporary log unlink: ${err.message}`);
+          else cleanupError = err;
+        }
+      }
+    }
   }
-  if (result.error) fs.appendFileSync(logAbs, `\n[phase-gate] failed to start: ${result.error.message}\n`);
-  const exitCode = typeof result.status === "number" ? result.status : -1;
-  const summary = inspectTestSummary(fs.readFileSync(logAbs, "utf8"), strict);
-  const treeAfter = treeHash();
-  if (treeAfter && typeof treeAfter === "object") {
-    die(2, `ERROR: cannot snapshot code tree after test: ${treeAfter.error}`);
+  if (operationError) {
+    if (cleanupError) console.error(`ERROR: temporary log cleanup: ${cleanupError.message}`);
+    if (operationError.phaseGateExitCode) die(operationError.phaseGateExitCode, `ERROR: ${operationError.message}`);
+    throw operationError;
   }
-  // Both unavailable preserves legacy no-git behavior; only one unavailable must fail.
-  const treeOk = treeBefore === treeAfter;
-  const treeDiagnostic = treeBefore === null && treeAfter === null
-    ? "code tree unavailable before and after; tree not bound"
-    : !treeOk && (treeBefore === null || treeAfter === null)
-      ? "code tree unavailable before or after test; cannot compare"
-      : !treeOk ? "code changed during test" : "code tree unchanged";
-  // A detected zero/all-skipped/failing summary is always FAIL. A missing summary
-  // also fails for new strict invocations; older projects retain legacy behavior.
-  const status = exitCode === 0 && summary.ok !== false && treeOk ? "PASS" : "FAIL";
-  fs.appendFileSync(logAbs, `[phase-gate] command: ${cmd.join(" ")}\n[phase-gate] exit_code: ${exitCode}\n[phase-gate] test_summary: ${JSON.stringify(summary)}\n[phase-gate] tree: ${treeDiagnostic}\n`);
+  if (cleanupError) throw cleanupError;
 
   // Reads made while the test command was running do not count.
   rotateReadToken(phase);
