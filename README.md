@@ -52,6 +52,12 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 
 두 도구 모두 실제 모델의 효과나 운영 환경을 검증한 결과가 아닙니다. [호스트 격리 검증 계획](docs/host-verification-plan.md)은 사전 승인·대조군·복구를 요구하는 미실행 계획입니다. 사용 전 안내 문서의 개인정보·권한·검증 한계를 확인하세요.
 
+### 선택형 작업 계약·그래프·평가 집계
+
+외부 프레임워크 없이 사용할 수 있는 독립형 도구입니다. [작업 계약](docs/task-contract.md)은 목표·범위·산출물·제약의 형식만 검증하고, [작업 그래프](docs/task-graph.md)는 선언된 의존성과 상태를 분석하며 선택적으로 동일 범위 라벨의 충돌을 경고합니다. [평가 집계](docs/evaluation-accounting.md)는 미검증·미완료 결과를 포함해 분모를 계산하며, [쌍별 평가 진단](docs/paired-evaluation.md)은 선언된 baseline·candidate 결과를 케이스별로 집계합니다. 이 진단의 결과는 입력 선언의 산술적 분류일 뿐 실제 성능 개선이나 후보 채택을 증명하지 않습니다. 어느 도구도 작업을 실행하거나 권한·격리·예산을 강제하지 않으며 입력의 진실성이나 독립적 검증을 보증하지 않습니다. 기존 Phase 게이트에 자동 통합되지 않습니다. [DeepSeek Harness 협업 절차](docs/deepseek-team-workflow.md)는 Team·Subagent의 작업 상태와 독립 Phase 증거를 구별하는 선택형 가이드입니다.
+
+제공된 13개 저장소의 기능·루트 라이선스·적용 한계는 [하네스 최적화 검토](docs/harness-optimization-review-2026-11-02.md)에 고정 커밋별로 정리했습니다. 자동 최적화 도구를 설치하거나 외부 모델을 실행한 결과는 아닙니다.
+
 ## 선택형 디자인 검증 스킬
 
 [design-evidence-harness](skills/design-evidence-harness/SKILL.md)는 사용자가 명시적으로 요청할 때 적용하는 디자인·산출물 검증 절차입니다. 기존 브랜드와 요청한 산출물 형식을 우선하고, HTML 상호작용·편집 가능한 PPTX·차트·동영상 등은 해당 형식에 맞게 검증합니다. 검사할 수 없는 항목은 미검증으로 보고합니다. 원본 [huashu-design](https://github.com/alchaincyf/huashu-design/tree/4fc7bfdbd5ec3fa2d43ce7a6433de60976a5e4b1)의 MIT 고지를 포함하며 원본 자산·스크립트는 가져오지 않았습니다.
@@ -255,6 +261,8 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ### 필수 attestation 목록 검사 (선택형)
 
 현재 CI는 발견된 attestation을 재실행하지만, Phase가 없으면 0개를 검사할 수 있습니다. 특정 Phase가 필수라면 신뢰할 수 있는 관리자가 보관한 비어 있지 않은 JSON ID 배열(예: `["1", "2"]`)을 명시해 `node scripts/verify-attestation-inventory.js <manifest.json>`을 실행할 수 있습니다. 목록의 모든 Phase가 정의되고 파일이 존재해야 하며 각 attestation 재검증이 성공해야 합니다. 이 도구는 현재 CI에 자동 연결되지 않습니다. PR 작성자가 바꿀 수 없는 별도 정책·필수 워크플로와 검증기 보호가 필요하며, 이 저장소만으로 GitHub 보호가 적용됐다고 주장할 수 없습니다. 현재 저장소의 명령 pin은 `bash tests/run-all.sh`이지만 pin이 없거나 변경되면 attestation이 명령을 선택할 수 있습니다. pin이 있어도 저장소 코드를 상속된 환경에서 실제 실행합니다. 검증기·pin·Phase 정의도 보호하고, replay를 별도 승인된 격리 환경에서 수행하세요. 순차 검증 중 뒤의 실패는 앞선 실행의 효과를 되돌리지 않습니다.
+
+재실행 없이 목록과 파일 존재만 미리 확인하려면 `node scripts/verify-attestation-inventory.js --preflight <manifest.json>`을 사용하세요. 이 모드는 동일한 manifest·Phase ID·일반 파일 존재 조건을 검사하지만 gate나 attestation 명령을 실행하지 않으며 파일 내용, 유효성 또는 신뢰성을 검증하지 않습니다. 출력의 present/unverified와 종료 코드 0은 검증 성공이 아닌 존재 확인만 뜻합니다. 파일을 순차적으로 검사하고 심볼릭 링크를 따라가므로 동시점 스냅샷, 내용의 읽기 가능성이나 검사 후 존재를 보장하지 않습니다. 신뢰할 수 있는 로컬 입력에만 사용하세요. 기본 호출은 여전히 실제 재검증을 수행합니다.
 
 ## ToolBroker 멱등성/승인 참조 구현 (선택형)
 
