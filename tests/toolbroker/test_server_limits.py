@@ -128,6 +128,20 @@ class ServerLimitTests(unittest.TestCase):
                 time.sleep(0.01)
             self.assertEqual(broker.calls, 0)
 
+    @staticmethod
+    def _read_until_closed(sock):
+        data = b""
+        try:
+            while True:
+                part = sock.recv(4096)
+                if not part:
+                    break
+                data += part
+        except ConnectionResetError:
+            if not data:
+                raise
+        return data
+
     def test_slow_drip_has_absolute_deadline_and_releases_slot(self):
         prefixes = (b"GET /hea", b"GET /health HTTP/1.1\r\nHost: local",
                     b"POST /v1/tools/execute HTTP/1.1\r\nHost: localhost\r\n"
@@ -143,7 +157,10 @@ class ServerLimitTests(unittest.TestCase):
                     while not select.select([sock], [], [], 0.1)[0]:
                         self.assertLess(time.monotonic() - start, 2)
                         sock.sendall(b"x")
-                    reply = receive_all(sock)
+                    # The server closes while this client may still have unread bytes in flight; some
+                    # kernels (macOS) then reset the connection. Read the 408 first and treat a reset
+                    # after any data was received as the connection simply being closed.
+                    reply = self._read_until_closed(sock)
                     self.assertIn(b" 408 ", reply)
                     self.assertIn(b"REQUEST_TIMEOUT", reply)
                     self.assertIn(b"Connection: close", reply)
