@@ -26,6 +26,41 @@ function fixture(fn) {
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 }
 
+test("preflight checks presence without spawning or verifying attestation contents", () => {
+  const child = require("node:child_process");
+  const original = child.spawnSync;
+  let spawned = 0;
+  child.spawnSync = () => { spawned++; throw new Error("unexpected spawn"); };
+  delete require.cache[checker];
+  const { verifyInventory } = require(checker);
+  child.spawnSync = original;
+  delete require.cache[checker];
+  fixture(({ root, manifest, att }) => {
+    const output = [];
+    const log = console.log;
+    console.log = (line) => output.push(line);
+    try {
+      att("1"); att("2");
+      fs.writeFileSync(path.join(root, "docs", "attestations", "phase-2.json"), "not JSON");
+      fs.writeFileSync(manifest, '["2","1"]');
+      verifyInventory(manifest, { root, preflight: true });
+      assert.match(output.join("\n"), /Phase 2:.*present.*unverified[\s\S]*Phase 1:.*present.*unverified/i);
+      assert.match(output.join("\n"), /not verified and no commands were run/i);
+      assert.doesNotMatch(output.join("\n"), /Verified \d+ required/);
+      for (const input of ["[]", "{}", "null", "[", '["1","1"]', '["../2"]', '["1",2]', '["fake"]', '["unknown"]', Buffer.from([0xff])]) {
+        fs.writeFileSync(manifest, input);
+        assert.throws(() => verifyInventory(manifest, { root, preflight: true }), /manifest|unknown phase/i);
+      }
+      fs.writeFileSync(manifest, '["1","2"]');
+      fs.unlinkSync(path.join(root, "docs", "attestations", "phase-2.json"));
+      assert.throws(() => verifyInventory(manifest, { root, preflight: true }), /missing.*phase 2/i);
+      fs.mkdirSync(path.join(root, "docs", "attestations", "phase-2.json"));
+      assert.throws(() => verifyInventory(manifest, { root, preflight: true }), /missing.*phase 2/i);
+      assert.equal(spawned, 0);
+    } finally { console.log = log; }
+  });
+});
+
 test("rejects empty, malformed, duplicate, traversal, unknown and non-string manifests before replay", () => {
   fixture(({ att, run, calls }) => {
     att("1"); att("2");
@@ -85,6 +120,89 @@ test("real gate rejects a malformed attestation in a fixture root", () => {
     assert.match(r.stderr, /attestation for phase 1: schema or phase mismatch/);
     assert.match(r.stderr, /phase 1 verification failed/);
     assert.doesNotMatch(r.stdout, /Verified 1 required/);
+  });
+});
+
+test("real gate verifies a complete multi-phase inventory and rejects missing or corrupt entries", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "inventory-real-"));
+  const gate = path.resolve(__dirname, "../.claude/workflows/phase-gate.js");
+  const env = { ...process.env, PHASE_GATE_ROOT: root };
+  // Do not let inherited Git routing/config redirect fixture operations elsewhere.
+  for (const name of Object.keys(env)) if (/^GIT_/i.test(name)) delete env[name];
+  env.GIT_CONFIG_NOSYSTEM = "1";
+  env.GIT_CONFIG_GLOBAL = path.join(root, "absent-git-config");
+  delete env.NODE_TEST_CONTEXT; // Permit the fixture's independent Node test runner.
+  const run = (program, args) => spawnSync(program, args, { cwd: root, env, encoding: "utf8" });
+  const ok = (result, label) => assert.equal(result.status, 0, `${label}: ${result.error || ""}\n${result.stdout}\n${result.stderr}`);
+  try {
+    ok(run("git", ["init", "-q"]), "git init");
+    fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+    fs.mkdirSync(path.join(root, ".phase-evidence"));
+    fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: One\n### Phase 2: Two\n");
+    const manifest = path.join(root, "manifest.json");
+    fs.writeFileSync(manifest, '["1","2"]');
+    const report = ".phase-evidence/report.txt";
+    fs.writeFileSync(path.join(root, report), "fixture report\n");
+    fs.writeFileSync(path.join(root, "fixture.test.js"), 'const { test } = require("node:test");\nconst assert = require("node:assert/strict");\ntest("deterministic fixture", () => assert.equal(2 + 2, 4));\n');
+    const gateRun = (...args) => run(process.execPath, [gate, ...args]);
+    for (const id of ["1", "2"]) {
+      ok(gateRun("record", id, "coding", "--status", "PASS", "--report", report), `coding ${id}`);
+      const command = [process.execPath, "--test", "fixture.test.js"];
+      ok(gateRun("run", id, "test", "--require-bound-tree", "--require-test-summary", "--", ...command), `test ${id}`);
+      for (const step of ["verify", "review", "compound"]) {
+        ok(gateRun("record", id, step, "--status", "PASS", "--report", report), `${step} ${id}`);
+      }
+      ok(gateRun("check", id, "--require-bound-tree"), `check ${id}`);
+      ok(gateRun("attest", id), `attest ${id}`);
+    }
+    const runner = `require(${JSON.stringify(checker)}).verifyInventory(${JSON.stringify(manifest)}, {root:${JSON.stringify(root)}, gatePath:${JSON.stringify(gate)}})`;
+    const inventory = () => run(process.execPath, ["-e", `try { ${runner} } catch(e) { console.error(e.message); process.exitCode=1; }`]);
+    const valid = inventory();
+    ok(valid, "inventory");
+    assert.match(valid.stdout, /deterministic fixture[\s\S]*Phase 1 attestation verified[\s\S]*deterministic fixture[\s\S]*Phase 2 attestation verified[\s\S]*Verified 2 required attestation/);
+
+    const second = path.join(root, "docs", "attestations", "phase-2.json");
+    const original = fs.readFileSync(second);
+    fs.unlinkSync(second);
+    const missing = inventory();
+    assert.notEqual(missing.status, 0);
+    assert.match(missing.stderr, /missing or unreadable attestation for phase 2/i);
+    assert.doesNotMatch(missing.stdout, /deterministic fixture|Verified 2 required/);
+    fs.writeFileSync(second, original);
+    fs.writeFileSync(second, "{invalid");
+    const corrupt = inventory();
+    assert.notEqual(corrupt.status, 0);
+    assert.match(corrupt.stdout, /Phase 1 attestation verified/);
+    assert.match(corrupt.stderr, /attestation for phase 2: invalid JSON[\s\S]*phase 2 verification failed/i);
+    assert.doesNotMatch(corrupt.stdout, /Phase 2 attestation verified|Verified 2 required/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI preflight reports fixture presence without running the gate", () => {
+  fixture(({ root, manifest, att }) => {
+    att("1");
+    fs.writeFileSync(manifest, '["1"]');
+    fs.mkdirSync(path.join(root, "scripts"));
+    const localChecker = path.join(root, "scripts", "verify-attestation-inventory.js");
+    fs.copyFileSync(checker, localChecker);
+    const r = spawnSync(process.execPath, [localChecker, "--preflight", manifest], { cwd: root, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /present \(unverified\)/);
+    assert.match(r.stdout, /not verified and no commands were run/);
+    assert.doesNotMatch(r.stdout, /Verified \d+ required/);
+  });
+});
+
+test("CLI preflight rejects malformed argument lists", () => {
+  fixture(({ root }) => {
+    for (const args of [["--preflight"], ["--preflight", "a", "b"], ["--preflight", "--help"], ["a", "--preflight"]]) {
+      const r = spawnSync(process.execPath, [checker, ...args], { cwd: root, encoding: "utf8" });
+      assert.notEqual(r.status, 0);
+      assert.match(r.stderr, /Usage:/);
+      assert.doesNotMatch(r.stdout, /Verifying/);
+    }
   });
 });
 
