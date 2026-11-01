@@ -12,7 +12,7 @@ const ROOT = path.resolve(__dirname, "..");
 const GATE = path.join(ROOT, ".claude", "workflows", "phase-gate.js");
 
 // root and gatePath are dependency injection for callers/tests, not CLI options.
-function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE } = {}) {
+function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight = false } = {}) {
   if (typeof manifestPath !== "string" || !manifestPath || manifestPath.startsWith("-")) {
     throw new Error("provide exactly one manifest path");
   }
@@ -46,6 +46,11 @@ function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE } = {}) {
       throw new Error(`missing or unreadable attestation for phase ${id}: ${err.message}`);
     }
   }
+  if (preflight) {
+    for (const id of phases) console.log(`Phase ${id}: attestation file present (unverified).`);
+    console.log(`Preflight: ${phases.length} required attestation file(s) present; attestations were not verified and no commands were run.`);
+    return;
+  }
   for (const id of phases) {
     console.log(`Verifying attestation for phase ${id}...`);
     const result = spawnSync(process.execPath, [gatePath, "verify-attestation", id], {
@@ -59,10 +64,13 @@ function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE } = {}) {
 
 if (require.main === module) {
   try {
-    if (process.argv.length !== 3) throw new Error("provide exactly one manifest path");
-    verifyInventory(process.argv[2]);
+    const args = process.argv.slice(2);
+    const preflight = args[0] === "--preflight";
+    if (args.length !== (preflight ? 2 : 1)) throw new Error("provide exactly one manifest path");
+    verifyInventory(args[preflight ? 1 : 0], { preflight });
   } catch (err) {
-    console.error(`ERROR: ${err.message}\nUsage: node scripts/verify-attestation-inventory.js <manifest.json>`);
+    const usage = process.argv[2] === "--preflight" ? "[--preflight] <manifest.json>" : "<manifest.json>";
+    console.error(`ERROR: ${err.message}\nUsage: node scripts/verify-attestation-inventory.js ${usage}`);
     process.exitCode = 1;
   }
 }
