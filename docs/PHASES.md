@@ -13,8 +13,8 @@ Evidence is recorded only through `.claude/workflows/phase-gate.js`. Never write
 
 - `coding`, `verify`, `review`, `compound`: save the agent's report under `.phase-evidence/`, then run
   `node .claude/workflows/phase-gate.js record <id> <step> --status PASS|FAIL --report .phase-evidence/<file>.md`
-- `test`: for a new Phase, run `node .claude/workflows/phase-gate.js run <id> test --require-test-summary -- <command>`. The runner records the actual exit status and validates recognized Node TAP / pytest counts. Missing summary, zero tests, and all-skipped tests fail in strict mode. Add a reviewed adapter for other runners; legacy no-summary commands retain compatibility but do not prove executed tests.
-- Gate: `node .claude/workflows/phase-gate.js check <id>` exits 0 only when all five steps are valid.
+- `test`: for a new Phase, run `node .claude/workflows/phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <command>`. The runner records the actual exit status and validates recognized Node TAP / pytest counts. Missing summary, zero tests, and all-skipped tests fail with the summary flag. Add a reviewed adapter for other runners; legacy no-summary commands retain compatibility but do not prove executed tests.
+- Gate: `node .claude/workflows/phase-gate.js check <id> --require-bound-tree` requires five valid steps and a present, matching tree snapshot. The flag is per invocation; omitting it permits legacy unbound checks when Git is unavailable. It cannot prove historical snapshot completeness or authenticate evidence, and endpoint snapshots are not isolation.
 
 Each `.phase-evidence/phase-<id>-<step>.json` holds the status, the SHA-256 of its report or log, and the SHA-256 of the previous step's file. A step cannot be recorded until the previous step is PASS. Recording a step clears the steps after it, so a changed result must be re-tested and re-verified.
 

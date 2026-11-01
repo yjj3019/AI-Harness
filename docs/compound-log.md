@@ -112,6 +112,30 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Replay used separate bounded pipes while the original run wrote both streams to one file descriptor.
 - **Resolution/Pattern**: Capture both streams to a temporary file for strict replay and inspect the merged bytes. Snapshot and summary heuristics remain non-isolating; disk and full-output memory use are unbounded, and abrupt termination can leave temporary data.
 
+### [2026-11-01] Offline review - Reject lossy input decoding
+
+- **Issue/Risk**: Invalid UTF-8 in a candidate JSON file could silently become U+FFFD, so a reviewer would see altered text rather than the supplied output.
+- **Root Cause**: Default buffer-to-string decoding replaces invalid byte sequences before JSON parsing.
+- **Resolution/Pattern**: Decode with fatal UTF-8 validation before parsing or creating outputs, test both candidate inputs and preserve valid multilingual text. A leading BOM is deliberately rejected; packet preparation does not establish semantic quality or provenance.
+
+### [2026-11-01] Tree enumeration - Distinguish confirmed worktree failures
+
+- **Issue/Risk**: A damaged Git index made both snapshots unavailable, yet a new test could pass as unbound evidence.
+- **Root Cause**: All `git ls-files` failures shared the legacy no-Git fallback.
+- **Resolution/Pattern**: If a separate Git probe confirms a worktree, treat enumeration failure as an error. Preserve existing unbound fallback when discovery fails, but label it ambiguous: a broken repository or permission problem can still pass unbound with a warning. The existing tree format does not bind file modes; adding that guarantee requires an explicit version and migration policy, not retroactive claims about old evidence.
+
+### [2026-11-01] Tree policy - Require binding at verification too
+
+- **Issue/Risk**: Requiring a bound snapshot during a run does not prevent a later plain legacy check from accepting an unbound chain when Git discovery fails.
+- **Root Cause**: An invocation-only flag is not a durable policy and legacy compatibility remains the default.
+- **Resolution/Pattern**: The Phase workflow requests `--require-bound-tree` for both run and check; tests exercise the unbound boundary and workflow wiring. An independent verifier must also require the flag. This does not authenticate evidence or prove historical snapshot completeness; rerun and re-attest where that matters.
+
+### [2026-11-02] Attestation inventory - Zero is not verified
+
+- **Issue/Risk**: An optional CI discovery loop can succeed with zero files and be mistaken for verification of a required Phase.
+- **Root Cause**: File discovery is not an independently protected list of required phase IDs; no phases are currently defined, so zero is legitimate but proves none complete.
+- **Resolution/Pattern**: Report the discovered count and provide an explicit nonempty required-ID check. Protect the policy, workflow, verifier and command pin independently; replay executes code and must be authorized and isolated. A later failure cannot undo earlier replay effects.
+
 ### [2026-10-31] Blind comparison - Record reproducible allocation privately
 
 - **Issue/Risk**: A random A/B packet without a recorded seed could not satisfy the paired protocol's reproducibility requirement; a packet alone does not prove reviewer independence or authentic output provenance.
@@ -129,6 +153,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Issue/Risk**: Slow-drip local clients held broker slots past an inactivity timeout; predictable gate log paths could follow pre-existing links; direct gate edits were outside an evidence guard's declared coverage. A smoke test could misinterpret unrelated filesystem errors as read-only enforcement.
 - **Root Cause**: Per-read deadlines, open-by-name truncation, lexical guard coverage, and a missing positive control did not match the intended claims.
 - **Resolution/Pattern**: Use a monotonic request-input deadline, exclusively created staging files, explicit direct-edit guards, matched filesystem controls and mount-state checks; add bounded JSON inputs. Review ownership on error paths and retain platform and race limitations. These are local safeguards, not a sandbox or host authorization certification; actual host/model checks remain separate.
+
+### [2026-11-02] Cross-platform fixtures - Compare filesystem identity
+
+- **Issue/Risk**: A macOS CI test failed because a temporary root was reported as `/var/...` while the child process reported the same cwd as `/private/var/...`.
+- **Root Cause**: The test compared path spellings rather than the resolved filesystem location.
+- **Resolution/Pattern**: Compare canonical cwd identity while still checking the exact root argument and command arguments. Local Windows regression alone does not establish macOS success; require the updated PR CI result.
 
 ## Template for New Entries
 

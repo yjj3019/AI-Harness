@@ -9,10 +9,10 @@
  *
  * Commands:
  *   list                                     List valid phase ids from docs/PHASES.md
- *   run <phase> test [--require-test-summary] -- <command...>         Run a test command, store its log, record the real exit code
+ *   run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>  Run and record a test
  *   record <phase> <step> --status PASS|FAIL [--report <file>]
  *                                            Record coding|verify|review|compound evidence
- *   check <phase>                            Verify all five steps; exit 0 only if complete
+ *   check <phase> [--require-bound-tree]     Verify all five steps; exit 0 only if complete
  *   doctor                                   Check that the guards can run here (jq, sha256sum, realpath, git,
  *                                            hook registration, quoting, executable bits). Exit 2 on a problem
  *   attest <phase>                           After check passes, write docs/attestations/phase-<id>.json
@@ -75,9 +75,9 @@ function usage() {
     [
       "Usage:",
       "  node phase-gate.js list",
-      "  node phase-gate.js run <phase> test [--require-test-summary] -- <command...>",
+      "  node phase-gate.js run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>",
       "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>]",
-      "  node phase-gate.js check <phase>",
+      "  node phase-gate.js check <phase> [--require-bound-tree]",
       "  node phase-gate.js doctor",
       "  node phase-gate.js attest <phase>",
       "  node phase-gate.js verify-attestation <phase> [-- <expected command...>]",
@@ -90,13 +90,21 @@ function sha256(buf) {
   return crypto.createHash("sha256").update(buf).digest("hex");
 }
 
-// Hash of tracked and untracked-but-not-ignored files (minus TREE_EXCLUDE). null when git is unavailable.
+// Hash tracked and untracked-but-not-ignored files (minus TREE_EXCLUDE).
+// A failed discovery probe remains ambiguous: Git may be unavailable, outside a
+// worktree, or the probe itself may have failed. Preserve legacy null in those cases.
 function treeHash() {
   const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
     cwd: ROOT,
     encoding: "buffer",
   });
-  if (r.error || r.status !== 0) return null;
+  if (r.error || r.status !== 0) {
+    const probe = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: ROOT, encoding: "utf8" });
+    if (!probe.error && probe.status === 0 && probe.stdout.trim() === "true") {
+      return { error: `git ls-files failed: ${r.error ? (r.error.code || r.error.message) : `exit ${r.status}`}` };
+    }
+    return null;
+  }
   const files = [...new Set(r.stdout.toString("utf8").split("\0").filter(Boolean))]
     .filter((f) => !TREE_EXCLUDE.some((re) => re.test(f)))
     .sort();
@@ -316,8 +324,12 @@ function cmdRun(args) {
   if (sep < 0 || sep === args.length - 1) usage();
   const head = args.slice(0, sep);
   const cmd = args.slice(sep + 1);
-  let strict = head.length === 3 && head[2] === "--require-test-summary";
-  if ((head.length !== 2 && !strict) || head[1] !== "test") usage();
+  const flags = head.slice(2);
+  if (head.length < 2 || head[1] !== "test" ||
+      flags.some((flag) => !["--require-test-summary", "--require-bound-tree"].includes(flag)) ||
+      new Set(flags).size !== flags.length) usage();
+  let strict = flags.includes("--require-test-summary");
+  const requireBoundTree = flags.includes("--require-bound-tree");
   const phase = head[0];
   requirePhase(phase);
   // Even a rejected rerun invalidates prior test and verify evidence.
@@ -344,6 +356,9 @@ function cmdRun(args) {
   const treeBefore = treeHash();
   if (treeBefore && typeof treeBefore === "object") {
     die(2, `ERROR: cannot snapshot code tree before test: ${treeBefore.error}`);
+  }
+  if (requireBoundTree && treeBefore === null) {
+    die(2, "ERROR: cannot snapshot code tree before test; --require-bound-tree requires a tree");
   }
   // Create a new inode exclusively, then replace the directory entry, never opening
   // the predictable log for writing. Existing symlinks and hardlinks are not followed.
@@ -387,7 +402,7 @@ function cmdRun(args) {
       throw err;
     }
     // Both unavailable preserves legacy no-git behavior; only one unavailable must fail.
-    const treeOk = treeBefore === treeAfter;
+    const treeOk = treeBefore === treeAfter && (!requireBoundTree || treeAfter !== null);
     const treeDiagnostic = treeBefore === null && treeAfter === null
       ? "code tree unavailable before and after; tree not bound"
       : !treeOk && (treeBefore === null || treeAfter === null)
@@ -447,7 +462,7 @@ function cmdRun(args) {
 }
 
 // Walks the five steps. Returns { passed: [...], fail: { step, why } | null, testEv, warnings: [...] }.
-function validateChain(phase) {
+function validateChain(phase, requireBoundTree = false) {
   const passed = [];
   const warnings = [];
   let prevSha = null;
@@ -486,8 +501,12 @@ function validateChain(phase) {
           return fail("strict test summary invalid or changed");
         }
       }
+      if (requireBoundTree && (ev.tree === null || ev.tree === undefined)) {
+        return fail("test evidence has no code tree hash; --require-bound-tree requires bound evidence");
+      }
       const now = treeHash();
       if (now && typeof now === "object") return fail(`cannot snapshot code tree: ${now.error}`);
+      if (requireBoundTree && now === null) return fail("code tree snapshot unavailable; --require-bound-tree requires a current tree");
       if (now !== null) {
         if (typeof ev.tree !== "string") return fail("test evidence has no code tree hash. Run the test again");
         if (ev.tree !== now) return fail("code changed after the test ran. Run the test again");
@@ -522,9 +541,10 @@ function validateChain(phase) {
 }
 
 function cmdCheck(args) {
+  if (args.length < 1 || args.length > 2 || (args.length === 2 && args[1] !== "--require-bound-tree")) usage();
   const phase = args[0];
   requirePhase(phase);
-  const res = validateChain(phase);
+  const res = validateChain(phase, args[1] === "--require-bound-tree");
   for (const step of res.passed) console.log(`[PASS]    ${step}`);
   for (const w of res.warnings) console.log(`[WARN]    ${w}`);
   if (res.fail) {

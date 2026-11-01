@@ -98,6 +98,34 @@ test('exclusive creation preserves existing files and rolls back reservation', t
   assert.throws(() => generate(args), /EEXIST/);
   assert.equal(fs.readFileSync(paths[2], 'utf8'), 'packet exists');
 });
+test('rejects malformed UTF-8 rather than silently changing candidate output', t => {
+  for (const index of [0, 1]) {
+    const { paths, args } = fixture(t);
+    const bytes = fs.readFileSync(paths[index]);
+    const position = bytes.indexOf(Buffer.from('candidate'));
+    assert.ok(position >= 0);
+    bytes[position] = 0xff;
+    fs.writeFileSync(paths[index], bytes);
+    assert.throws(() => generate(args), /not valid UTF-8/);
+    assert.equal(fs.existsSync(paths[2]), false);
+    assert.equal(fs.existsSync(paths[3]), false);
+  }
+});
+test('preserves valid multilingual output and interior BOM characters', t => {
+  const { paths, values, args } = fixture(t);
+  values[0][cases[0].id] = '한글 📝\ufeff원문';
+  fs.writeFileSync(paths[0], JSON.stringify(values[0]));
+  generate(args);
+  const packet = JSON.parse(fs.readFileSync(paths[2], 'utf8'));
+  assert.ok(Object.values(packet.cases[0].candidates).includes(values[0][cases[0].id]));
+});
+test('rejects a leading UTF-8 BOM rather than silently stripping it', t => {
+  const { paths, args } = fixture(t);
+  fs.writeFileSync(paths[0], Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), fs.readFileSync(paths[0])]));
+  assert.throws(() => generate(args), /not valid JSON/);
+  assert.equal(fs.existsSync(paths[2]), false);
+  assert.equal(fs.existsSync(paths[3]), false);
+});
 test('bounds each candidate by bytes and rejects non-regular inputs', t => {
   const max = 16 * 1024 * 1024;
   for (const index of [0, 1]) {
