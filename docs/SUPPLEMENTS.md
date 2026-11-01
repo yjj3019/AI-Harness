@@ -76,7 +76,7 @@
 결정 근거는 `docs/DECISIONS.md`에 있다.
 
 1. Playwright MCP 활성화: `.mcp.json.example`을 `.mcp.json`으로 복사한다. `test` 에이전트의 허용 도구는 반영되어 있다. 외부 코드를 실행하므로 소유자 승인 후 진행한다.
-2. LICENSE 저작권 표기: `LICENSE` 끝의 `Copyright [yyyy] [name of copyright owner]`는 템플릿 그대로다. 소유자가 연도와 이름을 채운다.
+2. 저작권 표기: `LICENSE` 끝의 `Copyright [yyyy] [name of copyright owner]`는 Apache 라이선스 적용 예시다. 이를 바꾸지 말고, 프로젝트의 실제 저작권 고지 위치와 내용은 권리자가 별도로 결정한다.
 3. Actions에서 `verify-attestation` 단계 확인: 이 저장소에는 attestation 파일이 없어 반복문이 비어 있다. 대상 프로젝트에서 처음 `attest`를 커밋할 때 실제로 실행된다.
 4. 종단 시험은 한 번 통과했다. 임시 복제본에 장난감 Phase를 두고 헤드리스로 `/phase-harness 1`을 돌려 5단계가 모두 PASS했고, 이어서 `check`, `attest`, `verify-attestation`도 통과했다. 재시도 경로도 한 번 돌렸다. 첫 실행에서 반드시 실패하는 테스트 명령으로 시험한 결과 1차 시도가 실패하고 2차 시도에서 통과했으며, 증거 파일의 시도 번호(coding-1, coding-2)와 `check` 통과로 확인했다. 3회 소진 후 중단하는 경로는 돌려 보지 못했다 [unverified]. 시험용 임시 복제본에서만 돌렸다.
 5. 계획 단계 도구(superpowers, spec-kit, OpenSpec)와 관측 대시보드는 번들하지 않기로 했다. 프로젝트별로 필요할 때 고른다.

@@ -160,6 +160,24 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: The test compared path spellings rather than the resolved filesystem location.
 - **Resolution/Pattern**: Compare canonical cwd identity while still checking the exact root argument and command arguments. Local Windows regression alone does not establish macOS success; require the updated PR CI result.
 
+### [2026-11-02] Offline planning - Preserve unresolved dependencies and attempts
+
+- **Issue/Risk**: A graph could report a node READY through an inconsistent PASS ancestor; a later completed attempt could mask an earlier unresolved STARTED attempt or inflate completion.
+- **Root Cause**: Declared status was accepted without consistent predecessor state, and a retry was treated as reconciliation of an unknown outcome.
+- **Resolution/Pattern**: Reject inconsistent PASS dependencies, require UNKNOWN for unreconciled STARTED attempts, count completion from the last attempt, and test both orders. These checks consume declarations only; they do not enforce host permissions, prove truth, or make parallel work safe.
+
+### [2026-11-02] Multi-agent planning - Keep coordination separate from evidence
+
+- **Issue/Risk**: A Team completion, a conflict-free label check, or an inventory presence check can be mistaken for verified safe execution.
+- **Root Cause**: Advisory declarations and task state were confused with host enforcement, effect reconciliation, and independent Phase evidence.
+- **Resolution/Pattern**: Keep labels and Team scopes advisory, offer a no-replay inventory preflight explicitly marked unverified, and separately check the pinned test command and read-tracker availability. Reject sparse programmatic arrays that bypass element validation. Review actual permissions and independently verify results before recording a Phase.
+
+### [2026-11-02] Benchmark comparisons - Count matched declarations, not claimed gains
+
+- **Issue/Risk**: Aggregate pass rates, repeated selection on a holdout, missing context or an all-fail tie can be mistaken for an independently established improvement.
+- **Root Cause**: Pair membership, context, incompleteness and the separation between selection and final assessment were not made explicit.
+- **Resolution/Pattern**: Report all four paired verdict cells plus unknown and NA counts; keep incompatible or missing declared context inconclusive, reject missing planned results, and preserve original attempts. Snapshot programmatic inputs before validation and classification. Matching labels and these arithmetic counts remain unverified claims, not a sandbox, proof of preregistration, independent evaluation or authorization to promote.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
