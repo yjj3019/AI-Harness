@@ -56,7 +56,10 @@ test("verifies multiple phases sequentially with only the gate command and ID", 
     const r = run('["2","1"]');
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /stub 2[\s\S]*stub 1[\s\S]*Verified 2 required attestation/);
-    assert.deepEqual(calls(), ["2", "1"].map((id) => ({ argv: ["verify-attestation", id], root, cwd: root, exec: process.execPath })));
+    const observed = calls();
+    assert.deepEqual(observed.map(({ argv, root, exec }) => ({ argv, root, exec })),
+      ["2", "1"].map((id) => ({ argv: ["verify-attestation", id], root, exec: process.execPath })));
+    for (const call of observed) assert.equal(fs.realpathSync.native(call.cwd), fs.realpathSync.native(root));
   });
 });
 
