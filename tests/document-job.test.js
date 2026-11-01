@@ -90,6 +90,28 @@ test("CLI binds exact job bytes and fails closed on malformed JSON", () => {
     fs.writeFileSync(rp, "{"); output = run(); assert.equal(output.status, 2); assert.equal(JSON.parse(output.stdout).ok, false);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+test("CLI bounds each manifest and rejects non-regular files", t => {
+  const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
+  const { spawnSync } = require("node:child_process");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "document-limit-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const { job, result } = fixtures();
+  const jp = path.join(dir, "job.json"), rp = path.join(dir, "result.json");
+  const max = 16 * 1024 * 1024;
+  const run = () => spawnSync(process.execPath, [path.resolve(__dirname, "../scripts/document-job.js"), "verify", jp, rp], { encoding: "utf8", timeout: 30000 });
+  for (const target of [jp, rp]) {
+    const jobBytes = target === jp ? JSON.stringify(job).padEnd(max) : JSON.stringify(job);
+    result.job_sha256 = digest(jobBytes);
+    fs.writeFileSync(jp, jobBytes);
+    const resultBytes = JSON.stringify(result);
+    fs.writeFileSync(rp, target === rp ? resultBytes.padEnd(max) : resultBytes);
+    assert.equal(run().status, 0);
+    fs.appendFileSync(target, " ");
+    const out = run(); assert.equal(out.status, 2); assert.equal(JSON.parse(out.stdout).ok, false);
+  }
+  fs.rmSync(jp); fs.mkdirSync(jp);
+  assert.equal(run().status, 2);
+});
 test("reject unverified review and unsafe/colliding artifact descriptors",  () => {
   for (const change of [r => r.items[0].checks.visual = "not_run", r => r.items[0].checks.semantics = "fail",
     r => delete r.items[0].artifacts.comparison, r => r.items[0].artifacts.translated.sha256 = "bad",

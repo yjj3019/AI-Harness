@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Subagent PreToolUse guard for .phase-evidence/.
 # Usage: evidence-guard.sh auto   (settings.json: subagents only; test agent -> test, others -> deny)
-#        evidence-guard.sh deny   (no access to evidence or phase-gate.js)
+#        evidence-guard.sh deny   (guard selected edits and Bash calls; Read is not blocked)
 #        evidence-guard.sh test   (may only call `phase-gate.js run`)
 # Only the orchestrator (main session) records evidence, through phase-gate.js.
-# Pattern matching is a guardrail, not a security boundary. Fail-open if jq is missing.
+# Path matching is a guardrail, not a security boundary: symlinks, other aliases,
+# other tools and indirect writes are not resolved; host tool semantics are unverified.
+# Fail-open if jq is missing or input is invalid.
 
 set -u
 
@@ -36,6 +38,12 @@ case "$tool" in
     # Both separators: Claude Code on Windows passes C:\proj\.phase-evidence\x.json.
     if printf '%s' "$path" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
       block "only the orchestrator records evidence"
+    fi
+    # Conservatively treat trailing Win32 dots/spaces and NTFS stream suffixes
+    # as aliases, even on POSIX. This does not resolve other filesystem aliases.
+    # The test agent's run exception applies to Bash invocation, not direct edits.
+    if (shopt -s nocasematch; [[ $path =~ (^|[\\/])phase-gate\.js[.\ ]*(:[^\\/]*)?$ ]]); then
+      block "only the orchestrator may modify phase-gate.js"
     fi
     ;;
   Bash)
