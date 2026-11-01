@@ -58,6 +58,12 @@ const TREE_EXCLUDE = [
   /^docs\/attestations\//,
 ];
 
+// Canonical path for containment comparisons. The native variant expands Windows 8.3 short names (for example
+// RUNNER~1), which fs.realpathSync leaves unexpanded; comparing mixed short/long spellings would misjudge containment.
+function canonicalPath(p) {
+  return fs.realpathSync.native(p);
+}
+
 function die(code, msg) {
   console.error(msg);
   process.exit(code);
@@ -153,8 +159,8 @@ function safeEvidencePath(p) {
   let real;
   let realDir;
   try {
-    real = fs.realpathSync(abs);
-    realDir = fs.realpathSync(EVIDENCE_DIR);
+    real = canonicalPath(abs);
+    realDir = canonicalPath(EVIDENCE_DIR);
   } catch {
     return { error: `not found: ${p}` };
   }
@@ -604,7 +610,7 @@ function cmdDoctor() {
       }
       const f = path.join(ROOT, ".claude", "hooks", want);
       try {
-        const relative = path.relative(fs.realpathSync(ROOT), fs.realpathSync(f));
+        const relative = path.relative(canonicalPath(ROOT), canonicalPath(f));
         if (relative === ".." || relative.startsWith(".." + path.sep) || path.isAbsolute(relative) || !fs.statSync(f).isFile())
           throw new Error("not a repository file");
         fs.accessSync(f, fs.constants.X_OK);
@@ -705,8 +711,8 @@ function cmdVerifyAttestation(args) {
       // Keep replay output outside this worktree, including when TMPDIR points inside it.
       const repo = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: ROOT, encoding: "utf8" });
       if (repo.error || repo.status !== 0) throw new Error("cannot locate repository root");
-      const repoRoot = fs.realpathSync(repo.stdout.replace(/\r?\n$/, ""));
-      const tempRoot = fs.realpathSync(os.tmpdir());
+      const repoRoot = canonicalPath(repo.stdout.replace(/\r?\n$/, ""));
+      const tempRoot = canonicalPath(os.tmpdir());
       const rel = path.relative(repoRoot, tempRoot);
       if (!rel || (rel !== ".." && !rel.startsWith(".." + path.sep) && !path.isAbsolute(rel))) {
         throw new Error("temporary directory is inside the repository");

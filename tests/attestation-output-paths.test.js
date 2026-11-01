@@ -83,6 +83,24 @@ for (const nested of [false, true]) {
   });
 }
 
+// Windows runners expose os.tmpdir() as an 8.3 short name (for example RUNNER~1). A temp directory inside the repository
+// must still be recognized when only one side of the comparison is spelled with short names.
+test("strict replay rejects temp inside repository addressed by its 8.3 short name", { skip: process.platform !== "win32" && "8.3 short names exist only on Windows" }, () => {
+  fixture(({ repo, marker, gate, replayDirs }) => {
+    const inside = path.join(repo, "inside-temp");
+    fs.mkdirSync(inside);
+    // fs.realpathSync (JS) keeps a short spelling, so derive the short form from a ShortPath lookup instead.
+    const lookup = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "(New-Object -ComObject Scripting.FileSystemObject).GetFolder($env:HARNESS_SHORT_TARGET).ShortPath"], { encoding: "utf8", env: { ...process.env, HARNESS_SHORT_TARGET: inside } });
+    const short = (lookup.stdout || "").trim();
+    if (!short || short.toLowerCase() === inside.toLowerCase()) return; // volume does not generate short names
+    const r = gate(["verify-attestation", "1"], { TMPDIR: short, TMP: short, TEMP: short });
+    assert.equal(r.status, 2, r.stderr);
+    assert.match(r.stderr, /temporary directory is inside the repository/);
+    assert.equal(fs.existsSync(marker), false, "child must not run");
+    assert.deepEqual(replayDirs(inside), []);
+  });
+});
+
 test("strict replay rejects temp inside repository with trailing-space root", { skip: process.platform === "win32" && "Windows does not support trailing-space directory names" }, () => {
   fixture(({ repo, marker, gate, replayDirs }) => {
     const inside = path.join(repo, "inside-temp");
