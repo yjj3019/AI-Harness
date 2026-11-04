@@ -236,6 +236,9 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 추가 자료
 
+- [Design skills supplements](docs/design-skills-supplements.md) — PPT/다이어그램/시각 QA를 위한 외부 고품질 스킬·저장소 큐레이션과 채택 가이드.
+
+
 - [Multi-host balancing guide](docs/multi-host-balancing.md) — AGENTS.md를 공유 코어로 두고 Claude/Codex/기타 호스트 균형 맞추기.
 
 

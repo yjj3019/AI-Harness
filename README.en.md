@@ -198,6 +198,8 @@ When starting a new feature, enforce this order:
 Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phase-gate.js`, and `.claude/commands/phase-harness.md` from this repository, then fill in only the phases for the target project. To get the evidence write restrictions as well, also copy `.claude/agents/`, `.claude/hooks/`, and `.claude/settings.json`.
 
 ## Further Reading
+- [Design skills supplements](docs/design-skills-supplements.md) — Curated external PPT, diagram, and visual QA skills with adoption guidance.
+
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — Full synthesis (includes precise harness definition, failure modes, and references)
 - [docs/external-patterns.md](./docs/external-patterns.md) — Universal patterns extracted from Superpowers, Anthropic cwc, Ralph, Huntley, Ponytail, and Karpathy

@@ -41,6 +41,8 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Optional visual design and artifact verification (explicit opt-in): `skills/design-evidence-harness/SKILL.md`
 - Optional Super-agent architecture notes (Router/Worker, event-driven, Watchdog adaptation): `docs/super-agent-architecture-notes.md`, optional skill `skills/super-agent-router/SKILL.md`
 - Skill progressive disclosure and trigger testing guidance: `docs/skill-design-progressive-disclosure.md`
+- Design skills supplements (PPT, diagrams, visual QA): `docs/design-skills-supplements.md`
+
 - Usage Scenarios: `docs/usage-scenarios.md`
 - PPT / Office Harness: `docs/ppt-harness-workflow.md`
 - Gaps & Supplementary Repos: `docs/SUPPLEMENTS.md`
