@@ -41,9 +41,11 @@ Harness Engineering shifts the developer role from writing code lines to designi
 
 ```
 AI-Harness/
-├── CLAUDE.md                          # Project Constitution & Index
+├── AGENTS.md                          # Shared constitution for Codex / multi-host
+├── CLAUDE.md                          # Claude Code (prefer @AGENTS.md import)
 ├── README.md                          # Korean (default)
 ├── README.en.md                       # This file (English)
+├── skills/                            # Portable Agent Skills (SKILL.md)
 ├── docs/
 │   ├── architecture-spec.md            # Full synthesis
 │   ├── external-patterns.md            # Universal patterns from external harnesses
@@ -129,7 +131,9 @@ Systems such as Oh My Claudecode / Oh My Opencode provide higher-level orchestra
 
 ## Quick Start
 
-1. Read `CLAUDE.md`.
+**Multi-host**: Shared core rules live in `AGENTS.md`. Claude Code is recommended to import it via `@AGENTS.md` at the top of `CLAUDE.md`. See [docs/multi-host-balancing.md](docs/multi-host-balancing.md) for the balancing strategy.
+
+1. Read `AGENTS.md` (or `CLAUDE.md` on Claude Code).
 2. Review `docs/compound-log.md`.
 3. Define phases in `docs/PHASES.md` and requirements in `docs/DETAIL_SPEC.md`.
 4. Run a phase with `/phase-harness <phase-id>`. Completion is decided by `node .claude/workflows/phase-gate.js check <phase-id>`.
