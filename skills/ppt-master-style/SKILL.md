@@ -1,94 +1,65 @@
 ---
 name: ppt-master-style
 description: >
-  Staged, gated workflow for producing native-editable PowerPoint decks inspired by ppt-master.
-  Use when the user asks to create, generate, reconstruct, beautify, or template a PPT/PPTX/slide deck
-  and wants native shapes rather than screenshots. Prefer this over one-shot generation.
+  Apply the ppt-master staged, gated workflow for native-editable PowerPoint decks.
+  Use when creating, generating, reconstructing, beautifying, or templating a PPT/PPTX/slide deck.
+  Prefer this over one-shot generation. Route first, lock design spec, keep source of truth, verify before export.
 ---
 
-# PPT Master Style Workflow (AI-Harness Adaptation)
+# PPT Master Style Workflow
 
-**Status**: Optional skill. Inspired by [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) (MIT).  
-Does not vendor the original scripts or assets. Full native export still benefits from the upstream skill or equivalent tools (python-pptx, svg_to_pptx patterns).
+Optional skill adapted from [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) (MIT).  
+Encodes the workflow discipline for AI-Harness. Does not vendor upstream scripts.
 
-This skill encodes the *workflow discipline* (routing, staged gates, source-of-truth, visual QA) so it stays compatible with AI-Harness evidence rules and progressive disclosure.
+## Apply the workflow
 
-## When to use
+1. **Select route** (exactly one):
+   - **Generate** — new deck from topic or document
+   - **Template** — reusable brand/style/layout workspace
+   - **Edit / Beautify** — improve existing PPTX
+   - **Quick** — explicit speed request; fewer blocking gates
 
-- User wants a deck a colleague can edit in PowerPoint (native objects preferred).
-- Source is a document, outline, topic, or existing PPTX to improve.
-- One-shot generation has previously produced poor layout or non-editable output.
+2. **Follow the stages for the chosen route.**  
+   Detailed Generate stages: `references/stages.md` (load only when needed).
 
-## Route selection (do this first)
+3. **Enforce blocking gates.**  
+   Design spec confirmation is blocking on Generate/Template unless Quick was chosen. Do not proceed past a blocking gate without explicit user approval.
 
-Choose exactly one primary route:
+4. **Keep source of truth.**  
+   Prefer outline, Markdown, JSON, or SVG intermediates over opaque images.
 
-| Route | When | Primary output |
-|-------|------|----------------|
-| **Generate** | New deck from topic or document | Native PPTX + intermediate sources |
-| **Template** | Build reusable brand/style/layout workspace | Template workspace + sample deck |
-| **Edit / Beautify** | Improve an existing PPTX | Updated native PPTX |
-| **Quick** | Explicit speed request or small deck | Faster path with reduced gates |
+5. **Verify before claiming done.**  
+   Run visual, editability, and chart-honesty checks. Use `skills/design-evidence-harness/SKILL.md`.  
+   Record FAIL items. Do not claim completion without observable evidence.
 
-If ambiguous, ask once, then proceed.
+6. **Handoff.**  
+   Deliver final `.pptx` plus intermediate artifacts and known limitations.  
+   Inside a Phase, record evidence only via the phase gate.
 
-## Core stages (Generate route)
+## Minimal working set
 
-1. **Intake & source normalization**  
-   - Confirm brief, audience, length, delivery contract (editable PPTX required?).  
-   - Convert sources to clean Markdown or structured outline if needed.  
-   - Record assumptions.
+- `brief.md` or equivalent
+- `design_spec.md` (locked)
+- `page_plan.md`
+- Final `.pptx`
+- Short verification notes
 
-2. **Design spec lock (blocking)**  
-   - Produce a short design spec: narrative arc, color/typography direction, density, chart policy.  
-   - **Stop and wait for explicit user confirmation** before heavy generation.  
-   - Save spec as `design_spec.md` or equivalent in the working folder.
+## Rules that override convenience
 
-3. **Page planning**  
-   - Slide-by-slide outline with titles that state the claim (action titles preferred).  
-   - Note required charts, tables, diagrams.
+- No silent dependency installs.
+- No hand-written Phase evidence files.
+- Native editability must be evidenced, not assumed.
+- Chart claims must match the visual encoding.
 
-4. **Authoring**  
-   - Prefer intermediate source of truth (Markdown, JSON outline, or SVG pages) over opaque images.  
-   - When using external tools (upstream ppt-master, python-pptx, etc.), keep the intermediate files.
+## Full upstream capability
 
-5. **Quality gates (before final export)**  
-   - Visual review of rendered pages (overflow, contrast, alignment, hierarchy).  
-   - Chart honesty check (claims match data encoding).  
-   - Editability check: text is native text boxes, charts are native where claimed.  
-   - Run or reference `skills/design-evidence-harness/SKILL.md` checks.  
-   - Record failures as FAIL; do not claim done.
+For SVG→PPTX scripts, template workspaces, narration, and the complete route authorities, use the original skill:
 
-6. **Export & handoff**  
-   - Produce final `.pptx`.  
-   - List intermediate artifacts, known limitations, and unverified items.  
-   - If inside a Phase, record evidence only through the phase gate (never hand-write evidence files).
+```bash
+npx skills add hugohe3/ppt-master
+# or clone and follow its SKILL.md load order
+```
 
-## Blocking rules
+Then apply the same evidence and approval rules from this harness.
 
-- Design spec confirmation is blocking unless the user explicitly said “quick” or “no confirmation needed”.
-- Do not silently install heavy dependencies. Document required tools and request approval.
-- Do not claim native editability without evidence (opening in PowerPoint or equivalent inspection).
-
-## Integration with AI-Harness
-
-- Pair with `skills/design-evidence-harness/SKILL.md` for visual and editability verification.
-- See `docs/design-skills-supplements.md` for the broader external catalog.
-- For full upstream capability (SVG→PPTX scripts, template workspaces, narration), install or reference [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) separately and follow its SKILL.md load order.
-- Progressive disclosure: this file is the entry; load detailed checklists only when executing a stage.
-
-## Quick checklist (copy into working notes)
-
-- [ ] Route selected
-- [ ] Brief and delivery contract confirmed
-- [ ] Design spec locked (or Quick explicitly chosen)
-- [ ] Page plan with claim-oriented titles
-- [ ] Intermediate sources kept
-- [ ] Visual + editability + chart checks run
-- [ ] Final PPTX produced and limitations recorded
-
-## What this skill does not do
-
-- It does not replace the upstream ppt-master implementation.
-- It does not weaken Phase evidence gates or approval boundaries.
-- It does not guarantee pixel-perfect output without the original tooling and model quality.
+See also: `docs/design-skills-supplements.md`, `docs/ppt-harness-workflow.md`.
