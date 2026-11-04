@@ -76,9 +76,11 @@ PDFMathTranslate 분석을 바탕으로 [문서 변환 계약](docs/document-job
 
 ```
 AI-Harness/
-├── CLAUDE.md                          # 프로젝트 헌법 및 인덱스
+├── AGENTS.md                          # Codex / multi-host 공유 헌법 (핵심 규칙)
+├── CLAUDE.md                          # Claude Code용 (AGENTS.md import 권장)
 ├── README.md                          # 이 파일 (한글, 기본)
 ├── README.en.md                       # 영문 버전
+├── skills/                            # 포터블 Agent Skills (SKILL.md)
 ├── docs/
 │   ├── architecture-spec.md            # 전체 종합 명세
 │   ├── external-patterns.md            # 외부 저장소에서 추출한 보편 패턴
@@ -164,7 +166,9 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 빠른 시작
 
-1. `CLAUDE.md` 읽기.
+**Multi-host**: 공유 핵심 규칙은 `AGENTS.md`에 있습니다. Claude Code는 `CLAUDE.md`에서 `@AGENTS.md`를 우선 로드하도록 권장합니다. 자세한 균형 맞추기는 [docs/multi-host-balancing.md](docs/multi-host-balancing.md)를 참고하세요.
+
+1. `AGENTS.md` (또는 Claude Code면 `CLAUDE.md`) 읽기.
 2. `docs/compound-log.md` 검토.
 3. `docs/PHASES.md`에 단계 정의, `docs/DETAIL_SPEC.md`에 요구사항 작성.
 4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id> --require-bound-tree`.
