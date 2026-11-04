@@ -232,6 +232,10 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 추가 자료
 
+- [AGENTS.md](AGENTS.md) — Codex 및 multi-host용 헌법 (CLAUDE.md와 핵심 규칙 정렬).
+- [Codex adaptation notes](docs/codex-adaptation-notes.md) — AGENTS.md vs CLAUDE.md, 스킬 경로, Phase 증거 이식 가이드.
+
+
 - [Super-agent architecture notes](docs/super-agent-architecture-notes.md) — DeepSeek Harness Router/Worker, event-driven, Watchdog 패턴의 AI-Harness 적응 노트 (선택형, 증거 게이트 유지).
 - [Skill progressive disclosure guidance](docs/skill-design-progressive-disclosure.md) — SKILL.md 3단계 로딩과 트리거 테스트 루프.
 
