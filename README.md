@@ -232,6 +232,10 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 추가 자료
 
+- [Super-agent architecture notes](docs/super-agent-architecture-notes.md) — DeepSeek Harness Router/Worker, event-driven, Watchdog 패턴의 AI-Harness 적응 노트 (선택형, 증거 게이트 유지).
+- [Skill progressive disclosure guidance](docs/skill-design-progressive-disclosure.md) — SKILL.md 3단계 로딩과 트리거 테스트 루프.
+
+
 - [Cursor plugins 비교·적용 분석](docs/cursor-plugins-review-2026-10-28.md) — 고정 커밋의 구조·검증·호스트 이식성과 채택/제외 이유. `node scripts/package-lint.js`는 정의·단순 상대 링크를 검사하며 `bash tests/run-all.sh`에도 포함됩니다. `phase-gate.js doctor`는 필수 훅의 정확한 이벤트·matcher·명령과 저장소 안 실행 파일을 확인합니다. 전체 YAML 문법이나 실제 호스트 권한 강제를 인증하지는 않습니다.
 
 - [docs/architecture-spec.md](./docs/architecture-spec.md) — 전체 종합 문서 (하네스 정의, 실패 모드, 참고 자료 포함)
