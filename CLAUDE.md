@@ -41,6 +41,8 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Optional visual design and artifact verification (explicit opt-in): `skills/design-evidence-harness/SKILL.md`
 - Highest-quality design workflow: `skills/design-master/SKILL.md`
 - Highest-quality document writing: `skills/document-master/SKILL.md`
+- Highest-quality coding workflow: `skills/coding-master/SKILL.md`
+
 
 
 - Optional Super-agent architecture notes (Router/Worker, event-driven, Watchdog adaptation): `docs/super-agent-architecture-notes.md`, optional skill `skills/super-agent-router/SKILL.md`
