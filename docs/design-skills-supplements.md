@@ -47,3 +47,7 @@ See also:
 - `docs/ppt-harness-workflow.md`
 - `docs/skill-design-progressive-disclosure.md`
 - `docs/multi-host-balancing.md`
+
+## Local adaptation
+
+A portable, evidence-aligned adaptation of the ppt-master staged workflow lives at `skills/ppt-master-style/SKILL.md`. Use it when you want the discipline without vendoring the full upstream package.
