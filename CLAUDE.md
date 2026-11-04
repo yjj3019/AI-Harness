@@ -42,6 +42,11 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Highest-quality design workflow: `skills/design-master/SKILL.md`
 - Highest-quality document writing: `skills/document-master/SKILL.md`
 - Highest-quality coding workflow: `skills/coding-master/SKILL.md`
+- Highest-quality debugging workflow: `skills/debugging-master/SKILL.md`
+- Highest-quality security workflow: `skills/security-master/SKILL.md`
+- Highest-quality observability workflow: `skills/observability-master/SKILL.md`
+- Highest-quality performance workflow: `skills/performance-master/SKILL.md`
+
 
 
 

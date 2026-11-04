@@ -64,6 +64,11 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Design Master](skills/design-master/SKILL.md) — 최고 품질 UI·브랜드·시각 시스템 워크플로 (아트 디렉션, 안티슬롭, 시각 QA).
 - [Document Master](skills/document-master/SKILL.md) — 최고 품질 문서 작성 워크플로 (독자·작업, Diátaxis, 출처, 평문).
 - [Coding Master](skills/coding-master/SKILL.md) — 최고 품질 코딩 워크플로 (스펙 우선, TDD, 증분 슬라이스, 다축 리뷰, 증거 기반 완료).
+- [Debugging Master](skills/debugging-master/SKILL.md) — 최고 품질 디버깅 워크플로 (재현 우선, 가설 주도, 회귀 테스트).
+- [Security Master](skills/security-master/SKILL.md) — 최고 품질 보안 워크플로 (입력 검증, 비밀 관리, 증거 기반 발견).
+- [Observability Master](skills/observability-master/SKILL.md) — 최고 품질 관측성 워크플로 (로그·메트릭·트레이스, 비밀 로깅 금지).
+- [Performance Master](skills/performance-master/SKILL.md) — 최고 품질 성능 워크플로 (측정 우선, before/after 증거).
+
 
 
 
@@ -72,6 +77,11 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Design Master](skills/design-master/SKILL.md) — 최고 품질 UI·브랜드·시각 시스템 워크플로 (아트 디렉션, 안티슬롭, 시각 QA).
 - [Document Master](skills/document-master/SKILL.md) — 최고 품질 문서 작성 워크플로 (독자·작업, Diátaxis, 출처, 평문).
 - [Coding Master](skills/coding-master/SKILL.md) — 최고 품질 코딩 워크플로 (스펙 우선, TDD, 증분 슬라이스, 다축 리뷰, 증거 기반 완료).
+- [Debugging Master](skills/debugging-master/SKILL.md) — 최고 품질 디버깅 워크플로 (재현 우선, 가설 주도, 회귀 테스트).
+- [Security Master](skills/security-master/SKILL.md) — 최고 품질 보안 워크플로 (입력 검증, 비밀 관리, 증거 기반 발견).
+- [Observability Master](skills/observability-master/SKILL.md) — 최고 품질 관측성 워크플로 (로그·메트릭·트레이스, 비밀 로깅 금지).
+- [Performance Master](skills/performance-master/SKILL.md) — 최고 품질 성능 워크플로 (측정 우선, before/after 증거).
+
 
 
 
