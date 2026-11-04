@@ -29,6 +29,8 @@ Refer to these detailed documents in `docs/` rather than bloating this file:
 - Super-agent architecture notes: `docs/super-agent-architecture-notes.md`
 - Skill progressive disclosure guidance: `docs/skill-design-progressive-disclosure.md`
 - Design skills supplements (PPT, diagrams, visual QA): `docs/design-skills-supplements.md`
+- Optional PPT Master style workflow: `skills/ppt-master-style/SKILL.md`
+
 
 - Codex / multi-host adaptation notes: `docs/codex-adaptation-notes.md`
 - Multi-host balancing guide: `docs/multi-host-balancing.md`
