@@ -43,6 +43,8 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Skill progressive disclosure and trigger testing guidance: `docs/skill-design-progressive-disclosure.md`
 - Design skills supplements (PPT, diagrams, visual QA): `docs/design-skills-supplements.md`
 - Optional PPT Master style workflow: `skills/ppt-master-style/SKILL.md`
+- Highest-quality PPT workflow: `skills/ppt-master/SKILL.md`
+
 
 
 - Usage Scenarios: `docs/usage-scenarios.md`

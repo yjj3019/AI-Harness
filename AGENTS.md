@@ -30,6 +30,8 @@ Refer to these detailed documents in `docs/` rather than bloating this file:
 - Skill progressive disclosure guidance: `docs/skill-design-progressive-disclosure.md`
 - Design skills supplements (PPT, diagrams, visual QA): `docs/design-skills-supplements.md`
 - Optional PPT Master style workflow: `skills/ppt-master-style/SKILL.md`
+- Highest-quality PPT workflow: `skills/ppt-master/SKILL.md`
+
 
 
 - Codex / multi-host adaptation notes: `docs/codex-adaptation-notes.md`
