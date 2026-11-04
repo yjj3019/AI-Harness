@@ -33,3 +33,13 @@ State the delivered artifact and format, checks actually performed, their result
 ## Attribution
 
 Adapted from the workflow and verification principles of [huashu-design](https://github.com/alchaincyf/huashu-design/tree/4fc7bfdbd5ec3fa2d43ce7a6433de60976a5e4b1), copyright 2026 alchaincyf (花叔 · 花生), under the MIT license reproduced in [LICENSE](LICENSE). No upstream assets, exporter, web server, or executable code are included. External brands and media referenced upstream require their own rights review.
+
+## External supplements
+
+For richer pattern libraries, staged PPT workflows, and chart-honesty rules, see `docs/design-skills-supplements.md`.  
+When using an external skill (ppt-master, agent-slides, diagram-design, dataviz-design, etc.):
+
+- Confirm the delivery contract (editable PPTX vs HTML/SVG) before generation.
+- After generation, run the evidence checks in this skill (layout, contrast, overflow, editability, chart claims).
+- Record unverifiable items as unverified rather than assuming success.
+- Prefer source-of-truth files (JSON, outline, storyboard) over opaque screenshots when the external tool supports them.
