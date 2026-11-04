@@ -70,3 +70,15 @@ The repository’s `skills/` path is not automatically registered as a native Cl
 
 - Anthropic: The Complete Guide to Building Skills for Claude (progressive disclosure chapters).
 - Field notes on trigger testing and 3-level loading (the attached “Build Skills Claude Actually Uses” diagram).
+
+## Codex and multi-host notes
+
+The 3-level progressive disclosure model (frontmatter always, body on relevance, resources on demand) is shared with Codex via the open Agent Skills standard.
+
+- Codex discovers skills in `.agents/skills/` (repo) and `$HOME/.agents/skills` (user).
+- Claude Code uses `.claude/skills/`.
+- Keep `name` and `description` high-quality; the description is the activation surface on both hosts.
+- Optional host-specific metadata (e.g. `agents/openai.yaml` for Codex invocation policy) can live alongside the portable `SKILL.md`.
+- Test the trigger loop on the host you use most; automatic invocation quality can differ.
+
+For dual-host repositories, keep portable skill bodies and document host-specific discovery in `docs/codex-adaptation-notes.md`.

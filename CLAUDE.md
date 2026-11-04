@@ -16,6 +16,8 @@ Notice to Code Agent: This is the top-level index file. Follow all instructions 
 - **Compound First**: Always read `docs/compound-log.md` before starting any task or workflow.
 
 ## 2. Document Map & Index
+- Codex / multi-host instructions: `AGENTS.md` (aligned principles; see `docs/codex-adaptation-notes.md`)
+
 
 Refer to these detailed documents in `docs/` rather than bloating this top-level file:
 
