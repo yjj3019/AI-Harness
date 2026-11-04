@@ -40,6 +40,8 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Optional report editing (explicit opt-in, no gate changes): `skills/evidence-preserving-editor/SKILL.md`; evaluation cases: `docs/report-editing-cases.json`
 - Optional visual design and artifact verification (explicit opt-in): `skills/design-evidence-harness/SKILL.md`
 - Highest-quality design workflow: `skills/design-master/SKILL.md`
+- Highest-quality document writing: `skills/document-master/SKILL.md`
+
 
 - Optional Super-agent architecture notes (Router/Worker, event-driven, Watchdog adaptation): `docs/super-agent-architecture-notes.md`, optional skill `skills/super-agent-router/SKILL.md`
 - Skill progressive disclosure and trigger testing guidance: `docs/skill-design-progressive-disclosure.md`
