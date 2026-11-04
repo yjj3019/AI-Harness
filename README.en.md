@@ -11,6 +11,8 @@ Cursor/plugins adoption: [pinned-source review, 2026-10-28](docs/cursor-plugins-
 The optional [design evidence harness](skills/design-evidence-harness/SKILL.md) adapts the MIT-licensed huashu-design workflow for visual artifacts while preserving the requested format and reporting unavailable checks. Ask the agent explicitly to read the file; repository `skills/` does not automatically register a Claude Code skill. Codex's explicit-only policy applies only when this skill is discovered from a supported skill location. No upstream assets, runtime, or exporter are installed, and package checks do not certify design quality.
 - [Design Master](skills/design-master/SKILL.md) — Highest-quality UI, brand, and visual-system workflow (art direction, anti-slop, visual QA).
 - [Document Master](skills/document-master/SKILL.md) — Highest-quality document writing workflow (audience, Diátaxis, sourced claims, plain language).
+- [Coding Master](skills/coding-master/SKILL.md) — Highest-quality coding workflow (spec-first, TDD, incremental slices, multi-axis review, evidence-based completion).
+
 
 
 
