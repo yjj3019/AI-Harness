@@ -29,6 +29,8 @@ Refer to these detailed documents in `docs/` rather than bloating this file:
 - Super-agent architecture notes: `docs/super-agent-architecture-notes.md`
 - Skill progressive disclosure guidance: `docs/skill-design-progressive-disclosure.md`
 - Codex / multi-host adaptation notes: `docs/codex-adaptation-notes.md`
+- Multi-host balancing guide: `docs/multi-host-balancing.md`
+
 - Usage Scenarios: `docs/usage-scenarios.md`
 - Design Decisions: `docs/DECISIONS.md`
 
