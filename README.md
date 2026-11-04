@@ -232,6 +232,9 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 추가 자료
 
+- [Multi-host balancing guide](docs/multi-host-balancing.md) — AGENTS.md를 공유 코어로 두고 Claude/Codex/기타 호스트 균형 맞추기.
+
+
 - [AGENTS.md](AGENTS.md) — Codex 및 multi-host용 헌법 (CLAUDE.md와 핵심 규칙 정렬).
 - [Codex adaptation notes](docs/codex-adaptation-notes.md) — AGENTS.md vs CLAUDE.md, 스킬 경로, Phase 증거 이식 가이드.
 
