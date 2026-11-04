@@ -238,6 +238,8 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 - [Design skills supplements](docs/design-skills-supplements.md) — PPT/다이어그램/시각 QA를 위한 외부 고품질 스킬·저장소 큐레이션과 채택 가이드.
 - [PPT Master style workflow](skills/ppt-master-style/SKILL.md) — ppt-master 스타일의 단계·게이트·네이티브 PPTX 워크플로 적응.
+- [PPT Master](skills/ppt-master/SKILL.md) — 최고 품질 네이티브 PPTX 워크플로 (액션 타이틀, 디자인 스펙 락, 시각 QA).
+
 
 
 

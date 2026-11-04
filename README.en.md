@@ -200,6 +200,8 @@ Fastest start: copy `docs/PHASES.md`, `docs/HANDOFF.md`, `.claude/workflows/phas
 ## Further Reading
 - [Design skills supplements](docs/design-skills-supplements.md) — Curated external PPT, diagram, and visual QA skills with adoption guidance.
 - [PPT Master style workflow](skills/ppt-master-style/SKILL.md) — Staged, gated native-PPTX workflow adapted from ppt-master.
+- [PPT Master](skills/ppt-master/SKILL.md) — Highest-quality native PPTX workflow (action titles, design-spec lock, visual QA).
+
 
 
 
