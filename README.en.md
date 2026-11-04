@@ -12,6 +12,11 @@ The optional [design evidence harness](skills/design-evidence-harness/SKILL.md) 
 - [Design Master](skills/design-master/SKILL.md) — Highest-quality UI, brand, and visual-system workflow (art direction, anti-slop, visual QA).
 - [Document Master](skills/document-master/SKILL.md) — Highest-quality document writing workflow (audience, Diátaxis, sourced claims, plain language).
 - [Coding Master](skills/coding-master/SKILL.md) — Highest-quality coding workflow (spec-first, TDD, incremental slices, multi-axis review, evidence-based completion).
+- [Debugging Master](skills/debugging-master/SKILL.md) — Highest-quality debugging workflow (reproduce-first, hypothesis-driven, regression test).
+- [Security Master](skills/security-master/SKILL.md) — Highest-quality security workflow (input validation, secret handling, evidence-based findings).
+- [Observability Master](skills/observability-master/SKILL.md) — Highest-quality observability workflow (logs, metrics, traces; no secrets in telemetry).
+- [Performance Master](skills/performance-master/SKILL.md) — Highest-quality performance workflow (measure-first, before/after evidence).
+
 
 
 
