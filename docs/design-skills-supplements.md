@@ -55,3 +55,7 @@ A portable, evidence-aligned adaptation of the ppt-master staged workflow lives 
 ## Local PPT Master
 
 The highest-quality local workflow is `skills/ppt-master/SKILL.md`. It synthesizes action titles, design-spec lock, source-of-truth, and visual QA from the leading external skills while remaining evidence-first and host-portable.
+
+## Local Design Master
+
+The highest-quality local design workflow is `skills/design-master/SKILL.md`. It synthesizes art direction, anti-slop rules, design-system tokens, and visual QA from the leading external skills while remaining evidence-first and host-portable.
