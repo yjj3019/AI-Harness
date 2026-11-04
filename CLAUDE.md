@@ -1,5 +1,10 @@
 # CLAUDE.md - AI Harness Constitution
 
+> Prefer loading the shared core first: `@AGENTS.md`
+> (Claude Code reads the import, then this file). Core rules below are kept aligned with AGENTS.md.
+
+# CLAUDE.md - AI Harness Constitution
+
 Notice to Code Agent: This is the top-level index file. Follow all instructions strictly. Do not execute unrequested scope. Keep modifications surgical.
 
 ## 1. Primary Rules
