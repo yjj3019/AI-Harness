@@ -74,6 +74,10 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Browser Evidence](skills/browser-evidence/SKILL.md) — 브라우저·E2E 증거 캡처.
 - [Skill Audit](skills/skill-audit/SKILL.md) — 외부 스킬 보안 감사.
 - [Compound Feedback](skills/compound-feedback/SKILL.md) — 스킬 사용 결과 compound-log 기록.
+- [API Design](skills/api-design/SKILL.md) — 계약 우선 API·인터페이스 설계.
+- [Skill Catalog](docs/skill-catalog.md) — 스킬 목록 자동 생성 (`node scripts/skill-catalog/generate.js`).
+- [Dashboard](dashboard/index.html) — Phase 증거 정적 대시보드.
+
 
 
 
@@ -94,6 +98,10 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Browser Evidence](skills/browser-evidence/SKILL.md) — 브라우저·E2E 증거 캡처.
 - [Skill Audit](skills/skill-audit/SKILL.md) — 외부 스킬 보안 감사.
 - [Compound Feedback](skills/compound-feedback/SKILL.md) — 스킬 사용 결과 compound-log 기록.
+- [API Design](skills/api-design/SKILL.md) — 계약 우선 API·인터페이스 설계.
+- [Skill Catalog](docs/skill-catalog.md) — 스킬 목록 자동 생성 (`node scripts/skill-catalog/generate.js`).
+- [Dashboard](dashboard/index.html) — Phase 증거 정적 대시보드.
+
 
 
 

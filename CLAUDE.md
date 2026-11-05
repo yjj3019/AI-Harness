@@ -52,6 +52,10 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Browser / E2E evidence: `skills/browser-evidence/SKILL.md`
 - Skill security audit: `skills/skill-audit/SKILL.md`
 - Compound feedback: `skills/compound-feedback/SKILL.md`
+- API / interface design: `skills/api-design/SKILL.md`
+- Skill catalog generator: `scripts/skill-catalog/generate.js`
+- Static dashboard: `dashboard/index.html`
+
 
 
 
