@@ -201,6 +201,12 @@ jq -e --arg s "$want" -s 'all(.[]; .path == ".phase-evidence/phase-1-test.log" a
   || { fails=$((fails + 1)); echo "FAIL read-tracker: record path or sha256 wrong"; }
 rm -rf "$tmp"
 
+echo "== evidence-guard: lexical normalize =="
+t "$G" deny 2 Write file_path "foo/../.phase-evidence/x.json"
+t "$G" deny 2 Write file_path "foo//.phase-evidence/x.json"
+t "$G" deny 2 Write file_path "foo/./.phase-evidence/x.json"
+t "$G" deny 0 Write file_path "src/../src/a.js"
+
 echo "== fail-closed on empty or invalid input (critical hooks) =="
 for h in $B "$G deny" "$G auto"; do
   total=$((total + 1))
