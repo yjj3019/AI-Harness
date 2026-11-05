@@ -37,20 +37,20 @@ block() {
 case "$tool" in
   Write | Edit | MultiEdit | NotebookEdit)
     path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)
-    # Both separators: Claude Code on Windows passes C:\proj\.phase-evidence\x.json.
-    # Best-effort: if the path exists, also check its realpath.
+    # Lexical check for non-existent paths: normalize separators once, then match.
+    norm=$(printf '%s' "$path" | sed 's|\\|/|g; s|//|/|g; s|/\./|/|g')
+    if printf '%s' "$norm" | grep -Eiq '(^|/)\.phase-evidence(/|$)'; then
+      block "only the orchestrator records evidence"
+    fi
+    if printf '%s' "$path" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
+      block "only the orchestrator records evidence"
+    fi
+    # Best-effort realpath for existing targets (catches symlinks).
     if [ -n "$path" ] && [ -e "$path" ]; then
       real=$(realpath "$path" 2>/dev/null || true)
       if [ -n "$real" ] && printf '%s' "$real" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
         block "only the orchestrator records evidence"
       fi
-    fi
-    if printf '%s' "$path" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
-      block "only the orchestrator records evidence"
-    fi
-    # Extra: reject obvious parent-dir traversal toward evidence
-    if printf '%s' "$path" | grep -Eiq '\.phase-evidence.*\.\.'; then
-      block "path traversal toward .phase-evidence is not allowed"
     fi
     # Conservatively treat trailing Win32 dots/spaces and NTFS stream suffixes
     # as aliases, even on POSIX. This does not resolve other filesystem aliases.

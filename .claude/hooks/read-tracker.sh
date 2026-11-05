@@ -12,8 +12,8 @@
 # refused on that platform, which is the opposite of what the guard is for.
 
 set -u
-command -v jq >/dev/null 2>&1 || { echo "read-tracker: jq missing; verify PASS will be refused" >&2; exit 0; }
-command -v sha256sum >/dev/null 2>&1 || { echo "read-tracker: sha256sum missing; verify PASS will be refused" >&2; exit 0; }
+command -v jq >/dev/null 2>&1 || { echo "read-tracker: jq missing; verify PASS will be refused" >&2; exit 2; }
+command -v sha256sum >/dev/null 2>&1 || { echo "read-tracker: sha256sum missing; verify PASS will be refused" >&2; exit 2; }
 
 input=$(cat)
 tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || exit 0
