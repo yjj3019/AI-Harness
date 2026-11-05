@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+/**
+ * Minimal skill audit for CI.
+ * Scans skills/**\/SKILL.md for automatic-reject patterns.
+ * Exit 0 if clean, 1 if findings.
+ */
+const fs = require("fs");
+const path = require("path");
+
+const ROOT = path.resolve(__dirname, "..");
+const SKILLS = path.join(ROOT, "skills");
+
+const REJECT = [
+  { re: /ignore\s+(all\s+)?previous\s+instructions/i, why: "prompt injection" },
+  { re: /curl[^|]*\|\s*(ba|z)?sh/i, why: "download piped to shell" },
+  { re: /base64\s+-d/i, why: "obfuscated decode" },
+  { re: /send\s+(api[_ ]?key|token|secret|\.env)/i, why: "secret exfiltration" },
+];
+
+function walk(dir, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const name of fs.readdirSync(dir)) {
+    const p = path.join(dir, name);
+    const st = fs.statSync(p);
+    if (st.isDirectory()) walk(p, out);
+    else if (name === "SKILL.md") out.push(p);
+  }
+  return out;
+}
+
+const files = walk(SKILLS);
+const findings = [];
+
+for (const file of files) {
+  const rel = path.relative(ROOT, file);
+  // The audit skill documents the patterns; do not flag it.
+  if (rel.startsWith("skills/skill-audit/")) continue;
+  const text = fs.readFileSync(file, "utf8");
+  for (const { re, why } of REJECT) {
+    if (re.test(text)) findings.push({ file: rel, why });
+  }
+}
+
+if (findings.length) {
+  console.error("skill-audit: findings");
+  for (const f of findings) console.error(`  ${f.file}: ${f.why}`);
+  process.exit(1);
+}
+console.log(`skill-audit: ${files.length} skills clean`);

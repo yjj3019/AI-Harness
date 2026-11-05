@@ -27,6 +27,9 @@ for h in .claude/hooks/*.sh tests/*.sh; do bash -n "$h"; done
 jq empty .claude/settings.json
 echo "ok"
 
+echo "== skill audit =="
+node scripts/skill-audit.js
+
 echo "== handoff drift =="
 node scripts/handoff-lint.js
 
