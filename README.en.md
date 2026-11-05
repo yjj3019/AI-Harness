@@ -22,6 +22,10 @@ The optional [design evidence harness](skills/design-evidence-harness/SKILL.md) 
 - [Browser Evidence](skills/browser-evidence/SKILL.md) — Browser and E2E evidence capture.
 - [Skill Audit](skills/skill-audit/SKILL.md) — Security audit for external skills.
 - [Compound Feedback](skills/compound-feedback/SKILL.md) — Records skill outcomes into the compound log.
+- [API Design](skills/api-design/SKILL.md) — Contract-first API and interface design.
+- [Skill Catalog](docs/skill-catalog.md) — Auto-generated skill list (`node scripts/skill-catalog/generate.js`).
+- [Dashboard](dashboard/index.html) — Static phase evidence dashboard.
+
 
 
 
