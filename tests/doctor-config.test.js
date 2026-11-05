@@ -6,6 +6,10 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const source = path.resolve(__dirname, "..");
+const { jqReason } = require("./helpers/bash-probe");
+// doctor requires jq for its hook-wiring probe; without it the gate deliberately reports a
+// problem, so the "accepts exact wiring" assertion can only pass on jq-provisioned machines.
+const JQ_SKIP = jqReason();
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "doctor config "));
@@ -23,7 +27,7 @@ function fixture(t) {
   return { root, settings, run };
 }
 
-test("doctor accepts exact wiring in a project path with spaces", t => {
+test("doctor accepts exact wiring in a project path with spaces", { skip: JQ_SKIP }, t => {
   const { run } = fixture(t);
   const result = run();
   assert.ifError(result.error);

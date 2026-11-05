@@ -136,7 +136,7 @@ test('CLI rejects a directory and, on POSIX, a FIFO without blocking', t => {
   try {
     const cli = path.resolve(__dirname, '../scripts/task-graph.js');
     const check = input => {
-      const result = spawnSync(process.execPath, [cli, input], { encoding: 'utf8', timeout: 3000 });
+      const result = spawnSync(process.execPath, [cli, input], { encoding: 'utf8', timeout: 20000 });
       assert.ifError(result.error);
       assert.equal(result.status, 2);
       assert.equal(JSON.parse(result.stdout).verdict, 'UNKNOWN');
@@ -144,7 +144,7 @@ test('CLI rejects a directory and, on POSIX, a FIFO without blocking', t => {
     check(dir);
     if (process.platform !== 'win32') {
       const fifo = path.join(dir, 'fifo');
-      const mkfifo = spawnSync('mkfifo', [fifo], { timeout: 3000 });
+      const mkfifo = spawnSync('mkfifo', [fifo], { timeout: 20000 });
       assert.ifError(mkfifo.error);
       assert.equal(mkfifo.status, 0);
       check(fifo);

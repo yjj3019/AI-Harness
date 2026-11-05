@@ -7,7 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(process.argv[2] || path.join(__dirname, ".."));
 const SKILLS = path.join(ROOT, "skills");
 
 const REJECT = [
@@ -34,7 +34,7 @@ const files = walk(SKILLS);
 const findings = [];
 
 for (const file of files) {
-  const rel = path.relative(ROOT, file);
+  const rel = path.relative(ROOT, file).split(path.sep).join("/");
   // The audit skill documents the patterns; do not flag it.
   if (rel.startsWith("skills/skill-audit/")) continue;
   const text = fs.readFileSync(file, "utf8");

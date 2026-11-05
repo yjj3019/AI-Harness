@@ -16,6 +16,9 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { skipReason } = require("./helpers/bash-probe");
+
+const BASH_SKIP = skipReason();
 
 const REPO = path.resolve(__dirname, "..");
 const GATE = path.join(REPO, ".claude", "workflows", "phase-gate.js");
@@ -90,7 +93,7 @@ function verifyReadsLog(root, filePath) {
   });
 }
 
-test("simulated phase: five steps, gate, attestation and CI re-verification", () => {
+test("simulated phase: five steps, gate, attestation and CI re-verification", { skip: BASH_SKIP }, () => {
   const root = project();
   try {
     initRepo(root);
@@ -110,7 +113,7 @@ test("simulated phase: five steps, gate, attestation and CI re-verification", ()
   }
 });
 
-test("simulated phase: a failing test forces a retry that re-runs the whole chain", () => {
+test("simulated phase: a failing test forces a retry that re-runs the whole chain", { skip: BASH_SKIP }, () => {
   const root = project();
   try {
     initRepo(root);
@@ -136,7 +139,7 @@ test("simulated phase: a failing test forces a retry that re-runs the whole chai
   }
 });
 
-test("simulated verify subagent: the real read-tracker hook unlocks verify PASS for relative and native paths", (t) => {
+test("simulated verify subagent: the real read-tracker hook unlocks verify PASS for relative and native paths", { skip: BASH_SKIP }, (t) => {
   if (!bashHasJq()) {
     t.skip("bash with jq is required to exercise the hook");
     return;
