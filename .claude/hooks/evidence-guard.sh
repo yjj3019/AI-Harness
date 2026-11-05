@@ -22,8 +22,9 @@ tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || { echo
 # (the orchestrator) is not restricted. Agent frontmatter hooks are skipped until the
 # workspace trust dialog is accepted, so settings.json is the authority.
 if [ "$mode" = auto ]; then
-  agent_id=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null) || exit 0
-  agent_type=$(printf '%s' "$input" | jq -r '.agent_type // empty' 2>/dev/null) || exit 0
+  agent_id=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null) || { echo "Blocked by .claude/hooks/evidence-guard.sh: invalid agent fields" >&2; exit 2; }
+  agent_type=$(printf '%s' "$input" | jq -r '.agent_type // empty' 2>/dev/null) || { echo "Blocked by .claude/hooks/evidence-guard.sh: invalid agent fields" >&2; exit 2; }
+  # Empty agent fields mean the main session (orchestrator). That is allowed.
   [ -n "$agent_id$agent_type" ] || exit 0
   if [ "$agent_type" = test ]; then mode=test; else mode=deny; fi
 fi
@@ -37,7 +38,13 @@ case "$tool" in
   Write | Edit | MultiEdit | NotebookEdit)
     path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)
     # Both separators: Claude Code on Windows passes C:\proj\.phase-evidence\x.json.
-    # Guardrail only: does not resolve symlinks or other filesystem aliases.
+    # Best-effort: if the path exists, also check its realpath.
+    if [ -n "$path" ] && [ -e "$path" ]; then
+      real=$(realpath "$path" 2>/dev/null || true)
+      if [ -n "$real" ] && printf '%s' "$real" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
+        block "only the orchestrator records evidence"
+      fi
+    fi
     if printf '%s' "$path" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
       block "only the orchestrator records evidence"
     fi

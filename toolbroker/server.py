@@ -148,11 +148,11 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/v1/tools/execute":
             self.respond(404, {"error": "NOT_FOUND"})
             return
-        # Optional local token. If TOOLBROKER_TOKEN is set, require matching header.
-        expected = os.environ.get("TOOLBROKER_TOKEN")
-        if expected:
+        # Token required unless TOOLBROKER_ALLOW_UNAUTHENTICATED=1.
+        if os.environ.get("TOOLBROKER_ALLOW_UNAUTHENTICATED") != "1":
+            expected = os.environ.get("TOOLBROKER_TOKEN", "")
             got = self.headers.get("X-Toolbroker-Token", "")
-            if got != expected:
+            if not expected or got != expected:
                 self.respond(401, {"error": "UNAUTHORIZED"})
                 return
         try:

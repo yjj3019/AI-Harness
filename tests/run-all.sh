@@ -33,6 +33,9 @@ node scripts/skill-audit.js
 echo "== secret scan =="
 node scripts/secret-scan.js
 
+echo "== tree exclude =="
+node scripts/tree-exclude-check.js
+
 echo "== handoff drift =="
 node scripts/handoff-lint.js
 
