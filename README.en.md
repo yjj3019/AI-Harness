@@ -259,3 +259,12 @@ New phases should run `phase-gate.js run <id> test --require-test-summary -- <co
 ## Typed constraint preservation and handoff drift
 
 Opt-in Phase contracts are checked against typed, full-text local checkpoints before test runs and Phase completion. CI cross-checks the HANDOFF platform list. These checks do not intercept the model's private compaction, authenticate approval, or replace tool-level authorization. See `docs/task-contracts/README.md`.
+
+
+## Recent updates (2026-11-05) — test isolation hardening, secret-scan expansion, memory-guard
+
+- **Commit `7ffc1d0`** — test isolation hardening: on hosts where bash/jq are not actually runnable (e.g. a WSL launcher stub), bash-hook and doctor suites now **skip** with an explicit reason via `tests/helpers/bash-probe.js` (cached `bashWorks()`/`jqReason()` probes). Short 3s spawn timeouts that flaked under parallel load were relaxed to 20s (`evaluation-accounting`, `task-graph`). `tests/run-all.sh` fails fast (exit 2) when node/jq/bash are missing. Added `tests/skill-audit.test.js`.
+- **Commit `1e217a9`** — **memory-guard**: deterministic validator `scripts/memory-guard.js` for distilled (dreaming) memory stores — requires `_index.md`, validates links, fails on secret-shaped tokens, warns on undated facts (`date:`) and email-like PII. Covered by `tests/memory-guard.test.js` (3 tests).
+- **Secret-scan expansion**: added `ghp_`/`github_pat_`/`glpat-`/Slack (`xox*`)/OpenAI (`sk-`)/Google (`AIza`)/`npm_` patterns — measured **clean**.
+- **Full suite (measured)**: **pass 319 / fail 0 / skipped 10**. Heaviest single gate/verify test is 136.8s; splitting it proved impossible without breaking attestation semantics, so it stays unified.
+- Prerequisites: Node.js >= 20, bash, **jq** (enforced up front by `tests/run-all.sh`). Windows batch-flake mitigations: pin `HARNESS_BASH` to a native bash or lower `--test-concurrency`.
