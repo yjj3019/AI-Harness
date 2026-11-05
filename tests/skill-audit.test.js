@@ -14,6 +14,25 @@ test("skill-audit gate passes on the repository's own skills", () => {
   assert.match(r.stdout, /skills clean/);
 });
 
+test("skill-audit flags a skill whose frontmatter lacks a license", () => {
+  const { writeFileSync, mkdtempSync, mkdirSync, rmSync } = require("node:fs");
+  const os = require("node:os");
+  const dir = mkdtempSync(path.join(os.tmpdir(), "skill-audit-lic-"));
+  try {
+    mkdirSync(path.join(dir, "skills"), { recursive: true });
+    writeFileSync(path.join(dir, "skills", "SKILL.md"),
+      "---\nname: plain\n---\nA benign skill body.\n");
+    const r = spawnSync(process.execPath, [script, dir], { encoding: "utf8", timeout: 30000 });
+    assert.notEqual(r.status, 0, "skill without license must be rejected");
+    assert.match(r.stderr, /license: field/);
+    writeFileSync(path.join(dir, "skills", "SKILL.md"),
+      "---\nname: ok\nlicense: Apache-2.0\n---\nfine\n");
+    const ok = spawnSync(process.execPath, [script, dir], { encoding: "utf8", timeout: 30000 });
+    assert.equal(ok.status, 0, `expected clean: ${ok.stderr}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 test("skill-audit flags a planted prompt-injection skill", () => {
   const { writeFileSync, mkdtempSync, mkdirSync, rmSync } = require("node:fs");
   const os = require("node:os");

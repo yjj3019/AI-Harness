@@ -117,3 +117,17 @@ jobs:
           python-version: '3.12'
       - name: Deny-default broker, atomic DB and unknown API result regression
         run: python -m unittest discover -s tests/toolbroker -p 'test_*.py' -v
+
+  self-qa:
+    name: self-qa / shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Shellcheck the shell test runner
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck >/dev/null
+          shellcheck --version | head -1
+          shellcheck -x tests/run-all.sh
+          bash -n tests/run-all.sh
