@@ -363,3 +363,12 @@ ode --test tests/*.test.js run takes roughly 20 minutes. Budget CI accordingly o
   native bash or run suites with reduced --test-concurrency.
 
 - Distilled memory stores (dreaming/memory-distill): `node scripts/memory-guard.js <store>` fails on broken links, missing `_index.md` and secret-shaped tokens and warns on undated facts (TTL policy) and email-like PII; covered by tests/memory-guard.test.js.
+
+
+## 최근 갱신 (2026-11-05) — 테스트 격리 하드닝 · 시크릿 스캔 확장 · memory-guard
+
+- **커밋 `7ffc1d0`** — 테스트 격리 하드닝: bash/jq가 실제로 구동 가능하지 않은 환경(WSL 런처 스텁 등)에서 bash 훅·doctor 계열 스위트를 명확한 이유와 함께 **skip** 처리(`tests/helpers/bash-probe.js`, `bashWorks()/jqReason()` 캐시 프로브). 병렬 부하에서 플레이크를 내던 3s 스폰 타임아웃을 20s로 완화(`evaluation-accounting`, `task-graph`). `tests/run-all.sh`는 node/jq/bash 부재 시 **즉시 오류**(exit 2). `tests/skill-audit.test.js` 추가.
+- **커밋 `1e217a9`** — **memory-guard**: 증류(dreaming) 메모리 저장소용 결정적 검증기 `scripts/memory-guard.js` — `_index.md` 필수·링크 유효성·secret 형상 토큰(error)·미기재 `date:`/이메일형 PII(warn). 테스트 `tests/memory-guard.test.js` (3건).
+- **시크릿 스캔 확장**: `ghp_`/`github_pat_`/`glpat-`/Slack(`xox*`)/OpenAI(`sk-`)/Google(`AIza`)/`npm_` 패턴 추가 — 실측 **clean**.
+- **전체 스위트 실측**: **pass 319 / fail 0 / skipped 10** (게이트·검증 계열 최장 단일 테스트 136.8s; 분할은 attestation drift로 판정 불가 → 원형 유지).
+- 전제조건: Node.js ≥ 20, bash, **jq** (`tests/run-all.sh`가 부재 시 즉시 실패). Windows 배치 플레이크 완화: `HARNESS_BASH` 고정 또는 `--test-concurrency` 축소.
