@@ -37,8 +37,13 @@ case "$tool" in
   Write | Edit | MultiEdit | NotebookEdit)
     path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)
     # Both separators: Claude Code on Windows passes C:\proj\.phase-evidence\x.json.
+    # Guardrail only: does not resolve symlinks or other filesystem aliases.
     if printf '%s' "$path" | grep -Eiq '(^|[\\/])\.phase-evidence([\\/]|$)'; then
       block "only the orchestrator records evidence"
+    fi
+    # Extra: reject obvious parent-dir traversal toward evidence
+    if printf '%s' "$path" | grep -Eiq '\.phase-evidence.*\.\.'; then
+      block "path traversal toward .phase-evidence is not allowed"
     fi
     # Conservatively treat trailing Win32 dots/spaces and NTFS stream suffixes
     # as aliases, even on POSIX. This does not resolve other filesystem aliases.
