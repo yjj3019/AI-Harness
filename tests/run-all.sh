@@ -30,6 +30,9 @@ echo "ok"
 echo "== skill audit =="
 node scripts/skill-audit.js
 
+echo "== secret scan =="
+node scripts/secret-scan.js
+
 echo "== handoff drift =="
 node scripts/handoff-lint.js
 

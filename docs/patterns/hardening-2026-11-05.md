@@ -11,3 +11,13 @@
 
 ## 4. Evidence path guardrail
 `evidence-guard.sh` documents that path matching does not resolve symlinks, and rejects an obvious `..` traversal pattern toward `.phase-evidence`. This remains a guardrail, not a full filesystem boundary.
+
+## Medium / low priority (same day)
+
+- **MCP pin**: `.mcp.json.example` notes the Playwright MCP pin and review date. Do not use `latest`.
+- **Toolbroker token**: optional `TOOLBROKER_TOKEN`. When set, `POST /v1/tools/execute` requires `X-Toolbroker-Token`. Loopback bind unchanged.
+- **Phase ID**: `ID_RE` rejects leading dots and caps length at 64.
+- **TREE_EXCLUDE**: comment added that new exclusions narrow the integrity check and need review.
+- **Secret scan**: `scripts/secret-scan.js` wired into `tests/run-all.sh`. Looks for AWS keys, private keys, and hardcoded credential shapes.
+- **CI permissions**: already `contents: read`. No change.
+- **Windows path**: evidence-guard remains a guardrail; full alias resolution is not claimed.
