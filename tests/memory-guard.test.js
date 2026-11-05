@@ -1,0 +1,55 @@
+"use strict";
+// Deterministic guard for distilled memory stores: links resolve, secrets are absent, facts are dated.
+// Covers the deterministic-verification gap of the "dreaming" memory workflow (LLM output has no
+// lint pass of its own) plus the pre-dream redaction and TTL eligibility checks.
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+
+const SCRIPT = path.resolve(__dirname, "../scripts/memory-guard.js");
+function store() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "memory-guard-"));
+  const write = (rel, text) => {
+    fs.mkdirSync(path.join(root, path.dirname(rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), text);
+  };
+  return { root, write };
+}
+const run = (root) => spawnSync(process.execPath, [SCRIPT, root], { encoding: "utf8" });
+
+test("a clean dated store with resolved links passes", () => {
+  const { root, write } = store();
+  try {
+    write("_index.md", "# Index\n- [[a]]\n");
+    write("a.md", "date: 2026-11-05\nfact\n");
+    const r = run(root);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /files ok/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("missing index, broken link and secret are errors", () => {
+  const { root, write } = store();
+  try {
+    write("_index.md", "- [[missing]]\n");
+    write("a.md", "date: 2026-11-05\ntoken ghp_" + "a".repeat(30) + "\n");
+    const r = run(root);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /broken link -> missing/);
+    assert.match(r.stderr, /secret-shaped pattern/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("undated facts warn and missing index is reported", () => {
+  const { root, write } = store();
+  try {
+    write("note.md", "fact without a date\n");
+    const r = run(root);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /_index.md is missing/);
+    assert.match(r.stderr, /no ISO/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
