@@ -21,3 +21,11 @@
 - **Secret scan**: `scripts/secret-scan.js` wired into `tests/run-all.sh`. Looks for AWS keys, private keys, and hardcoded credential shapes.
 - **CI permissions**: already `contents: read`. No change.
 - **Windows path**: evidence-guard remains a guardrail; full alias resolution is not claimed.
+
+## Residual risk patches
+
+- **evidence-guard auto**: agent field parse failure now denies. Empty agent fields still mean the main session and are allowed.
+- **evidence-guard path**: if the target exists, `realpath` is also checked for `.phase-evidence`. Still a guardrail for non-existent or aliased paths.
+- **read-tracker**: missing `jq` or `sha256sum` logs to stderr. Behavior remains fail-open; phase-gate still refuses verify PASS.
+- **toolbroker**: `POST /v1/tools/execute` requires `TOOLBROKER_TOKEN` unless `TOOLBROKER_ALLOW_UNAUTHENTICATED=1`.
+- **TREE_EXCLUDE**: `scripts/tree-exclude-check.js` fails CI if the exclusion list grows past 4 without a reviewed change.
