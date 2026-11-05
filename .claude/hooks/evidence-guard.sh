@@ -6,15 +6,16 @@
 # Only the orchestrator (main session) records evidence, through phase-gate.js.
 # Path matching is a guardrail, not a security boundary: symlinks, other aliases,
 # other tools and indirect writes are not resolved; host tool semantics are unverified.
-# Fail-open if jq is missing or input is invalid.
+# Fail-closed if jq is missing or critical input is unparsable.
 
 set -u
 
 mode=${1:-deny}
-command -v jq >/dev/null 2>&1 || exit 0
+command -v jq >/dev/null 2>&1 || { echo "Blocked by .claude/hooks/evidence-guard.sh: jq is required" >&2; exit 2; }
 
 input=$(cat)
-tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || exit 0
+[ -n "$input" ] || { echo "Blocked by .claude/hooks/evidence-guard.sh: empty hook input" >&2; exit 2; }
+tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || { echo "Blocked by .claude/hooks/evidence-guard.sh: invalid hook input" >&2; exit 2; }
 
 # auto: registered in settings.json, so it runs for every tool call. Claude Code adds
 # agent_id / agent_type to the hook input only inside a subagent. The main session

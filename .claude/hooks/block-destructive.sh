@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # PreToolUse(Bash) guardrail: deny a short list of destructive commands.
 # Pattern matching is a guardrail, not a security boundary. Variants can slip through.
-# Fail-open: if jq is missing or the input is unparsable, the command is allowed.
+# Fail-closed: if jq is missing or the input is unparsable, the command is denied.
 
 set -u
 
-command -v jq >/dev/null 2>&1 || exit 0
+command -v jq >/dev/null 2>&1 || { echo "Blocked by .claude/hooks/block-destructive.sh: jq is required" >&2; exit 2; }
 
+input=$(cat)
+[ -n "$input" ] || { echo "Blocked by .claude/hooks/block-destructive.sh: empty hook input" >&2; exit 2; }
 # Preserve embedded LF on native Windows jq too; text-mode CRLF conversion changes shell syntax.
-cmd=$(jq -br '.tool_input.command // empty' 2>/dev/null) || exit 0
+cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || { echo "Blocked by .claude/hooks/block-destructive.sh: invalid hook input" >&2; exit 2; }
 [ -n "$cmd" ] || exit 0
 
 deny() {

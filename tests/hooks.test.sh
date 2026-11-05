@@ -201,12 +201,12 @@ jq -e --arg s "$want" -s 'all(.[]; .path == ".phase-evidence/phase-1-test.log" a
   || { fails=$((fails + 1)); echo "FAIL read-tracker: record path or sha256 wrong"; }
 rm -rf "$tmp"
 
-echo "== fail-open on empty or invalid input =="
+echo "== fail-closed on empty or invalid input (critical hooks) =="
 for h in $B "$G deny" "$G auto"; do
   total=$((total + 1))
-  printf '' | bash .claude/hooks/$h >/dev/null 2>&1 || { fails=$((fails + 1)); echo "FAIL empty input: $h"; }
+  printf '' | bash .claude/hooks/$h >/dev/null 2>&1 && { fails=$((fails + 1)); echo "FAIL empty input should be denied: $h"; }
   total=$((total + 1))
-  printf 'not json' | bash .claude/hooks/$h >/dev/null 2>&1 || { fails=$((fails + 1)); echo "FAIL garbage input: $h"; }
+  printf 'not json' | bash .claude/hooks/$h >/dev/null 2>&1 && { fails=$((fails + 1)); echo "FAIL garbage input should be denied: $h"; }
 done
 
 echo "hooks: $((total - fails))/$total passed"
