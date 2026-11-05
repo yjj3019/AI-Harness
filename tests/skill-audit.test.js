@@ -29,3 +29,20 @@ test("skill-audit flags a planted prompt-injection skill", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("skill-audit terminates on a self-referencing directory symlink", { skip: process.platform === "win32" && "symlinks need elevation on Windows" }, () => {
+  const { mkdtempSync, mkdirSync, symlinkSync, rmSync } = require("node:fs");
+  const os = require("node:os");
+  const dir = mkdtempSync(path.join(os.tmpdir(), "skill-audit-loop-"));
+  try {
+    mkdirSync(path.join(dir, "skills", "ok"), { recursive: true });
+    require("node:fs").writeFileSync(path.join(dir, "skills", "ok", "SKILL.md"),
+      "---\nname: ok\n---\nNormal skill.\n");
+    symlinkSync(".", path.join(dir, "skills", "loop"), "dir");
+    const r = spawnSync(process.execPath, [script, dir], { encoding: "utf8", timeout: 30000 });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /skills clean/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

@@ -12,13 +12,22 @@ const attestDir = path.join("docs", "attestations");
 const out = path.join("dashboard", "status.json");
 const STEPS = 5;
 
+// Mirror phase-gate.js and verify-attestation-inventory.js: a phase id is the first
+// non-whitespace, non-colon token; the title after ": " is optional there, so a
+// colon-less heading must not silently vanish from the dashboard.
+const PHASE_RE = /^###\s+Phase\s+([^\s:]+)/gm;
+const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
 let text = "";
 try { text = fs.readFileSync(phasesFile, "utf8"); } catch { text = ""; }
 
-const phases = [];
-for (const m of text.matchAll(/^### Phase\s+([A-Za-z0-9._-]+):\s*(.+)$/gm)) {
+const phases = new Map();
+for (const m of text.matchAll(PHASE_RE)) {
   if (m[1] === "<id>") continue;
-  phases.push({ id: m[1], title: m[2].trim(), evidence: 0, total: STEPS });
+  if (!ID_RE.test(m[1])) continue;
+  const line = text.slice(m.index).split(/\r?\n/, 1)[0];
+  const title = (line.split(":", 2)[1] || "").trim();
+  phases.set(m[1], { id: m[1], title, evidence: 0, total: STEPS });
 }
 
 if (fs.existsSync(attestDir)) {
@@ -26,12 +35,16 @@ if (fs.existsSync(attestDir)) {
     const m = name.match(/^phase-(.+)\.json$/);
     if (!m) continue;
     const id = m[1];
-    const hit = phases.find((p) => p.id === id);
+    if (!ID_RE.test(id)) continue;
+    const hit = phases.get(id);
     if (hit) hit.evidence = STEPS;
-    else phases.push({ id, title: "(attestation only)", evidence: STEPS, total: STEPS });
+    else phases.set(id, { id, title: "(attestation only)", evidence: STEPS, total: STEPS });
   }
 }
 
 fs.mkdirSync("dashboard", { recursive: true });
-fs.writeFileSync(out, JSON.stringify(phases, null, 2));
-console.log(`dashboard-status: ${phases.length} phases -> ${out}`);
+// Atomic write: a reader never observes a truncated status.json.
+const tmp = out + ".tmp-" + process.pid;
+fs.writeFileSync(tmp, JSON.stringify([...phases.values()], null, 2));
+fs.renameSync(tmp, out);
+console.log(`dashboard-status: ${phases.size} phases -> ${out}`);

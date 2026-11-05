@@ -31,10 +31,13 @@ const SECRETS = [
 ];
 const PII_EMAIL = /\b[A-Za-z0-9._%+-]{2,64}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
 
+// Skip directory symlinks: following them can escape the store root (out-of-root content
+// gets linted as store files) or, when a link points at an ancestor, recurse without bound.
 function walk(dir, out = []) {
   for (const name of fs.readdirSync(dir)) {
     const p = path.join(dir, name);
-    const st = fs.statSync(p);
+    const st = fs.lstatSync(p);
+    if (st.isSymbolicLink()) continue;
     if (st.isDirectory()) walk(p, out);
     else if (name.endsWith(".md")) out.push(p);
   }
@@ -55,8 +58,9 @@ function main() {
   const warnings = [];
   if (!fs.existsSync(path.join(root, "_index.md"))) errors.push("_index.md is missing at the store root");
 
-  const known = new Map(walk(root).map((p) => [path.relative(root, p)]));
-  for (const file of walk(root)) {
+  const files = walk(root);
+  const known = new Map(files.map((p) => [path.relative(root, p)]));
+  for (const file of files) {
     const rel = path.relative(root, file);
     const text = fs.readFileSync(file, "utf8");
     const body = text.replace(/^---\n[\s\S]*?\n---\n?/, "");

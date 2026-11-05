@@ -139,3 +139,30 @@ test("actual worker termination leaves FAIL; a new Phase gate process can recove
   }
   if (failure) throw failure;
 });
+
+test("a hung test command is bounded by PHASE_GATE_TEST_TIMEOUT_MS and recorded as FAIL", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "harness-timeout-"));
+  let failure;
+  try {
+    fs.mkdirSync(path.join(root, "docs"));
+    fs.mkdirSync(path.join(root, ".phase-evidence"));
+    fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Timeout probe\n");
+    report(root, "coding");
+    const sleep = process.platform === "win32"
+      ? [process.execPath, "-e", "setTimeout(()=>{}, 30000)"]
+      : [process.execPath, "-e", "setTimeout(()=>process.exit(0), 30000)"];
+    const env = { ...process.env, PHASE_GATE_ROOT: root, PHASE_GATE_TEST_TIMEOUT_MS: "2500" };
+    const result = spawnSync(NODE, [GATE, "run", "1", "test", "--", ...sleep], {
+      cwd: root, encoding: "utf8", env, timeout: 90000,
+    });
+    assert.equal(result.status, 2, resultMessage(result));
+    assert.match(result.stdout + result.stderr, /TIMEOUT after 2500ms/);
+    const evidence = readEvidence(root, "test");
+    assert.equal(evidence.status, "FAIL");
+    assert.equal(evidence.test_summary.ok, null, "a killed run claims no passing summary");
+    assert.equal(evidence.exit_code, -1, "a timeout records -1, and worst of all a FAIL");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+  if (failure) throw failure;
+});

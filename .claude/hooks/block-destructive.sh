@@ -25,6 +25,11 @@ deny() {
 protected_rm_target() {
   local target=$1
   while [[ "$target" != / && "$target" == */ ]]; do target=${target%/}; done
+  # A leading ./ or ../ aliases the same entries: `rm -rf ./*` and `rm -rf ../*`
+  # must hit the `*` branch that bare `*` hits.
+  while [[ "$target" == ./* || "$target" == ../* ]]; do
+    target=${target#./}; target=${target#../}
+  done
   case "$target" in
     /|/\*|'~'|'$HOME'|'${HOME}'|'$PWD'|'${PWD}'|.|..|\*) return 0 ;;
     '~/'*|'$HOME/'*|'${HOME}/'*|'$PWD/'*|'${PWD}/'*) return 0 ;;

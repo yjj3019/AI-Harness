@@ -355,7 +355,7 @@ test("verify PASS is accepted after the test log was read; a stale hash or other
     assert.equal(verifyPass(root).status, 0);
   }));
 
-test("actual read hook binds identical reruns, phases, and failed verify attempts", { skip: require("./helpers/bash-probe").skipReason() }, () =>
+test("actual read hook binds identical reruns, phases, and failed verify attempts", { skip: require("./helpers/bash-probe").skipReason() || JQ_SKIP }, () =>
   withRoot((root) => {
     arm(root);
     const bash = process.env.HARNESS_BASH || "bash";

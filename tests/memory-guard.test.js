@@ -53,3 +53,30 @@ test("undated facts warn and missing index is reported", () => {
     assert.match(r.stderr, /no ISO/);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+test("a self-referencing directory symlink terminates and is not walked", { skip: process.platform === "win32" && "symlinks need elevation on Windows" }, () => {
+  const { root, write } = store();
+  try {
+    write("_index.md", "- [[a]]\n");
+    write("a.md", "date: 2026-11-05\ndated\n");
+    fs.symlinkSync(".", path.join(root, "loop"), "dir"); // walking 'loop' would recurse into itself forever
+    const r = run(root);
+    assert.equal(r.status, 0, r.stderr); // terminates with a verdict instead of a stack overflow
+    assert.match(r.stdout, /files ok/);
+    assert.doesNotMatch(r.stderr, /Maximum call stack size exceeded/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("an out-of-root symlink is skipped, never reaching files outside the store", { skip: process.platform === "win32" && "symlinks need elevation on Windows" }, () => {
+  const { root, write } = store();
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), "memory-guard-outside-"));
+  try {
+    write("_index.md", "- [[a]]\n");
+    write("a.md", "date: 2026-11-05\ndated\n");
+    fs.writeFileSync(path.join(outside, "leak.md"), "token ghp_" + "a".repeat(30) + "\n"); // would error if walked
+    fs.symlinkSync(outside, path.join(root, "linked"), "dir");
+    const r = run(root);
+    assert.equal(r.status, 0, r.stderr); // linked/leak.md must be skipped, so no secret finding
+    assert.match(r.stdout, /2 files ok/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); }
+});

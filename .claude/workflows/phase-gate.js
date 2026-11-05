@@ -32,6 +32,9 @@
  *   2  evidence missing/invalid, or test failed
  *
  * PHASE_GATE_ROOT overrides the project root (used by tests).
+ * PHASE_GATE_TEST_TIMEOUT_MS bounds each test command and attestation replay
+ *   (default 30 min); a killed command is recorded as FAIL, never a hang.
+ *   PHASE_GATE_DOCTOR_TIMEOUT_MS bounds each doctor tool probe (default 60 s).
  */
 
 const fs = require("fs");
@@ -50,6 +53,10 @@ const RECORD_STEPS = ["coding", "verify", "review", "compound"];
 const SCHEMA = 1;
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/; // no leading dot, max 128
 const ATTEST_DIR = path.join(ROOT, "docs", "attestations");
+// Bound every child test command so a hung test cannot block the gate (or CI) forever.
+// Overridable for very heavy suites; a killed child is a FAIL, never a hang.
+const TEST_TIMEOUT_MS = Number(process.env.PHASE_GATE_TEST_TIMEOUT_MS) || 30 * 60 * 1000;
+const DOCTOR_TIMEOUT_MS = Number(process.env.PHASE_GATE_DOCTOR_TIMEOUT_MS) || 60 * 1000;
 // Files that legitimately change after the test step (or are environment state) are not part of the tree hash.
 // Intentional exclusions. Adding entries narrows the integrity check; review before extending.
 const TREE_EXCLUDE = [
@@ -384,8 +391,15 @@ function cmdRun(args) {
   try {
     fd = fs.openSync(tempLog, "wx+", 0o600);
     ownsTempLog = true;
-    result = spawnSync(cmd[0], cmd.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd] });
-    if (result.error) appendLog(`\n[phase-gate] failed to start: ${result.error.message}\n`);
+    result = spawnSync(cmd[0], cmd.slice(1), {
+      cwd: ROOT,
+      stdio: ["ignore", fd, fd],
+      timeout: TEST_TIMEOUT_MS,
+    });
+    if (result.error) {
+      if (result.error.code === "ETIMEDOUT" || result.error.killed) appendLog(`\n[phase-gate] status: TIMEOUT after ${TEST_TIMEOUT_MS}ms; the test command was terminated\n`);
+      else appendLog(`\n[phase-gate] failed to start: ${result.error.message}\n`);
+    }
     exitCode = typeof result.status === "number" ? result.status : -1;
     // Read using explicit offsets: the child shares the descriptor's file position.
     const content = Buffer.alloc(fs.fstatSync(fd).size);
@@ -580,7 +594,7 @@ function cmdDoctor() {
   shells.push("bash");
   let probed = null;
   for (const shell of shells.filter(Boolean)) {
-    const r = spawnSync(shell, ["-c", probe], { encoding: "utf8" });
+    const r = spawnSync(shell, ["-c", probe], { encoding: "utf8", timeout: DOCTOR_TIMEOUT_MS });
     if (!r.error && r.status === 0 && String(r.stdout).includes("have:bash")) {
       probed = r;
       break;
@@ -740,7 +754,7 @@ function cmdVerifyAttestation(args) {
       }
       dir = fs.mkdtempSync(path.join(tempRoot, "phase-gate-replay-"));
       fd = fs.openSync(path.join(dir, "output.log"), "wx", 0o600);
-      r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd] });
+      r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd], timeout: TEST_TIMEOUT_MS });
       fs.closeSync(fd);
       fd = undefined;
       if (r.error) throw new Error(`test command failed to start: ${r.error.message}`);
@@ -755,7 +769,7 @@ function cmdVerifyAttestation(args) {
     if (r.error) bad(`replay output or start error: ${r.error.message}`);
     process.stdout.write(output);
   } else {
-    r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: "inherit" });
+    r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: "inherit", timeout: TEST_TIMEOUT_MS });
   }
   if (r.error) bad(`test command failed to start: ${r.error.message}`);
   if (r.status !== 0) bad(`test command exited with ${r.status}`);

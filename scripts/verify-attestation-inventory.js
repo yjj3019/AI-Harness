@@ -53,9 +53,13 @@ function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight
   }
   for (const id of phases) {
     console.log(`Verifying attestation for phase ${id}...`);
+    // Bound the replay like sibling subprocess users (merge-guard.js 60s, gate-mutation-probe.js 120s):
+    // a hung gate replay must surface as a failure, not an unbounded wait.
     const result = spawnSync(process.execPath, [gatePath, "verify-attestation", id], {
       cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, stdio: "inherit", shell: false,
+      timeout: 300_000,
     });
+    if (result.error && result.error.killed) throw new Error(`phase ${id} verification timed out after 300s and was terminated`);
     if (result.error) throw new Error(`phase ${id} verification could not start: ${result.error.message}`);
     if (result.status !== 0) throw new Error(`phase ${id} verification failed (${result.signal || `exit ${result.status}`})`);
   }
