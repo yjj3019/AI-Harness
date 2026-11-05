@@ -23,6 +23,11 @@ The optional [design evidence harness](skills/design-evidence-harness/SKILL.md) 
 - [Skill Audit](skills/skill-audit/SKILL.md) — Security audit for external skills.
 - [Compound Feedback](skills/compound-feedback/SKILL.md) — Records skill outcomes into the compound log.
 - [API Design](skills/api-design/SKILL.md) — Contract-first API and interface design.
+- [Deterministic Kernel](skills/deterministic-kernel/SKILL.md) — Deterministic state transitions (decide + log replay).
+- [Card Handoff](skills/card-handoff/SKILL.md) — Ask with a card, resume the same context.
+- [Event Boundary](skills/event-boundary/SKILL.md) — Events are data; rules control routing.
+- [Recipe + Skill](skills/recipe-skill/SKILL.md) — Pair a trigger with a processing manual.
+
 - [Skill Catalog](docs/skill-catalog.md) — Auto-generated skill list (`node scripts/skill-catalog/generate.js`).
 - [Dashboard](dashboard/index.html) — Static phase evidence dashboard.
 

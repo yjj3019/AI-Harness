@@ -75,6 +75,11 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Skill Audit](skills/skill-audit/SKILL.md) — 외부 스킬 보안 감사.
 - [Compound Feedback](skills/compound-feedback/SKILL.md) — 스킬 사용 결과 compound-log 기록.
 - [API Design](skills/api-design/SKILL.md) — 계약 우선 API·인터페이스 설계.
+- [Deterministic Kernel](skills/deterministic-kernel/SKILL.md) — 결정적 상태 전이 (decide + log replay).
+- [Card Handoff](skills/card-handoff/SKILL.md) — 카드로 판단 요청 후 동일 컨텍스트 재개.
+- [Event Boundary](skills/event-boundary/SKILL.md) — 이벤트는 데이터, 라우팅은 규칙.
+- [Recipe + Skill](skills/recipe-skill/SKILL.md) — 트리거와 처리 매뉴얼 쌍.
+
 - [Skill Catalog](docs/skill-catalog.md) — 스킬 목록 자동 생성 (`node scripts/skill-catalog/generate.js`).
 - [Dashboard](dashboard/index.html) — Phase 증거 정적 대시보드.
 
@@ -99,6 +104,11 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Skill Audit](skills/skill-audit/SKILL.md) — 외부 스킬 보안 감사.
 - [Compound Feedback](skills/compound-feedback/SKILL.md) — 스킬 사용 결과 compound-log 기록.
 - [API Design](skills/api-design/SKILL.md) — 계약 우선 API·인터페이스 설계.
+- [Deterministic Kernel](skills/deterministic-kernel/SKILL.md) — 결정적 상태 전이 (decide + log replay).
+- [Card Handoff](skills/card-handoff/SKILL.md) — 카드로 판단 요청 후 동일 컨텍스트 재개.
+- [Event Boundary](skills/event-boundary/SKILL.md) — 이벤트는 데이터, 라우팅은 규칙.
+- [Recipe + Skill](skills/recipe-skill/SKILL.md) — 트리거와 처리 매뉴얼 쌍.
+
 - [Skill Catalog](docs/skill-catalog.md) — 스킬 목록 자동 생성 (`node scripts/skill-catalog/generate.js`).
 - [Dashboard](dashboard/index.html) — Phase 증거 정적 대시보드.
 
