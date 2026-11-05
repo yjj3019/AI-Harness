@@ -148,13 +148,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/v1/tools/execute":
             self.respond(404, {"error": "NOT_FOUND"})
             return
-        # Token required unless TOOLBROKER_ALLOW_UNAUTHENTICATED=1.
-        if os.environ.get("TOOLBROKER_ALLOW_UNAUTHENTICATED") != "1":
-            expected = os.environ.get("TOOLBROKER_TOKEN", "")
-            got = self.headers.get("X-Toolbroker-Token", "")
-            if not expected or got != expected:
-                self.respond(401, {"error": "UNAUTHORIZED"})
-                return
+        # Token always required. No unauthenticated bypass.
+        expected = os.environ.get("TOOLBROKER_TOKEN", "")
+        got = self.headers.get("X-Toolbroker-Token", "")
+        if not expected or got != expected:
+            self.respond(401, {"error": "UNAUTHORIZED"})
+            return
         try:
             size = int(self.headers.get("Content-Length", "0"))
             content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip()
