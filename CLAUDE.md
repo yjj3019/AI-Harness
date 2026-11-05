@@ -46,6 +46,13 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Highest-quality security workflow: `skills/security-master/SKILL.md`
 - Highest-quality observability workflow: `skills/observability-master/SKILL.md`
 - Highest-quality performance workflow: `skills/performance-master/SKILL.md`
+- Meta skill router: `skills/skill-router/SKILL.md`
+- Skill evaluation: `skills/skill-eval/SKILL.md`
+- Skill composition: `skills/skill-composition/SKILL.md`
+- Browser / E2E evidence: `skills/browser-evidence/SKILL.md`
+- Skill security audit: `skills/skill-audit/SKILL.md`
+- Compound feedback: `skills/compound-feedback/SKILL.md`
+
 
 
 
