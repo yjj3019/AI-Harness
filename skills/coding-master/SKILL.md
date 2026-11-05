@@ -1,10 +1,6 @@
 ---
 name: coding-master
-description: >
-  Highest-quality coding workflow for professional-grade implementation.
-  Enforces spec-first, TDD (red-green-refactor), incremental slices, source-driven
-  verification, adversarial review, multi-axis code review, and evidence-based
-  completion. Use for any non-trivial coding task. Prefer this over generic coding.
+description: Highest-quality coding workflow for professional-grade implementation. Enforces spec-first, TDD (red-green-refactor), incremental slices, source-driven verification, adversarial review, multi-axis code review, and evidence-based  completion. Use for any non-trivial coding task. Prefer this over generic coding.
 ---
 
 # Coding Master

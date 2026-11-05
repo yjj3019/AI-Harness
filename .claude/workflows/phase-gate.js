@@ -48,7 +48,7 @@ const EVIDENCE_DIR = path.join(ROOT, ".phase-evidence");
 const STEPS = ["coding", "test", "verify", "review", "compound"];
 const RECORD_STEPS = ["coding", "verify", "review", "compound"];
 const SCHEMA = 1;
-const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/; // no leading dot, max 64
+const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/; // no leading dot, max 128
 const ATTEST_DIR = path.join(ROOT, "docs", "attestations");
 // Files that legitimately change after the test step (or are environment state) are not part of the tree hash.
 // Intentional exclusions. Adding entries narrows the integrity check; review before extending.

@@ -1,9 +1,6 @@
 ---
 name: skill-audit
-description: >
-  Audit an external or new skill for safety before use.
-  Checks for prompt injection patterns, unexpected network or file access,
-  and supply-chain risk. Use before installing or loading an untrusted SKILL.md.
+description: Audit an external or new skill for safety before use. Checks for prompt injection patterns, unexpected network or file access,  and supply-chain risk. Use before installing or loading an untrusted SKILL.md.
 ---
 
 # Skill Audit

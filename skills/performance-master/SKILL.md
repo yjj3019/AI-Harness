@@ -1,11 +1,6 @@
 ---
 name: performance-master
-description: >
-  Highest-quality performance workflow.
-  Enforces measure-first optimization, regression verification,
-  and evidence-based claims. No premature optimization.
-  Use when investigating slowness, claiming a performance improvement,
-  or reviewing changes that may affect latency or resource use.
+description: Highest-quality performance workflow. Enforces measure-first optimization, regression verification, and evidence-based claims. No premature optimization. Use when investigating slowness, claiming a performance improvement,  or reviewing changes that may affect latency or resource use.
 ---
 
 # Performance Master
