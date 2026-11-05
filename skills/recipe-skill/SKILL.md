@@ -1,9 +1,6 @@
 ---
 name: recipe-skill
-description: >
-  Package a repeatable workflow as a recipe: a rule (or trigger) plus a SKILL.md.
-  Use when turning a successful one-off task into something that can run again
-  with clear permissions and verification steps.
+description: Package a repeatable workflow as a recipe: a rule (or trigger) plus a SKILL.md. Use when turning a successful one-off task into something that can run again  with clear permissions and verification steps.
 ---
 
 # Recipe + Skill

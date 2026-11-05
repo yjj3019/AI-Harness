@@ -1,10 +1,6 @@
 ---
 name: skill-router
-description: >
-  Meta-skill that maps user intent to the correct master skill.
-  Use at the start of any non-trivial task, or when unsure which skill applies.
-  Routes to coding-master, debugging-master, security-master, observability-master,
-  performance-master, design-master, document-master, ppt-master, or others.
+description: Meta-skill that maps user intent to the correct master skill. Use at the start of any non-trivial task, or when unsure which skill applies. Routes to coding-master, debugging-master, security-master, observability-master,  performance-master, design-master, document-master, ppt-master, or others.
 ---
 
 # Skill Router

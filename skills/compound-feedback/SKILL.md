@@ -1,9 +1,6 @@
 ---
 name: compound-feedback
-description: >
-  Close the loop from skill use back into the compound log.
-  Use at the end of a non-trivial task that used one or more master skills.
-  Records what worked, what failed, and what should change next time.
+description: Close the loop from skill use back into the compound log. Use at the end of a non-trivial task that used one or more master skills.  Records what worked, what failed, and what should change next time.
 ---
 
 # Compound Feedback

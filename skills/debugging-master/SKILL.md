@@ -1,10 +1,6 @@
 ---
 name: debugging-master
-description: >
-  Highest-quality systematic debugging workflow.
-  Enforces reproduce-first, hypothesis-driven root-cause analysis, localization,
-  minimal fix, and regression test. No symptom fixes. Use for any bug,
-  failure, unexpected behavior, or error investigation.
+description: Highest-quality systematic debugging workflow. Enforces reproduce-first, hypothesis-driven root-cause analysis, localization, minimal fix, and regression test. No symptom fixes. Use for any bug,  failure, unexpected behavior, or error investigation.
 ---
 
 # Debugging Master

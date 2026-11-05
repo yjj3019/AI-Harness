@@ -1,10 +1,6 @@
 ---
 name: design-master
-description: >
-  Highest-quality design workflow for UI, visual systems, brand, and interfaces.
-  Forces distinctive art direction, design-system tokens, anti-slop rules, and
-  evidence-based visual QA. Use for frontend design, UI components, brand systems,
-  landing pages, or any visual interface work. Prefer this over generic generation.
+description: Highest-quality design workflow for UI, visual systems, brand, and interfaces. Forces distinctive art direction, design-system tokens, anti-slop rules, and evidence-based visual QA. Use for frontend design, UI components, brand systems,  landing pages, or any visual interface work. Prefer this over generic generation.
 ---
 
 # Design Master

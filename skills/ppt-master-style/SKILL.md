@@ -1,9 +1,6 @@
 ---
 name: ppt-master-style
-description: >
-  Apply the ppt-master staged, gated workflow for native-editable PowerPoint decks.
-  Use when creating, generating, reconstructing, beautifying, or templating a PPT/PPTX/slide deck.
-  Prefer this over one-shot generation. Route first, lock design spec, keep source of truth, verify before export.
+description: Apply the ppt-master staged, gated workflow for native-editable PowerPoint decks. Use when creating, generating, reconstructing, beautifying, or templating a PPT/PPTX/slide deck.  Prefer this over one-shot generation. Route first, lock design spec, keep source of truth, verify before export.
 ---
 
 # PPT Master Style Workflow

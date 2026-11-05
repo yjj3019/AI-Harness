@@ -1,9 +1,6 @@
 ---
 name: skill-eval
-description: >
-  Evaluate whether a skill triggers correctly and improves outcomes.
-  Use when adding or changing a SKILL.md, or when checking that a skill
-  actually loads and helps. Supports trigger tests and simple with/without comparison.
+description: Evaluate whether a skill triggers correctly and improves outcomes. Use when adding or changing a SKILL.md, or when checking that a skill  actually loads and helps. Supports trigger tests and simple with/without comparison.
 ---
 
 # Skill Evaluation
