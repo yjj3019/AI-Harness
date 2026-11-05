@@ -347,3 +347,17 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 ## 컨텍스트 제약 보존과 HANDOFF 검증
 
 고위험/장시간 작업에서만 정본 계약을 선택적으로 정의합니다. 선언된 Phase는 출처·해시·필수 조건이 다른 컨텍스트 체크포인트를 거부합니다. HANDOFF에 기록한 지원 CI 운영체제가 실제 워크플로와 다르면 자동 검사에서 실패합니다. 내부 모델 압축을 자동 가로채거나 외부 쓰기 권한을 부여하는 기능은 아닙니다. 자세한 내용은 `docs/task-contracts/README.md`와 `docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`를 참조하세요.
+
+
+## Testing: prerequisites and known limits (measured 2026-11-05)
+
+- Prerequisites: Node.js >= 20, bash, and **jq**. 	ests/run-all.sh now fails fast with a clear
+  message when any of them is missing instead of failing late mid-run.
+- Heavy suites: the gate/verify family contains single tests of 75–137s (largest measured 136.8s),
+  so a full 
+ode --test tests/*.test.js run takes roughly 20 minutes. Budget CI accordingly or
+  split those suites.
+- Batch-only flakes on Windows: spawning ash resolves to WSL bash, and under full parallel
+  load WSL startup contention can exceed short per-spawn timeouts (relaxed to 20s in
+  evaluation-accounting tests). If flakes appear in CI on Windows, pin HARNESS_BASH to a fast
+  native bash or run suites with reduced --test-concurrency.

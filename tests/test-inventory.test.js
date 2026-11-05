@@ -5,10 +5,12 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const { skipReason } = require("./helpers/bash-probe");
 
 // Exercise the real entry point in an isolated tree; the guard precedes all
 // other checks, so neither the suite nor production files are touched.
-test("inventory guard counts files and rejects a shrunken suite", (t) => {
+const BASH_SKIP = skipReason();
+test("inventory guard counts files and rejects a shrunken suite", { skip: BASH_SKIP }, (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "inventory-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const tests = path.join(root, "tests");

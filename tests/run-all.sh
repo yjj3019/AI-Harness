@@ -3,6 +3,15 @@
 set -eu
 cd "$(dirname "$0")/.."
 
+# Prerequisites: node (>=20), bash, jq. Fail with a clear message instead of a late, opaque error.
+for tool in node jq; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "ERROR: missing required tool '$tool' (see README prerequisites)." >&2
+    exit 2
+  fi
+done
+command -v bash >/dev/null 2>&1 || { echo "ERROR: missing required tool 'bash'." >&2; exit 2; }
+
 echo "== test inventory =="
 # Count only files, not an unmatched glob or a directory named like a suite.
 test_files=()

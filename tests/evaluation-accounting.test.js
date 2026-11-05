@@ -19,8 +19,8 @@ function fixture() {
   ] };
 }
 const cli = path.join(__dirname, '..', 'scripts', 'evaluation-accounting.js');
-function runCli(input) {
-  return spawnSync(process.execPath, [cli, input], { encoding: 'utf8', timeout: 3000 });
+function runCli(input, timeout = 20000) {
+  return spawnSync(process.execPath, [cli, input], { encoding: 'utf8', timeout });
 }
 test('CLI reads a regular JSON file', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'evaluation-accounting-'));
@@ -38,7 +38,7 @@ test('CLI rejects a directory and unwritten FIFO without blocking', { skip: proc
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'evaluation-accounting-'));
   try {
     const fifo = path.join(dir, 'input.fifo');
-    const made = spawnSync('mkfifo', [fifo], { encoding: 'utf8', timeout: 3000 });
+    const made = spawnSync('mkfifo', [fifo], { encoding: 'utf8', timeout: 20000 });
     assert.ifError(made.error);
     assert.equal(made.status, 0, made.stderr);
     for (const input of [dir, fifo]) {

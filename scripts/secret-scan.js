@@ -11,6 +11,13 @@ const SKIP = new Set([".git", "node_modules", ".phase-evidence", "docs/attestati
 const PATTERNS = [
   { re: /AKIA[0-9A-Z]{16}/, why: "aws access key" },
   { re: /-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----/, why: "private key" },
+  { re: /ghp_[A-Za-z0-9]{30,}/, why: "github personal access token" },
+  { re: /github_pat_[A-Za-z0-9_]{40,}/, why: "github fine-grained token" },
+  { re: /glpat-[A-Za-z0-9_-]{20,}/, why: "gitlab token" },
+  { re: /xox[baprs]-[A-Za-z0-9-]{10,}/, why: "slack token" },
+  { re: /sk-[A-Za-z0-9]{16,}/, why: "openai-style api key" },
+  { re: /AIza[0-9A-Za-z_-]{30,}/, why: "google api key" },
+  { re: /npm_[A-Za-z0-9]{20,}/, why: "npm token" },
   { re: /(api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{8,}['"]/i, why: "hardcoded credential" },
 ];
 

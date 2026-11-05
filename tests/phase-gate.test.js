@@ -9,6 +9,11 @@ const { spawnSync } = require("child_process");
 const GATE = path.resolve(__dirname, "..", ".claude", "workflows", "phase-gate.js");
 const NODE = process.execPath;
 
+// "doctor passes in this repository" asserts a fully provisioned root (jq + bash). When the
+// probing tools are absent here, skip with an explicit reason instead of failing the suite.
+const { jqReason } = require("./helpers/bash-probe");
+const JQ_SKIP = jqReason();
+
 const PHASES_MD = [
   "# PHASES",
   "",
@@ -350,7 +355,7 @@ test("verify PASS is accepted after the test log was read; a stale hash or other
     assert.equal(verifyPass(root).status, 0);
   }));
 
-test("actual read hook binds identical reruns, phases, and failed verify attempts", () =>
+test("actual read hook binds identical reruns, phases, and failed verify attempts", { skip: require("./helpers/bash-probe").skipReason() }, () =>
   withRoot((root) => {
     arm(root);
     const bash = process.env.HARNESS_BASH || "bash";
@@ -446,7 +451,7 @@ function doctor(env, root) {
   return spawnSync(NODE, [GATE, "doctor"], { env: { ...env, ...(root ? { PHASE_GATE_ROOT: root } : {}) }, encoding: "utf8" });
 }
 
-test("doctor passes in this repository", () => {
+test("doctor passes in this repository", { skip: JQ_SKIP }, () => {
   const env = { ...process.env };
   delete env.PHASE_GATE_ROOT;
   const r = doctor(env);
