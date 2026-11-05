@@ -1,7 +1,7 @@
 ---
 name: evidence-preserving-editor
 description: Optionally edit reports, PR descriptions, and user-facing prose for clarity while preserving facts, uncertainty, and evidence boundaries. Not a runtime or completion gate.
-license: MIT
+license: Apache-2.0
 ---
 
 # Evidence-preserving editor

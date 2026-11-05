@@ -1,6 +1,7 @@
 ---
 name: card-handoff
 description: Pause work and ask the user with a structured card, then resume the same session. Use when an agent needs a decision (delete, spend, external message, irreversible action)  and should not continue or restart from scratch after the answer.
+license: Apache-2.0
 ---
 
 # Card Handoff

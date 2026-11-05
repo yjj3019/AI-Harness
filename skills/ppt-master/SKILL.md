@@ -1,6 +1,7 @@
 ---
 name: ppt-master
 description: Highest-quality PowerPoint workflow for AI agents. Produces native-editable PPTX decks with claim-oriented action titles, design-spec lock, source-of-truth intermediates, visual QA gates, and chart honesty checks. Use for any PPT, PPTX, slide deck, pitch,  board, academic, or consulting presentation. Prefer this over one-shot generation.
+license: Apache-2.0
 ---
 
 # PPT Master

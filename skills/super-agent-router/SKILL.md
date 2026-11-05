@@ -1,6 +1,7 @@
 ---
 name: super-agent-router
 description: Design or apply a two-level Router + isolated Worker pattern for concurrent, continuous agent work while preserving evidence gates and approval boundaries. Use when the user asks to "design a super-agent", "split router and workers", "handle multiple concurrent tasks with one voice", "adapt DeepSeek Harness Super-agent ideas", or "set up always-on style coordination without replacing Phase gates".
+license: Apache-2.0
 ---
 
 # Super-agent Router / Worker Coordination (Optional)

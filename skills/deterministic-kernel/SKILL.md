@@ -1,6 +1,7 @@
 ---
 name: deterministic-kernel
 description: Apply a deterministic decision kernel pattern. All state changes go through a single decide function. Time, secrets, and environment are injected. The same input on the same view produces the same result.  Use when designing or reviewing agent state transitions, event handling, or audit logs.
+license: Apache-2.0
 ---
 
 # Deterministic Kernel

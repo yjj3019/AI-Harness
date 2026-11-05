@@ -34,6 +34,21 @@ function walk(dir, out = []) {
 const files = walk(SKILLS);
 const findings = [];
 
+// License policy: the repository is Apache-2.0 (root LICENSE). A skill must either
+// declare a license that matches that default or ship its own LICENSE.txt. Missing
+// license metadata is a CI finding so third-party content cannot sit in the tree
+// with an undeclared provenance (pattern mirrored from Anthropic skills frontmatter).
+const DEFAULT_LICENSE = "Apache-2.0";
+
+function frontmatter(text) {
+  const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+  return m ? m[1] : "";
+}
+function fmField(fm, key) {
+  const m = new RegExp(`^${key}:\\s*(.+)$`, "m").exec(fm);
+  return m ? m[1].trim() : null;
+}
+
 for (const file of files) {
   const rel = path.relative(ROOT, file).split(path.sep).join("/");
   // The audit skill documents the patterns; do not flag it.
@@ -41,6 +56,15 @@ for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   for (const { re, why } of REJECT) {
     if (re.test(text)) findings.push({ file: rel, why });
+  }
+  const lic = fmField(frontmatter(text), "license");
+  if (!lic) {
+    findings.push({ file: rel, why: "missing license: field (repo default " + DEFAULT_LICENSE + ")" });
+  } else if (
+    lic !== DEFAULT_LICENSE &&
+    !fs.existsSync(path.join(path.dirname(file), "LICENSE.txt"))
+  ) {
+    findings.push({ file: rel, why: `license "${lic}" without a matching LICENSE.txt in the skill folder` });
   }
 }
 

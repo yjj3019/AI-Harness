@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(process.argv[2] || path.join(__dirname, ".."));
 const SKIP = new Set([".git", "node_modules", ".phase-evidence", "docs/attestations"]);
 const PATTERNS = [
   { re: /AKIA[0-9A-Z]{16}/, why: "aws access key" },
