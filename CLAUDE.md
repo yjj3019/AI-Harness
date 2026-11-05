@@ -53,6 +53,11 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Skill security audit: `skills/skill-audit/SKILL.md`
 - Compound feedback: `skills/compound-feedback/SKILL.md`
 - API / interface design: `skills/api-design/SKILL.md`
+- Deterministic kernel: `skills/deterministic-kernel/SKILL.md`
+- Card handoff: `skills/card-handoff/SKILL.md`
+- Event boundary: `skills/event-boundary/SKILL.md`
+- Recipe + Skill: `skills/recipe-skill/SKILL.md`
+
 - Skill catalog generator: `scripts/skill-catalog/generate.js`
 - Static dashboard: `dashboard/index.html`
 
