@@ -68,6 +68,13 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Security Master](skills/security-master/SKILL.md) — 최고 품질 보안 워크플로 (입력 검증, 비밀 관리, 증거 기반 발견).
 - [Observability Master](skills/observability-master/SKILL.md) — 최고 품질 관측성 워크플로 (로그·메트릭·트레이스, 비밀 로깅 금지).
 - [Performance Master](skills/performance-master/SKILL.md) — 최고 품질 성능 워크플로 (측정 우선, before/after 증거).
+- [Skill Router](skills/skill-router/SKILL.md) — 의도별 마스터 스킬 라우팅.
+- [Skill Eval](skills/skill-eval/SKILL.md) — 스킬 트리거 및 효과 평가.
+- [Skill Composition](skills/skill-composition/SKILL.md) — 여러 스킬 조합 가이드.
+- [Browser Evidence](skills/browser-evidence/SKILL.md) — 브라우저·E2E 증거 캡처.
+- [Skill Audit](skills/skill-audit/SKILL.md) — 외부 스킬 보안 감사.
+- [Compound Feedback](skills/compound-feedback/SKILL.md) — 스킬 사용 결과 compound-log 기록.
+
 
 
 
@@ -81,6 +88,13 @@ IDE 안정성, 하드웨어, 사용자 마음가짐 등 일반적인 안전 조�
 - [Security Master](skills/security-master/SKILL.md) — 최고 품질 보안 워크플로 (입력 검증, 비밀 관리, 증거 기반 발견).
 - [Observability Master](skills/observability-master/SKILL.md) — 최고 품질 관측성 워크플로 (로그·메트릭·트레이스, 비밀 로깅 금지).
 - [Performance Master](skills/performance-master/SKILL.md) — 최고 품질 성능 워크플로 (측정 우선, before/after 증거).
+- [Skill Router](skills/skill-router/SKILL.md) — 의도별 마스터 스킬 라우팅.
+- [Skill Eval](skills/skill-eval/SKILL.md) — 스킬 트리거 및 효과 평가.
+- [Skill Composition](skills/skill-composition/SKILL.md) — 여러 스킬 조합 가이드.
+- [Browser Evidence](skills/browser-evidence/SKILL.md) — 브라우저·E2E 증거 캡처.
+- [Skill Audit](skills/skill-audit/SKILL.md) — 외부 스킬 보안 감사.
+- [Compound Feedback](skills/compound-feedback/SKILL.md) — 스킬 사용 결과 compound-log 기록.
+
 
 
 

@@ -16,6 +16,13 @@ The optional [design evidence harness](skills/design-evidence-harness/SKILL.md) 
 - [Security Master](skills/security-master/SKILL.md) — Highest-quality security workflow (input validation, secret handling, evidence-based findings).
 - [Observability Master](skills/observability-master/SKILL.md) — Highest-quality observability workflow (logs, metrics, traces; no secrets in telemetry).
 - [Performance Master](skills/performance-master/SKILL.md) — Highest-quality performance workflow (measure-first, before/after evidence).
+- [Skill Router](skills/skill-router/SKILL.md) — Routes intent to the correct master skill.
+- [Skill Eval](skills/skill-eval/SKILL.md) — Trigger and outcome evaluation for skills.
+- [Skill Composition](skills/skill-composition/SKILL.md) — Guidance for combining multiple skills.
+- [Browser Evidence](skills/browser-evidence/SKILL.md) — Browser and E2E evidence capture.
+- [Skill Audit](skills/skill-audit/SKILL.md) — Security audit for external skills.
+- [Compound Feedback](skills/compound-feedback/SKILL.md) — Records skill outcomes into the compound log.
+
 
 
 
