@@ -361,3 +361,5 @@ ode --test tests/*.test.js run takes roughly 20 minutes. Budget CI accordingly o
   load WSL startup contention can exceed short per-spawn timeouts (relaxed to 20s in
   evaluation-accounting tests). If flakes appear in CI on Windows, pin HARNESS_BASH to a fast
   native bash or run suites with reduced --test-concurrency.
+
+- Distilled memory stores (dreaming/memory-distill): `node scripts/memory-guard.js <store>` fails on broken links, missing `_index.md` and secret-shaped tokens and warns on undated facts (TTL policy) and email-like PII; covered by tests/memory-guard.test.js.
