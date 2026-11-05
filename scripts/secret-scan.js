@@ -25,7 +25,8 @@ function walk(dir, out = []) {
   for (const name of fs.readdirSync(dir)) {
     if (SKIP.has(name)) continue;
     const p = path.join(dir, name);
-    const st = fs.statSync(p);
+    const st = fs.lstatSync(p);
+    if (st.isSymbolicLink()) continue; // never follow links: a link to an ancestor would recurse without bound
     if (st.isDirectory()) walk(p, out);
     else if (/\.(js|py|sh|md|json|yml|yaml|ts)$/.test(name)) out.push(p);
   }
