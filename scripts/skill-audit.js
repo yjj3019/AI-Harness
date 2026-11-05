@@ -15,6 +15,8 @@ const REJECT = [
   { re: /curl[^|]*\|\s*(ba|z)?sh/i, why: "download piped to shell" },
   { re: /base64\s+-d/i, why: "obfuscated decode" },
   { re: /send\s+(api[_ ]?key|token|secret|\.env)/i, why: "secret exfiltration" },
+  { re: /unrestricted\s+(shell|network|file)\s+access/i, why: "over-broad permission claim" },
+  { re: /exfiltrate|steal\s+credentials/i, why: "exfiltration intent" },
 ];
 
 function walk(dir, out = []) {
