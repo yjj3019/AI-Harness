@@ -9,8 +9,11 @@ command -v jq >/dev/null 2>&1 || { echo "Blocked by .claude/hooks/block-destruct
 
 input=$(cat)
 [ -n "$input" ] || { echo "Blocked by .claude/hooks/block-destructive.sh: empty hook input" >&2; exit 2; }
-# Preserve embedded LF on native Windows jq too; text-mode CRLF conversion changes shell syntax.
+# Windows jq's text-mode stdout can duplicate CR in embedded CRLF JSON strings.
+# Normalize doubled and ordinary CRLF to LF before lexing Bash continuations.
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || { echo "Blocked by .claude/hooks/block-destructive.sh: invalid hook input" >&2; exit 2; }
+cmd=${cmd//$'\r\r\n'/$'\n'}
+cmd=${cmd//$'\r\n'/$'\n'}
 [ -n "$cmd" ] || exit 0
 
 deny() {
