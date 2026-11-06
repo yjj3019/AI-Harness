@@ -56,7 +56,7 @@ test("skill-audit terminates on a self-referencing directory symlink", { skip: p
   try {
     mkdirSync(path.join(dir, "skills", "ok"), { recursive: true });
     require("node:fs").writeFileSync(path.join(dir, "skills", "ok", "SKILL.md"),
-      "---\nname: ok\n---\nNormal skill.\n");
+      "---\nname: ok\nlicense: Apache-2.0\n---\nNormal skill.\n");
     symlinkSync(".", path.join(dir, "skills", "loop"), "dir");
     const r = spawnSync(process.execPath, [script, dir], { encoding: "utf8", timeout: 30000 });
     assert.equal(r.status, 0, r.stderr);
