@@ -372,3 +372,10 @@ ode --test tests/*.test.js run takes roughly 20 minutes. Budget CI accordingly o
 - **시크릿 스캔 확장**: `ghp_`/`github_pat_`/`glpat-`/Slack(`xox*`)/OpenAI(`sk-`)/Google(`AIza`)/`npm_` 패턴 추가 — 실측 **clean**.
 - **전체 스위트 실측**: **pass 319 / fail 0 / skipped 10** (게이트·검증 계열 최장 단일 테스트 136.8s; 분할은 attestation drift로 판정 불가 → 원형 유지).
 - 전제조건: Node.js ≥ 20, bash, **jq** (`tests/run-all.sh`가 부재 시 즉시 실패). Windows 배치 플레이크 완화: `HARNESS_BASH` 고정 또는 `--test-concurrency` 축소.
+
+
+## 최근 갱신 (2026-11-06) — 메모리 가드 강화·정적 게이트 등재
+
+- `scripts/memory-guard.js`: 외부 URL(`https://`·`mailto:`·`//`)·닻(#anchor)을 broken 링크 오탐에서 제외 — 증류 저장소에 외부 링크가 있어도 유효. 회귀 테스트 추가(테스트 6/6 관련, fail 0).
+- 정적 게이트 등재: skill license/메타데이터 감사 `scripts/skill-audit.js`(license 필수·Apache-2.0 정합), 증류 저장소 리뷰 `scripts/memory-guard.js`, 증거 레드액션 `scripts/evidence-redact.js`, 시크릿 스캔 `scripts/secret-scan.js`(AGENTS.md·CLAUDE.md 문서 맵 동일 등재).
+- 시뮬레이션 100회(secret-scan·skill-audit ×100) 실측 **ALL_OK**(200/200 exit 0) — 결정적 게이트 변동성 0%.

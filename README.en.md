@@ -268,3 +268,10 @@ Opt-in Phase contracts are checked against typed, full-text local checkpoints be
 - **Secret-scan expansion**: added `ghp_`/`github_pat_`/`glpat-`/Slack (`xox*`)/OpenAI (`sk-`)/Google (`AIza`)/`npm_` patterns — measured **clean**.
 - **Full suite (measured)**: **pass 319 / fail 0 / skipped 10**. Heaviest single gate/verify test is 136.8s; splitting it proved impossible without breaking attestation semantics, so it stays unified.
 - Prerequisites: Node.js >= 20, bash, **jq** (enforced up front by `tests/run-all.sh`). Windows batch-flake mitigations: pin `HARNESS_BASH` to a native bash or lower `--test-concurrency`.
+
+
+## Recent updates (2026-11-06) — memory guard hardening, static gates listed
+
+- `scripts/memory-guard.js`: external URLs (`https://`/`mailto:`/`//`) and anchors (#anchor) are no longer reported as broken links — stores may legitimately reference the web. Regression test added (fail 0).
+- Static gates indexed: skill license/metadata audit `scripts/skill-audit.js` (license required, Apache-2.0 consistency), distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js` (same listing in AGENTS.md/CLAUDE.md).
+- 100-round simulation (secret-scan + skill-audit x100) measured **ALL_OK** (200/200 exit 0) — zero variance for the deterministic gates.

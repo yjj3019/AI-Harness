@@ -69,6 +69,8 @@ function main() {
     const links = [...body.matchAll(/\[\[([^\]|#]+)[^\]]*\]\]|\(([^)\s]+\.md[^)\s]*)\)/g)];
     for (const m of links) {
       const raw = (m[1] || m[2]).split("#")[0];
+      // External URLs, mailto/tel/scheme-relative links and pure anchors are not store files.
+      if (/^(https?:|mailto:|tel:|\/\/|#)/i.test(raw)) continue;
       const target = raw.endsWith(".md") ? raw : raw + ".md";
       if (!known.has(raw) && !known.has(target) && !fs.existsSync(path.join(path.dirname(file), target))) {
         errors.push(`${rel}: broken link -> ${raw}`);

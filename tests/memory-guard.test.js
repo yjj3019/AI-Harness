@@ -54,6 +54,18 @@ test("undated facts warn and missing index is reported", () => {
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
+test("external URLs, scheme-relative links and anchors are not broken links", () => {
+  const { root, write } = store();
+  try {
+    write("_index.md", "# Index\n- [[a]]\n");
+    write("a.md",
+      "date: 2026-11-05\n" +
+      "see <https://example.com/page.md> and [ref](#section) and //cdn.example/x.md\n");
+    const r = run(root);
+    assert.equal(r.status, 0, r.stderr);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test("a self-referencing directory symlink terminates and is not walked", { skip: process.platform === "win32" && "symlinks need elevation on Windows" }, () => {
   const { root, write } = store();
   try {
