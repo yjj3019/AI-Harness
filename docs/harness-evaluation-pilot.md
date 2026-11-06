@@ -1,5 +1,7 @@
 # Harness evaluation pilot (proposal only)
 
+> **Status (2026-11-06, 실측)**: design complete; **no paired baseline/candidate run has been executed** (record of executed checks = fixture-level suites only, `docs/maturity/LOCAL-FIXTURE-BASELINE-2026-11-02.md`). Executing the pilot requires separate authorization and a fixed environment; until then all pilot verdicts are `UNKNOWN`, never PASS.
+
 This is a small, manual evaluation design, not a report of executions, authorization, security, model quality, or production readiness. Nothing here enables an action or changes an existing gate. No model, network, installation, scheduled job, or new runtime framework is required to prepare or review this proposal. Any later execution is separately scoped and authorized; if suitable enforcement or evidence is unavailable, stop and record `UNKNOWN`. Use synthetic data and disposable fixtures. Existing guidance in `docs/agent-harness-integration-2026-10-26.md`, `docs/local-evaluation-poc.md`, and `docs/compound-log.md` remains authoritative for its stated scope.
 
 ## Minimal permission boundary
