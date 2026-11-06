@@ -22,6 +22,22 @@ Each `.phase-evidence/phase-<id>-<step>.json` holds the status, the SHA-256 of i
 
 For long/high-risk work, track reviewed constraints in docs/task-contracts/phase-<id>.json. When a contract exists, phase-gate.js run and check reject a missing or mismatched .phase-evidence/phase-<id>-context.json. See docs/task-contracts/README.md. CLI validation does not automatically intercept Claude/Codex internal compaction or change external tool permissions.
 
+## Loop interruption & retry conditions (policy; enforced by the evidence chain, not by a runner)
+
+The premise of every Phase loop is: coding → test → verify → review → compound, with evidence recorded only through `phase-gate.js`. The gate never retries on its own; humans (or the host loop) rerun. These conditions say when rerunning is allowed and when the loop must stop.
+
+| 상황 | 처리 |
+| --- | --- |
+| 테스트 실패 원인이 확인됨 | 수정 후 제한된 횟수로 재시도 (전체 최대 3회 반복, `CLAUDE.md`) |
+| 동일 실패가 반복됨 (같은 단계·같은 이유) | 조기 중단하고 원인을 보고; `record --status FAIL --meta reason=...`로 사유 기록 |
+| 증거 부족 | `UNKNOWN`으로 유지 (테스트 실행 없음·전부 skip = 미실행, 통과 아님) |
+| 외부 쓰기 결과 불확실 | 자동 재시도 금지 → `OUTCOME_UNKNOWN_RECONCILE` 원칙(toolbroker), 결과 대조 후 재개 |
+| 이전에 통과한 단계가 바뀜 | 회귀 → `check`의 chain break가 FAIL로 차단, 재테스트·재검증 후에만 재개 |
+| 시간/작업 예산 소진 | 미완료 상태와 남은 작업을 기록하고 종료 (거짓 PASS 금지) |
+
+- 재시도 메타데이터(정책/스킬 버전·시도 횟수·소요 시간)는 `record --meta key=value`로 증거에 남긴다(P1).
+- PASS/FAIL은 실제 실행·관측 결과로만 기재; 계획·fixture 통과·선언으로 PASS를 가장하지 않는다.
+
 ## Template
 
 Copy into the Phases section below. Code fences are ignored by the runner, so this template is never treated as a real Phase.

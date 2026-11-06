@@ -1,9 +1,18 @@
 "use strict";
 // Procedural merge gate: refuse to merge a pull request unless every reported check passed.
 //
-// This is NOT enforcement. GitHub branch protection / rulesets are unavailable for this private
-// repository without a paid plan (the API answers 403 "Upgrade to GitHub Pro or make this repository
-// public"), so a merge can still be performed by hand or by another tool. See docs/merge-policy.md.
+// If the intended enforcement mode is absent, unavailable or unexpectedly falls back, stop and report NOT VERIFIED rather than silently downgrading.
+//
+// Known limits (mirrors docs/merge-policy.md; five total):
+//   1. This is NOT enforcement — GitHub branch protection / rulesets are unavailable for this private
+//      repository without a paid plan (the API answers 403 "Upgrade to GitHub Pro or make this
+//      repository public"), so a merge can still be performed by hand or by another tool.
+//   2. The required check-name list is not required/validated, so a run that silently lost some
+//      checks can still appear passing.
+//   3. TOCTOU: a new commit may be pushed between the `gh pr checks` read and the merge.
+//   4. It does not judge check-content legitimacy (a passing suite may be vacuous).
+//   5. It does not run or require unit tests here; `passing` reflect reported status only.
+// See docs/merge-policy.md.
 const fs = require("node:fs");
 const { spawnSync } = require("node:child_process");
 

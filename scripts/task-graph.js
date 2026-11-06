@@ -10,10 +10,10 @@ const LABEL = /^[^\u0000-\u001f\u007f]{1,256}$/u;
 function analyze(graph, options = {}) {
   const errors = [];
   const object = x => x !== null && typeof x === 'object' && !Array.isArray(x);
-  const keys = (x, required, where) => {
+  const keys = (x, required, where, optional = []) => {
     if (!object(x)) { errors.push(`${where}: expected object`); return false; }
     for (const k of required) if (!Object.hasOwn(x, k)) errors.push(`${where}: missing ${k}`);
-    for (const k of Object.keys(x)) if (!required.includes(k)) errors.push(`${where}: unexpected ${k}`);
+    for (const k of Object.keys(x)) if (!required.includes(k) && !optional.includes(k)) errors.push(`${where}: unexpected ${k}`);
     return true;
   };
   if (!keys(graph, ['version', 'tasks'], 'graph')) return { verdict: 'FAIL', errors };
@@ -26,11 +26,12 @@ function analyze(graph, options = {}) {
   const fields = ['id', 'dependencies', 'role', 'readScopes', 'writeScopes', 'retryCap', 'attempts', 'status', 'effect'];
   Array.from(graph.tasks).forEach((t, i) => {
     const where = `tasks[${i}]`;
-    if (!keys(t, fields, where)) return;
+    if (!keys(t, fields, where, ['gate'])) return;
     if (typeof t.id !== 'string' || !ID.test(t.id)) errors.push(`${where}: invalid id`);
     else if (ids.has(t.id)) errors.push(`${where}: duplicate id ${t.id}`);
     else ids.set(t.id, t);
     if (typeof t.role !== 'string' || !ID.test(t.role)) errors.push(`${where}: invalid role`);
+    if (Object.hasOwn(t, 'gate') && (typeof t.gate !== 'string' || !ID.test(t.gate))) errors.push(`${where}: invalid gate`);
     for (const name of ['dependencies', 'readScopes', 'writeScopes']) {
       const a = t[name];
       if (!Array.isArray(a) || a.length > MAX_LIST) { errors.push(`${where}: invalid ${name}`); continue; }
@@ -50,6 +51,32 @@ function analyze(graph, options = {}) {
     if (typeof dep === 'string' && !ids.has(dep)) errors.push(`${id}: unknown dependency ${dep}`);
   }
   if (errors.length) return { verdict: 'FAIL', errors };
+  // Evidence-link mode: when a task declares an optional `gate` (a phase id from docs/PHASES.md),
+  // a PASS task must be backed by a PASS compound step in that phase's phase-gate evidence.
+  // Declarations alone keep their meaning; this check only runs when evidenceRoot is supplied.
+  if (options.evidenceRoot !== undefined && options.evidenceRoot !== null) {
+    const fs = require('node:fs');
+    const evidences = new Map();
+    const readGate = (phase, step) => {
+      const key = `${phase}/${step}`;
+      if (evidences.has(key)) return evidences.get(key);
+      const file = require('node:path').join(options.evidenceRoot, `phase-${phase}-${step}.json`);
+      let ok = false;
+      try { ok = JSON.parse(fs.readFileSync(file, 'utf8')).status === 'PASS'; }
+      catch { ok = false; }
+      evidences.set(key, ok);
+      return ok;
+    };
+    for (const [id, t] of ids) {
+      if (!Object.hasOwn(t, 'gate')) continue;
+      if (t.status === 'PASS' && !readGate(t.gate, 'compound')) {
+        errors.push(`${id}: declared PASS but gate phase '${t.gate}' has no PASS compound evidence (evidenceRoot ${options.evidenceRoot})`);
+      } else if (t.status === 'UNKNOWN' && !readGate(t.gate, 'compound')) {
+        errors.push(`${id}: declares gate '${t.gate}' but its compound evidence is missing; keep UNKNOWN`);
+      }
+    }
+    if (errors.length) return { verdict: 'FAIL', errors };
+  }
   for (const [id, t] of ids) if (t.status === 'PASS') {
     for (const dep of t.dependencies) if (ids.get(dep).status !== 'PASS') errors.push(`${id}: PASS requires dependency ${dep} to be PASS`);
   }
@@ -108,9 +135,24 @@ function analyze(graph, options = {}) {
 }
 
 function main(argv) {
-  const scopeWarnings = argv.length === 2 && argv[0] === '--scope-warnings' && argv[1] !== '--scope-warnings';
-  if (!(argv.length === 1 && argv[0] !== '--scope-warnings') && !scopeWarnings) { console.error('usage: node scripts/task-graph.js [--scope-warnings] INPUT.json'); return 2; }
-  const input = scopeWarnings ? argv[1] : argv[0];
+  // Flags must precede the input path (backward contract); anything after it is a usage error.
+  const opts = { scopeWarnings: false, evidenceRoot: null };
+  let rest = null;
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--scope-warnings') {
+      if (rest !== null) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+      opts.scopeWarnings = true; continue;
+    }
+    if (argv[i] === '--evidence') {
+      if (rest !== null || !argv[i + 1] || argv[i + 1].startsWith('--')) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+      opts.evidenceRoot = argv[i + 1]; i++; continue;
+    }
+    if (argv[i].startsWith('--')) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+    if (rest !== null) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+    rest = argv[i];
+  }
+  if (rest === null) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+  const input = rest;
   let fd, bytes;
   try {
     const fs = require('node:fs');
@@ -128,7 +170,7 @@ function main(argv) {
     if (bytes.length > MAX_BYTES) throw new Error('input exceeds byte limit');
     if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) throw new Error('BOM not allowed');
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    result = analyze(JSON.parse(text), { scopeWarnings });
+    result = analyze(JSON.parse(text), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot });
   } catch (error) { result = { verdict: 'FAIL', errors: ['invalid or oversized UTF-8 JSON'] }; }
   console.log(JSON.stringify(result));
   return result.verdict === 'PASS' ? 0 : 1;
