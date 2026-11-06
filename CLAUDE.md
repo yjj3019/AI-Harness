@@ -36,6 +36,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
 - 4-repo adoption record and licenses (2026-11-05): `docs/external-patterns-4repo-2026-11-05.md`
+- Static gates: skill license/metadata audit `scripts/skill-audit.js`, distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js`
 - Cursor plugins comparison and package checks: `docs/cursor-plugins-review-2026-10-28.md`, `scripts/package-lint.js`
 - Evidence-first research adoption and optional skill: `docs/agent-harness-integration-2026-10-26.md`, `skills/evidence-first-harness/SKILL.md`
 - Optional document conversion contract (manifest-only, no engine/permission enforcement): `docs/document-jobs.md`, `scripts/document-job.js`
