@@ -44,6 +44,27 @@
       "required_claims": ["A second among three", "B and C simultaneous", "response within 5 seconds not guaranteed"],
       "protected_spans": [],
       "unacceptable": "A가 가장 좋았고 B 다음에 C가 실행됐습니다."
+    },
+    {
+      "id": "ko-hype-reduction",
+      "source": "혁신적인 자동 감사 기능으로 보안 점검 시간을 극대화합니다. 검증된 범위는 합성 픽스처 12건입니다.",
+      "required_claims": ["synthetic fixtures 12 checked", "scope limited to synthetic fixtures", "no performance claim about production time"],
+      "protected_spans": [],
+      "unacceptable": "합성 픽스처 12건으로 실제 보안 점검 시간이 개선됐습니다."
+    },
+    {
+      "id": "ko-cve-preservation",
+      "source": "CVE-2024-1234는 영향받는 제품 버전 2.3~2.5에 해당하며 상태는 확인 중(미패치)입니다. 출처: 공급업체 권고 페이지.",
+      "required_claims": ["CVE-2024-1234", "affected versions 2.3-2.5", "status under investigation or unpatched", "source is vendor advisory"],
+      "protected_spans": ["CVE-2024-1234"],
+      "unacceptable": "CVE-2024-1234는 이미 패치되어 영향이 없습니다."
+    },
+    {
+      "id": "ko-voice-preservation",
+      "source": "직접 겪으니 확실히 불편하더군요. 필터 설정이 많아서 찾기가 어려웠고, 제 기준으로는 버튼 위치가 아쉬웠습니다.",
+      "required_claims": ["personal experience expressed", "filter settings numerous", "button position criticized as personal opinion"],
+      "protected_spans": [],
+      "unacceptable": "설정이 직관적이며 모두가 쉽게 찾을 수 있습니다."
     }
   ]
 }

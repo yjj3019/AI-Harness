@@ -22,7 +22,7 @@ test("report editor declares opt-in scope and verification limitations",  () => 
 
 test("manual semantic evaluation cases retain expected coverage and valid spans", () => {
   assert.equal(fixtures.schema_version, 1);
-  const expected = ["counts-and-skip", "fixture-not-production", "tool-not-os", "protected-and-injection", "condition-negation-and-attribution", "ranking-and-concurrency"];
+  const expected = ["counts-and-skip", "fixture-not-production", "tool-not-os", "protected-and-injection", "condition-negation-and-attribution", "ranking-and-concurrency", "ko-hype-reduction", "ko-cve-preservation", "ko-voice-preservation"];
   assert.deepEqual(fixtures.cases.map(c => c.id).sort(), expected.sort());
   for (const c of fixtures.cases) {
     assert.ok(c.source.length > 0 && c.unacceptable.length > 0, c.id);
