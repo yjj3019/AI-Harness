@@ -84,7 +84,7 @@ function usage() {
       "Usage:",
       "  node phase-gate.js list",
       "  node phase-gate.js run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>",
-      "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>]",
+      "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>] [--meta key=value ...]",
       "  node phase-gate.js check <phase> [--require-bound-tree]",
       "  node phase-gate.js doctor",
       "  node phase-gate.js attest <phase>",
@@ -232,6 +232,7 @@ function writeEvidence(phase, step, fields) {
           ...(fields.require_test_summary ? { require_test_summary: true } : {}) }
       : {}),
     artifacts: fields.artifacts,
+    ...(fields.meta && Object.keys(fields.meta).length ? { meta: fields.meta } : {}),
     prev: fields.prev,
   };
   fs.writeFileSync(evidenceFile(phase, step), JSON.stringify(ev, null, 2) + "\n");
@@ -314,7 +315,20 @@ function cmdRecord(args) {
   if (!RECORD_STEPS.includes(step)) {
     die(1, `ERROR: record supports ${RECORD_STEPS.join(", ")}. Use 'run' for test.`);
   }
-  const opts = parseFlags(rest, ["status", "report"]);
+  // Optional repeatable metadata (policy/skill version, retry count, elapsed time, cost...).
+  // Stored under `meta` in the evidence file; absent keys are not materialized.
+  const meta = {};
+  const plain = [];
+  for (let i = 0; i < rest.length; i += 1) {
+    if (rest[i] === "--meta" && rest[i + 1] && rest[i + 1].includes("=")) {
+      const eq = rest[i + 1].indexOf("=");
+      meta[rest[i + 1].slice(0, eq)] = rest[i + 1].slice(eq + 1);
+      i += 1;
+    } else {
+      plain.push(rest[i]);
+    }
+  }
+  const opts = parseFlags(plain, ["status", "report"]);
   const status = (opts.status || "").toUpperCase();
   if (status !== "PASS" && status !== "FAIL") die(1, "ERROR: --status must be PASS or FAIL");
   if (status === "PASS" && !opts.report) die(1, "ERROR: PASS requires --report <file under .phase-evidence/>");
@@ -323,7 +337,7 @@ function cmdRecord(args) {
   if (step === "verify" && status === "PASS") requireEvidenceRead(phase);
   // Consume the current signal before publishing a verdict; a failed write requires a new read.
   if (step === "verify") rotateReadToken(phase);
-  writeEvidence(phase, step, { status, artifacts, prev });
+  writeEvidence(phase, step, { status, artifacts, prev, meta });
   console.log(`Recorded phase ${phase} ${step}: ${status}`);
 }
 
