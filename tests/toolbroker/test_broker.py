@@ -4,6 +4,7 @@ import concurrent.futures
 import hashlib
 import hmac
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -22,6 +23,7 @@ from toolbroker.broker import canon
 from toolbroker.server import serve
 
 SECRET = bytes.fromhex("2d" * 32)  # deterministic test-only secret
+TOKEN = "stub"
 
 
 def b64(data):
@@ -257,31 +259,32 @@ class BrokerTests(unittest.TestCase):
 
     def test_actual_broker_http_server_denies_unapproved_write(self):
         b = self.broker(["fixture.db.increment"])
-        server = serve(b)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
-            url = "http://127.0.0.1:" + str(server.server_address[1]) + "/v1/tools/execute"
-            fields = {"operation": "fixture.db.increment", "request_id": "request_0001",
-                      "payload": {"amount": 7}, "approval": ""}
-            def req():
-                return urllib.request.Request(url, data=canon(fields),
-                    headers={"Content-Type": "application/json"}, method="POST")
-            with self.assertRaises(urllib.error.HTTPError) as error:
-                urllib.request.urlopen(req(), timeout=2)
+        with patch.dict(os.environ, {"TOOLBROKER_TOKEN": TOKEN}):
+            server = serve(b)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
             try:
-                self.assertEqual(error.exception.code, 403)
+                url = "http://127.0.0.1:" + str(server.server_address[1]) + "/v1/tools/execute"
+                fields = {"operation": "fixture.db.increment", "request_id": "request_0001",
+                          "payload": {"amount": 7}, "approval": ""}
+                def req():
+                    return urllib.request.Request(url, data=canon(fields),
+                        headers={"Content-Type": "application/json", "X-Toolbroker-Token": TOKEN}, method="POST")
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    urllib.request.urlopen(req(), timeout=2)
+                try:
+                    self.assertEqual(error.exception.code, 403)
+                finally:
+                    error.exception.close()
+                self.assertEqual(b.get_counter(), 0)
+                fields["approval"] = approval(fields["operation"], fields["request_id"], fields["payload"])
+                with urllib.request.urlopen(req(), timeout=2) as result:
+                    self.assertEqual(json.loads(result.read())["result"]["counter"], 7)
+                self.assertEqual(b.get_counter(), 7)
             finally:
-                error.exception.close()
-            self.assertEqual(b.get_counter(), 0)
-            fields["approval"] = approval(fields["operation"], fields["request_id"], fields["payload"])
-            with urllib.request.urlopen(req(), timeout=2) as result:
-                self.assertEqual(json.loads(result.read())["result"]["counter"], 7)
-            self.assertEqual(b.get_counter(), 7)
-        finally:
-            server.shutdown()
-            server.server_close()
-            thread.join(timeout=2)
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=2)
 
     def test_fixed_loopback_http_post_is_replayed_locally_not_sent_twice(self):
         Provider.mode, Provider.writes, Provider.calls = "normal", {}, 0

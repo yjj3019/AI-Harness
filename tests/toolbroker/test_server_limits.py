@@ -1,11 +1,13 @@
 """Loopback-only HTTP resource-limit regressions; no production-safety assertion."""
 import http.client
+import os
 import select
 import socket
 import threading
 import time
 import unittest
 from contextlib import contextmanager
+from unittest.mock import patch
 
 from toolbroker.server import serve
 
@@ -22,16 +24,17 @@ class NeverBroker:
 @contextmanager
 def running_server(**limits):
     broker = NeverBroker()
-    server = serve(broker, **limits)
-    thread = threading.Thread(target=server.serve_forever,
-                              kwargs={"poll_interval": 0.01}, daemon=True)
-    thread.start()
-    try:
-        yield server, broker
-    finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=2)
+    with patch.dict(os.environ, {"TOOLBROKER_TOKEN": "stub"}):
+        server = serve(broker, **limits)
+        thread = threading.Thread(target=server.serve_forever,
+                                  kwargs={"poll_interval": 0.01}, daemon=True)
+        thread.start()
+        try:
+            yield server, broker
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
 
 
 def connect(server):
@@ -49,6 +52,7 @@ def receive_all(sock):
 
 def partial_body(sock):
     sock.sendall(b"POST /v1/tools/execute HTTP/1.1\r\nHost: localhost\r\n"
+                 b"X-Toolbroker-Token: stub\r\n"
                  b"Content-Type: application/json\r\nContent-Length: 100\r\n\r\n{")
 
 
@@ -145,6 +149,7 @@ class ServerLimitTests(unittest.TestCase):
     def test_slow_drip_has_absolute_deadline_and_releases_slot(self):
         prefixes = (b"GET /hea", b"GET /health HTTP/1.1\r\nHost: local",
                     b"POST /v1/tools/execute HTTP/1.1\r\nHost: localhost\r\n"
+                    b"X-Toolbroker-Token: stub\r\n"
                     b"Content-Type: application/json\r\nContent-Length: 100\r\n\r\n{")
         for prefix in prefixes:
             with self.subTest(prefix=prefix), running_server(

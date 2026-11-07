@@ -136,6 +136,12 @@ t $B "" 0 Bash command $'rm file.txt\ngrep -r /etc .'
 
 echo "== block-destructive: Bash line continuations (JSON only, never executed) =="
 t $B "" 2 Bash command $'r\\\nm -rf /home/user'
+# Windows jq emits CRLF for embedded newlines; it must normalize to the same shell syntax.
+t $B "" 2 Bash command $'r\\\r\nm -rf /home/user'
+t $B "" 2 Bash command $'rm -r\\\r\nf /home/user'
+t $B "" 2 Bash command $'"r\\\r\nm" -rf /home/user'
+t $B "" 2 Bash command $'rm "-r\\\r\nf" /home/user'
+t $B "" 2 Bash command $'rm -rf "/ho\\\r\nme/user"'
 t $B "" 2 Bash command $'rm -r\\\nf /home/user'
 t $B "" 2 Bash command $'"r\\\nm" -rf /home/user'
 t $B "" 2 Bash command $'rm "-r\\\nf" /home/user'

@@ -1,6 +1,9 @@
 'use strict';
 
 // Offline analysis only: no task execution, filesystem scope checks, or retries.
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
 const MAX_BYTES = 1024 * 1024;
 const MAX_TASKS = 256;
 const MAX_LIST = 256;
@@ -51,29 +54,59 @@ function analyze(graph, options = {}) {
     if (typeof dep === 'string' && !ids.has(dep)) errors.push(`${id}: unknown dependency ${dep}`);
   }
   if (errors.length) return { verdict: 'FAIL', errors };
-  // Evidence-link mode: when a task declares an optional `gate` (a phase id from docs/PHASES.md),
-  // a PASS task must be backed by a PASS compound step in that phase's phase-gate evidence.
-  // Declarations alone keep their meaning; this check only runs when evidenceRoot is supplied.
+  // Opt-in link to phase-gate's canonical checker. A compound status alone is not proof;
+  // reuse its chain/artifact/test-summary/tree checks instead of copying its evidence schema.
   if (options.evidenceRoot !== undefined && options.evidenceRoot !== null) {
-    const fs = require('node:fs');
-    const evidences = new Map();
-    const readGate = (phase, step) => {
-      const key = `${phase}/${step}`;
-      if (evidences.has(key)) return evidences.get(key);
-      const file = require('node:path').join(options.evidenceRoot, `phase-${phase}-${step}.json`);
-      let ok = false;
-      try { ok = JSON.parse(fs.readFileSync(file, 'utf8')).status === 'PASS'; }
-      catch { ok = false; }
-      evidences.set(key, ok);
-      return ok;
+    if (typeof options.evidenceRoot !== 'string' || !options.evidenceRoot) return { verdict: 'FAIL', errors: ['evidence mode requires a nonempty evidence root path'] };
+    if (options.requireBoundTree !== undefined && typeof options.requireBoundTree !== 'boolean') return { verdict: 'FAIL', errors: ['requireBoundTree must be boolean'] };
+    if (options.phaseGate !== undefined) return { verdict: 'FAIL', errors: ['phaseGate override is not supported; use the canonical project phase-gate.js'] };
+    let evidenceRoot, projectRoot;
+    try {
+      evidenceRoot = fs.realpathSync.native(path.resolve(options.evidenceRoot));
+      projectRoot = fs.realpathSync.native(path.resolve(options.root || path.dirname(evidenceRoot)));
+    } catch { return { verdict: 'FAIL', errors: ['project evidence root is unavailable'] }; }
+    // Canonicalize system temp roots (for example macOS /var -> /private/var) before checks.
+    // Reject symlink/junction components inside the canonical project path, not system aliases.
+    // Reject symlink/junction components anywhere in the supplied project path, not only
+    // the final checker file and its immediate parent directories.
+    let projectCursor = path.parse(projectRoot).root;
+    for (const component of projectRoot.slice(projectCursor.length).split(path.sep).filter(Boolean)) {
+      projectCursor = path.join(projectCursor, component);
+      let componentStat;
+      try { componentStat = fs.lstatSync(projectCursor); }
+      catch { return { verdict: 'FAIL', errors: ['project root path component is unavailable'] }; }
+      if (componentStat.isSymbolicLink() || !componentStat.isDirectory())
+        return { verdict: 'FAIL', errors: ['project root path must contain only regular non-symlink directories'] };
+    }
+    if (path.join(projectRoot, '.phase-evidence') !== evidenceRoot)
+      return { verdict: 'FAIL', errors: ['evidenceRoot must be the project .phase-evidence directory used by phase-gate'] };
+    const gatePath = path.join(projectRoot, '.claude', 'workflows', 'phase-gate.js');
+    for (const directory of [projectRoot, path.join(projectRoot, '.claude'), path.join(projectRoot, '.claude', 'workflows')]) {
+      let stat;
+      try { stat = fs.lstatSync(directory); } catch { return { verdict: 'FAIL', errors: ['project-local phase-gate directory is unavailable'] }; }
+      if (stat.isSymbolicLink() || !stat.isDirectory()) return { verdict: 'FAIL', errors: ['phase-gate path must use project-local non-symlink directories'] };
+    }
+    let gateStat;
+    try { gateStat = fs.lstatSync(gatePath); } catch { return { verdict: 'FAIL', errors: ['project-local phase-gate.js is unavailable'] }; }
+    if (gateStat.isSymbolicLink() || !gateStat.isFile()) return { verdict: 'FAIL', errors: ['project-local phase-gate.js must be a regular non-symlink file'] };
+    const checked = new Map();
+    const verifyPhase = phase => {
+      if (checked.has(phase)) return checked.get(phase);
+      const result = spawnSync(process.execPath, [gatePath, 'check', phase, ...(options.requireBoundTree ? ['--require-bound-tree'] : [])], {
+        cwd: projectRoot, env: { ...process.env, PHASE_GATE_ROOT: projectRoot }, encoding: 'utf8', timeout: Number.isInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 30_000, maxBuffer: 1024 * 1024,
+      });
+      const error = result.error ? `phase-gate could not start: ${result.error.message}` :
+        (result.status === null ? `phase-gate check timed out or was terminated by signal ${result.signal || 'unknown'}` :
+          (result.status !== 0 ? `phase-gate check failed (exit ${result.status}): ${(result.stderr || result.stdout || '').trim()}` : null));
+      const verdict = { ok: !error, error };
+      checked.set(phase, verdict);
+      return verdict;
     };
     for (const [id, t] of ids) {
-      if (!Object.hasOwn(t, 'gate')) continue;
-      if (t.status === 'PASS' && !readGate(t.gate, 'compound')) {
-        errors.push(`${id}: declared PASS but gate phase '${t.gate}' has no PASS compound evidence (evidenceRoot ${options.evidenceRoot})`);
-      } else if (t.status === 'UNKNOWN' && !readGate(t.gate, 'compound')) {
-        errors.push(`${id}: declares gate '${t.gate}' but its compound evidence is missing; keep UNKNOWN`);
-      }
+      // UNKNOWN is already blocking graph progress; only a declared PASS requires verified phase evidence.
+      if (!Object.hasOwn(t, 'gate') || t.status !== 'PASS') continue;
+      const result = verifyPhase(t.gate);
+      if (!result.ok) errors.push(`${id}: declared PASS but gate phase '${t.gate}' failed canonical phase-gate verification: ${result.error}`);
     }
     if (errors.length) return { verdict: 'FAIL', errors };
   }
@@ -136,7 +169,7 @@ function analyze(graph, options = {}) {
 
 function main(argv) {
   // Flags must precede the input path (backward contract); anything after it is a usage error.
-  const opts = { scopeWarnings: false, evidenceRoot: null };
+  const opts = { scopeWarnings: false, evidenceRoot: null, requireBoundTree: false };
   let rest = null;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--scope-warnings') {
@@ -144,14 +177,18 @@ function main(argv) {
       opts.scopeWarnings = true; continue;
     }
     if (argv[i] === '--evidence') {
-      if (rest !== null || !argv[i + 1] || argv[i + 1].startsWith('--')) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+      if (rest !== null || !argv[i + 1] || argv[i + 1].startsWith('--')) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] [--require-bound-tree] INPUT.json'); return 2; }
       opts.evidenceRoot = argv[i + 1]; i++; continue;
     }
-    if (argv[i].startsWith('--')) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+    if (argv[i] === '--require-bound-tree') {
+      if (rest !== null || opts.evidenceRoot === null) { console.error('usage: --require-bound-tree requires a preceding --evidence DIR and must precede INPUT.json'); return 2; }
+      opts.requireBoundTree = true; continue;
+    }
+    if (argv[i].startsWith('--')) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] [--require-bound-tree] INPUT.json'); return 2; }
     if (rest !== null) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
     rest = argv[i];
   }
-  if (rest === null) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] INPUT.json'); return 2; }
+  if (rest === null) { console.error('usage: node scripts/task-graph.js [--scope-warnings] [--evidence DIR] [--require-bound-tree] INPUT.json'); return 2; }
   const input = rest;
   let fd, bytes;
   try {
@@ -170,7 +207,7 @@ function main(argv) {
     if (bytes.length > MAX_BYTES) throw new Error('input exceeds byte limit');
     if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) throw new Error('BOM not allowed');
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    result = analyze(JSON.parse(text), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot });
+    result = analyze(JSON.parse(text), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot, requireBoundTree: opts.requireBoundTree });
   } catch (error) { result = { verdict: 'FAIL', errors: ['invalid or oversized UTF-8 JSON'] }; }
   console.log(JSON.stringify(result));
   return result.verdict === 'PASS' ? 0 : 1;
