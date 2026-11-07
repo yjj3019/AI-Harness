@@ -1,6 +1,6 @@
 # Optional offline task graph validator
 
-This opt-in tool validates a declared dependency graph and reports a deterministic snapshot for valid graphs; invalid-input errors may follow input order. It does not execute tasks, orchestrate workers, access declared scopes, authorize actions, enforce permissions, provide isolation, verify statuses, or retry anything. It is not a security or completion gate. A valid graph is not proof that any task passed or that any host effect did or did not occur.
+This opt-in tool validates a declared dependency graph and reports a deterministic snapshot for valid graphs; invalid-input errors may follow input order. It does not execute tasks, orchestrate workers, access declared scopes, authorize actions, enforce permissions, provide isolation, verify evidence-writer identity, or retry anything. It is not a security or completion gate. A valid graph is not proof that any task passed or that any host effect did or did not occur.
 
 Run `node scripts/task-graph.js path/to/input.json`. It reads only the specified input file (at most 1 MiB plus one byte to detect overflow) and writes JSON to stdout; it creates no files and makes no network calls. The opened descriptor must be a regular file; nonblocking open avoids waiting for FIFO writers where supported. Symlinks are followed. Supply a trusted local file: this is not a sandbox and does not enforce host permissions or bound read time; filesystem operations and special-device opens can still block. Input must be UTF-8 without BOM. Output may reveal task IDs and dependencies; use synthetic or appropriately approved data.
 
@@ -31,6 +31,12 @@ Example:
 ## Results
 
 `verdict: PASS` means schema and graph consistency checks passed, not task success. `FAIL` means invalid JSON, invalid declared schema, missing reference, inconsistent PASS dependency, or cycle; exit 1. Unreadable input yields `UNKNOWN`, exit 2. Usage errors also exit 2. Valid graphs exit 0 and list nodes sorted by ID; each includes the declared `status`, derived `state`, `reason`, and sorted direct `unmet` dependencies. `DONE` means declared PASS, not independently observed success. For other nodes, `UNKNOWN` blocks pending reconciliation; any direct prerequisite not declared PASS blocks; a pending node with passed prerequisites is READY. A declared failed `NONE` node is READY only while the retry budget remains; an `EXTERNAL` failure is always BLOCKED pending reconciliation, irrespective of the budget. Exhausted failures are BLOCKED. No recommendation triggers execution. A PASS node with any direct dependency not declared PASS is inconsistent and makes the graph FAIL; applying this check to every PASS node also enforces the condition transitively. READY is not a guarantee of safe parallelism: the tool does not detect overlapping scopes or other conflicts by default.
+
+### Optional phase-gate evidence link
+
+Each task may include `gate` (a phase ID from `docs/PHASES.md`). Without `--evidence`, the field remains descriptive and does not affect the graph result. With `--evidence <project>/.phase-evidence`, a `PASS` task linked to a phase requires `phase-gate.js check <phase>` to succeed; an `UNKNOWN` task remains blocked without requiring evidence of completion. This reuses the canonical chain, artifact, test-summary and current-tree checks where available. Add `--require-bound-tree` after `--evidence DIR` to require a current bound tree. The evidence root must be the project's exact `.phase-evidence` directory; `.claude/workflows/phase-gate.js` and its parent directories must be regular, non-symlink project-local paths.
+
+This is still optional, per-invocation validation. It does not authenticate the evidence writer, certify historical snapshot completeness, execute graph tasks, enforce scope/permissions, or provide isolation. The checker process must be reviewed with the project source and test suite; do not use it as a server-side security boundary.
 
 ### Optional exact-label advisory
 
