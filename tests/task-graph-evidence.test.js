@@ -1,6 +1,6 @@
 "use strict";
-// P5: task-graph --evidence link mode — a PASS/UNKNOWN task declaring an optional `gate`
-// (phase id) must be backed by a PASS compound step in that phase's phase-gate evidence.
+// P5: task-graph --evidence invokes the canonical phase-gate checker for an optional task gate.
+// It validates phase evidence, not the evidence writer's identity or host authorization.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -19,11 +19,42 @@ function taskGraph() {
     ],
   };
 }
+function installPhaseGate(root) {
+  const workflow = path.join(root, ".claude", "workflows");
+  fs.mkdirSync(workflow, { recursive: true });
+  fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
+  fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/phase-gate.js"), path.join(workflow, "phase-gate.js"));
+  fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/test-summary.js"), path.join(workflow, "test-summary.js"));
+  fs.copyFileSync(path.resolve(__dirname, "../scripts/context-contract.js"), path.join(root, "scripts/context-contract.js"));
+}
 function evidenceRoot(t) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-"));
-  fs.writeFileSync(path.join(root, "phase-1-compound.json"), JSON.stringify({ schema: 1, phase: "1", step: "compound", status: "PASS", artifacts: [], recorded_at: new Date().toISOString() }));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  return root;
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-"));
+  const root = path.join(sandbox, "repo");
+  const evidenceRoot = path.join(root, ".phase-evidence");
+  fs.mkdirSync(path.join(evidenceRoot, "artifacts"), { recursive: true });
+  fs.mkdirSync(evidenceRoot, { recursive: true });
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Evidence link\n");
+  installPhaseGate(root);
+  const gate = (...args) => spawnSync(process.execPath, [path.resolve(__dirname, "../.claude/workflows/phase-gate.js"), ...args], {
+    cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 30000,
+  });
+  const record = (step, text) => {
+    const artifact = `artifacts/${step}.md`;
+    fs.writeFileSync(path.join(evidenceRoot, artifact), text);
+    const result = gate("record", "1", step, "--status", "PASS", "--report", `.phase-evidence/${artifact}`);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+  };
+  record("coding", "coding report\n");
+  const testLog = path.join(evidenceRoot, "artifacts", "strict-test.tap");
+  fs.writeFileSync(testLog, "TAP version 13\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n");
+  const testRun = gate("run", "1", "test", "--require-test-summary", "--", process.execPath, "-e", "process.stdout.write(require('fs').readFileSync(process.argv[1],'utf8'))", testLog);
+  assert.equal(testRun.status, 0, testRun.stdout + testRun.stderr);
+  record("verify", "verify report\n");
+  record("review", "review report\n");
+  record("compound", "compound report\n");
+  t.after(() => fs.rmSync(sandbox, { recursive: true, force: true }));
+  return { evidence: evidenceRoot, root };
 }
 
 test("gate field only (no evidence mode) keeps declarative behavior", () => {
@@ -31,38 +62,93 @@ test("gate field only (no evidence mode) keeps declarative behavior", () => {
   assert.equal(r.verdict, "PASS");
 });
 
-test("evidence mode: PASS task requires PASS compound evidence", (t) => {
-  const r = analyze(taskGraph(), { evidenceRoot: evidenceRoot(t) });
+test("evidence mode: PASS task requires complete canonical phase-gate evidence", (t) => {
+  const fixture = evidenceRoot(t);
+  const r = analyze(taskGraph(), { evidenceRoot: fixture.evidence, root: fixture.root });
   assert.equal(r.verdict, "PASS", JSON.stringify(r.errors));
 });
 
-test("evidence mode: missing compound evidence fails the link", (t) => {
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-empty-"));
-  t.after(() => fs.rmSync(empty, { recursive: true, force: true }));
-  const r = analyze(taskGraph(), { evidenceRoot: empty });
+test("evidence mode: missing chain fails closed", (t) => {
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-empty-"));
+  const root = path.join(sandbox, "repo");
+  const empty = path.join(root, ".phase-evidence");
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.mkdirSync(empty, { recursive: true });
+  fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Evidence link\n");
+  installPhaseGate(root);
+  t.after(() => fs.rmSync(sandbox, { recursive: true, force: true }));
+  const r = analyze(taskGraph(), { evidenceRoot: empty, root });
   assert.equal(r.verdict, "FAIL");
-  assert.match(JSON.stringify(r.errors), /no PASS compound evidence/);
+  assert.match(JSON.stringify(r.errors), /phase-gate check failed/);
 });
 
-test("evidence mode: FAIL or invalid JSON compound evidence is not PASS", (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-bad-"));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const content of [JSON.stringify({ status: "FAIL" }), "{not json"]) {
-    fs.writeFileSync(path.join(root, "phase-1-compound.json"), content);
-    const r = analyze(taskGraph(), { evidenceRoot: root });
-    assert.equal(r.verdict, "FAIL", "must be FAIL, not PASS");
+test("evidence mode rejects a symlinked phase-gate checker or parent directory", t => {
+  const fixture = evidenceRoot(t);
+  const outside = path.join(path.dirname(fixture.root), "untrusted-phase-gate.js");
+  fs.writeFileSync(outside, "process.exit(0)\n");
+  t.after(() => fs.rmSync(outside, { force: true }));
+  try {
+    const gatePath = path.join(fixture.root, ".claude", "workflows", "phase-gate.js");
+    fs.unlinkSync(gatePath);
+    fs.symlinkSync(outside, gatePath);
+    let result = analyze(taskGraph(), { evidenceRoot: fixture.evidence, root: fixture.root });
+    assert.equal(result.verdict, "FAIL");
+    assert.match(JSON.stringify(result.errors), /non-symlink/);
+
+    fs.unlinkSync(gatePath);
+    const workflows = path.dirname(gatePath);
+    fs.rmSync(workflows, { recursive: true, force: true });
+    fs.symlinkSync(path.dirname(outside), workflows, "junction");
+    result = analyze(taskGraph(), { evidenceRoot: fixture.evidence, root: fixture.root });
+    assert.equal(result.verdict, "FAIL");
+    assert.match(JSON.stringify(result.errors), /non-symlink directories/);
+  } catch (error) {
+    if (["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) return t.skip(`symlinks unavailable: ${error.code}`);
+    throw error;
   }
 });
 
-test("CLI: --evidence DIR INPUT.json exit 0 on linked PASS, 1 when absent", (t) => {
-  const root = evidenceRoot(t);
-  const good = path.join(root, "good.json");
-  fs.writeFileSync(good, JSON.stringify(taskGraph()));
-  let r = spawnSync(process.execPath, [CLI, "--evidence", root, good], { encoding: "utf8" });
+test("evidence mode: failure and invalid evidence never produce PASS", (t) => {
+  const fixture = evidenceRoot(t);
+  fs.writeFileSync(path.join(fixture.evidence, "phase-1-review.json"), "{not json");
+  const r = analyze(taskGraph(), { evidenceRoot: fixture.evidence, root: fixture.root });
+  assert.equal(r.verdict, "FAIL");
+  assert.match(JSON.stringify(r.errors), /phase-gate check failed/);
+});
+
+test("CLI: evidence mode validates linked phase; strict bound-tree is explicit", (t) => {
+  const fixture = evidenceRoot(t);
+  const graph = path.join(fixture.root, "tasks.json");
+  fs.writeFileSync(graph, JSON.stringify(taskGraph()));
+  let r = spawnSync(process.execPath, [CLI, "--evidence", fixture.evidence, graph], { cwd: fixture.root, encoding: "utf8" });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-cli-"));
-  t.after(() => fs.rmSync(empty, { recursive: true, force: true }));
-  fs.writeFileSync(path.join(empty, "g.json"), JSON.stringify(taskGraph()));
-  r = spawnSync(process.execPath, [CLI, "--evidence", empty, path.join(empty, "g.json")], { encoding: "utf8" });
-  assert.equal(r.status, 1);
+  r = spawnSync(process.execPath, [CLI, "--evidence", fixture.evidence, "--require-bound-tree", graph], { cwd: fixture.root, encoding: "utf8" });
+  assert.equal(r.status, 1, "fixture did not record bound tree; strict mode must reject it");
+  r = spawnSync(process.execPath, [CLI, "--require-bound-tree", "--evidence", fixture.evidence, graph], { cwd: fixture.root, encoding: "utf8" });
+  assert.equal(r.status, 2, "strict-bound-tree must follow --evidence");
+});
+
+test("evidence mode requires canonical project evidence root", (t) => {
+  const fixture = evidenceRoot(t);
+  const r = analyze(taskGraph(), { evidenceRoot: path.dirname(fixture.evidence), root: fixture.root });
+  assert.equal(r.verdict, "FAIL");
+  assert.match(JSON.stringify(r.errors), /project \.phase-evidence/);
+});
+
+test("UNKNOWN task with absent gate evidence remains BLOCKED without forcing PASS gate verification", (t) => {
+  const graph = taskGraph();
+  graph.tasks[0].status = "UNKNOWN";
+  graph.tasks[0].attempts = 0;
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-unknown-"));
+  const root = path.join(sandbox, "repo");
+  const evidence = path.join(root, ".phase-evidence");
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.mkdirSync(evidence, { recursive: true });
+  fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Evidence link\n");
+  installPhaseGate(root);
+  try {
+    const r = analyze(graph, { evidenceRoot: evidence, root });
+    assert.equal(r.verdict, "PASS", JSON.stringify(r.errors));
+    assert.equal(r.nodes[0].state, "BLOCKED");
+  } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
 });
