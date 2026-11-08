@@ -39,17 +39,25 @@ function main() {
     console.error("usage: node scripts/evidence-redact.js <file...>");
     process.exit(2);
   }
-  const findings = [];
+  const findings = [], errors = [];
   for (const arg of process.argv.slice(2)) {
-    const text = fs.readFileSync(arg, "utf8");
+    let text;
+    try { text = fs.readFileSync(arg, "utf8"); }
+    catch (error) { errors.push({ file: arg, code: error.code || "IO_ERROR" }); continue; }
     for (const hit of scan(text)) findings.push({ file: arg, ...hit });
+  }
+  if (errors.length) {
+    console.error("evidence-redact: scan incomplete; do not record this content");
+    for (const error of errors) console.error(`  ${error.file}: cannot read file (${error.code})`);
   }
   if (findings.length) {
     console.error("evidence-redact: secrets detected — do not record this content");
     for (const f of findings) console.error(`  ${f.file}: ${f.label} (${f.sample})`);
-    process.exit(1);
   }
-  console.log(`evidence-redact: clean (${process.argv.length - 2} file(s))`);
+  if (errors.length) process.exitCode = 2;
+  else if (findings.length) process.exitCode = 1;
+  else console.log(`evidence-redact: clean (${process.argv.length - 2} file(s))`);
 }
 
-main();
+if (require.main === module) main();
+module.exports = { scan, main };

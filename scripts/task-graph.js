@@ -3,7 +3,7 @@
 // Offline analysis only: no task execution, filesystem scope checks, or retries.
 const path = require('node:path');
 const fs = require('node:fs');
-const { spawnSync } = require('node:child_process');
+const childProcess = require('node:child_process');
 const MAX_BYTES = 1024 * 1024;
 const MAX_TASKS = 256;
 const MAX_LIST = 256;
@@ -92,12 +92,18 @@ function analyze(graph, options = {}) {
     const checked = new Map();
     const verifyPhase = phase => {
       if (checked.has(phase)) return checked.get(phase);
-      const result = spawnSync(process.execPath, [gatePath, 'check', phase, ...(options.requireBoundTree ? ['--require-bound-tree'] : [])], {
+      const result = childProcess.spawnSync(process.execPath, [gatePath, 'check', phase, ...(options.requireBoundTree ? ['--require-bound-tree'] : [])], {
         cwd: projectRoot, env: { ...process.env, PHASE_GATE_ROOT: projectRoot }, encoding: 'utf8', timeout: Number.isInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 30_000, maxBuffer: 1024 * 1024,
       });
-      const error = result.error ? `phase-gate could not start: ${result.error.message}` :
-        (result.status === null ? `phase-gate check timed out or was terminated by signal ${result.signal || 'unknown'}` :
-          (result.status !== 0 ? `phase-gate check failed (exit ${result.status}): ${(result.stderr || result.stdout || '').trim()}` : null));
+      const error = result.error && result.error.code === 'ETIMEDOUT'
+        ? `phase-gate check timed out after ${Number.isInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 30_000}ms`
+        : result.error
+          ? `phase-gate could not start: ${result.error.message}`
+          : result.status === null
+            ? `phase-gate check was terminated by signal ${result.signal || 'unknown'}`
+            : result.status !== 0
+              ? `phase-gate check failed (exit ${result.status}): ${(result.stderr || result.stdout || '').trim()}`
+              : null;
       const verdict = { ok: !error, error };
       checked.set(phase, verdict);
       return verdict;

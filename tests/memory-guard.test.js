@@ -20,6 +20,14 @@ function store() {
 }
 const run = (root) => spawnSync(process.execPath, [SCRIPT, root], { encoding: "utf8" });
 
+test("unreadable store path returns a concise IO error instead of a raw stack", () => {
+  const missing = path.join(os.tmpdir(), `memory-guard-missing-${process.pid}-${Date.now()}`);
+  const r = run(missing);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /cannot access store/);
+  assert.doesNotMatch(r.stderr, /Error: ENOENT/);
+});
+
 test("a clean dated store with resolved links passes", () => {
   const { root, write } = store();
   try {
@@ -51,6 +59,17 @@ test("undated facts warn and missing index is reported", () => {
     assert.equal(r.status, 1);
     assert.match(r.stderr, /_index.md is missing/);
     assert.match(r.stderr, /no ISO/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("CRLF frontmatter is stripped before body validation like LF frontmatter", () => {
+  const { root, write } = store();
+  try {
+    write("_index.md", "# Index\r\n- [[a]]\r\n");
+    write("a.md", "---\r\ntitle: [[missing]]\r\ndate: 2026-11-05\r\n---\r\nfact\r\n");
+    const r = run(root);
+    assert.equal(r.status, 0, r.stderr);
+    assert.doesNotMatch(r.stderr, /broken link/);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
