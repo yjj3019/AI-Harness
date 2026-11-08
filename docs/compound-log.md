@@ -196,6 +196,19 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: `run-all.sh` expands `tests/*.test.js` to files and never passes a directory; the direct invocation copied the directory form.
 - **Resolution/Pattern**: Run the same command shape the entry point uses (`node --test tests/*.test.js`). Read the failure text before attributing it to the code under test; an invocation error and a test failure are both `exit != 0` but need different responses.
 
+### [2026-11-08] Codex port - A renamed hook is not a ported hook
+
+- **Issue/Risk**: `.codex/` (commit `18bf75f`) copies the `.claude` hooks verbatim except for the error-message prefix, and the commit states both harnesses "share the same guardrails" with "guardrail semantics unchanged". Codex does not use Claude's tool names: edits arrive as `tool_name: "apply_patch"` and there is no `Read` tool at all. `evidence-guard.sh` matches only `Write|Edit|MultiEdit|NotebookEdit`, and `read-tracker.sh` exits unless `tool_name == "Read"`. So the evidence guard never fires for a Codex edit, and the read tracker never records a evidence read, which permanently refuses verify PASS.
+- **Root Cause**: The port was validated by diffing the two script copies against each other (they differ by one string), which proves byte-fidelity but not host behavior. No probe exercised the scripts with the *target host's* documented hook payload.
+- **Resolution/Pattern**: A cross-host port needs a payload probe per host, not a source diff. Feed each hook the documented input shape of the host it will run under (`apply_patch` for Codex) and assert the deny path still returns 2. A script that is identical on both sides of a port is evidence of copy fidelity only.
+- **Open defects (unfixed as of 2026-11-08)**: `apply_patch` bypasses `evidence-guard` (exit 0 where `Write` exits 2); `read-tracker` cannot fire under Codex; `.codex/agents/test.toml:13` points at a nonexistent `.Codex/workflows/phase-gate.js`; all five agent TOMLs carry literal `\r` escapes inside `developer_instructions`; `tests/` has zero `.codex` references.
+
+### [2026-11-08] Guardrail parsing - A dead branch hid a Windows deletion bypass
+
+- **Issue/Risk**: `block-destructive.sh` allows `rm -rf C:\Users` and `rm -rf C:\*` (exit 0) while blocking the forward-slash form `rm -rf C:/Users` (exit 2). `Remove-Item -Recurse -Force` and `cmd /c del /s /q` are not covered at all. Found independently by an external reviewer and reproduced here.
+- **Root Cause**: In the word-splitting loop the unquoted-backslash handler (`escaped=1; continue`) consumes `\` before the drive-path rewrite can see it, so the `"$char" == '\' && "$word" =~ ^[A-Za-z]:` branch is unreachable dead code. The lexer also only inspects a command whose first word is `rm` or `chmod`, so native Windows deletion verbs are never in scope. The same defect exists unchanged in `.claude/hooks/block-destructive.sh`; the port reproduced it faithfully rather than introducing it.
+- **Resolution/Pattern**: Reachability of a guard branch must be tested, not read: assert that the intended input shape actually hits the branch (here, that `C:\Users` is denied). A guardrail copied between hosts inherits every gap, so a faithful port is not a fixed port. Do not describe a lexical guard as shared protection without a deny-path probe per platform.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
