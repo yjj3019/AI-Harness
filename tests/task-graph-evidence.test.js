@@ -135,6 +135,30 @@ test("evidence mode requires canonical project evidence root", (t) => {
   assert.match(JSON.stringify(r.errors), /project \.phase-evidence/);
 });
 
+test("gate spawn errors report startup failure instead of timeout", (t) => {
+  const fixture = evidenceRoot(t);
+  const graph = taskGraph();
+  const realSpawn = require("node:child_process").spawnSync;
+  const childProcess = require("node:child_process");
+  const taskGraphModule = require("../scripts/task-graph.js");
+  try {
+    // Force ENOENT while keeping the project checker a valid regular file.
+    childProcess.spawnSync = () => ({ error: Object.assign(new Error("missing"), { code: "ENOENT" }), status: null, signal: null });
+    const result = taskGraphModule.analyze(graph, { evidenceRoot: fixture.evidence, root: fixture.root });
+    assert.equal(result.verdict, "FAIL");
+    assert.match(JSON.stringify(result.errors), /phase-gate could not start/);
+    assert.doesNotMatch(JSON.stringify(result.errors), /timed out/);
+  } finally { childProcess.spawnSync = realSpawn; }
+});
+
+test("gate timeout reports timeout separately from checker startup errors", (t) => {
+  const root = evidenceRoot(t);
+  const timedOut = analyze(taskGraph(), { evidenceRoot: root.evidence, root: root.root, timeoutMs: 1 });
+  assert.equal(timedOut.verdict, "FAIL");
+  assert.match(JSON.stringify(timedOut.errors), /phase-gate check timed out/);
+  assert.doesNotMatch(JSON.stringify(timedOut.errors), /could not start/);
+});
+
 test("UNKNOWN task with absent gate evidence remains BLOCKED without forcing PASS gate verification", (t) => {
   const graph = taskGraph();
   graph.tasks[0].status = "UNKNOWN";

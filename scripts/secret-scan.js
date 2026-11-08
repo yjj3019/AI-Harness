@@ -19,32 +19,62 @@ const PATTERNS = [
   { re: /AIza[0-9A-Za-z_-]{30,}/, why: "google api key" },
   { re: /npm_[A-Za-z0-9]{20,}/, why: "npm token" },
   { re: /(api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{8,}['"]/i, why: "hardcoded credential" },
+  // Unquoted YAML/env scalars; a constrained URL/base64-like value grammar avoids prose matches.
+  { re: /^\s*(api[_-]?key|secret|password|token)\s*[:=]\s*(?!(?:placeholder|example|dummy|changeme|change-me|replace-me|your-api-key-here)(?:[^\s#]*\s|\s|#|$))[^\s#]{8,}\s*(?:#.*)?$/im, why: "hardcoded credential (unquoted)" },
 ];
 
-function walk(dir, out = []) {
-  for (const name of fs.readdirSync(dir)) {
-    if (SKIP.has(name)) continue;
-    const p = path.join(dir, name);
-    const st = fs.lstatSync(p);
-    if (st.isSymbolicLink()) continue; // never follow links: a link to an ancestor would recurse without bound
-    if (st.isDirectory()) walk(p, out);
-    else if (/\.(js|py|sh|md|json|yml|yaml|ts)$/.test(name)) out.push(p);
+function scan(root) {
+  const findings = [], errors = [];
+  const files = [];
+  function walk(dir) {
+    let names;
+    try { names = fs.readdirSync(dir); }
+    catch (error) { errors.push(`${path.relative(root, dir) || "."}: cannot list path (${error.code || error.message})`); return; }
+    for (const name of names) {
+      if (SKIP.has(name)) continue;
+      const p = path.join(dir, name);
+      let st;
+      try { st = fs.lstatSync(p); }
+      catch (error) { errors.push(`${path.relative(root, p)}: cannot inspect path (${error.code || error.message})`); continue; }
+      if (st.isSymbolicLink()) continue; // never follow links: a link to an ancestor would recurse without bound
+      if (st.isDirectory()) walk(p);
+      else if (/\.(js|py|sh|md|json|yml|yaml|ts)$/.test(name)) files.push(p);
+    }
   }
-  return out;
+  walk(root);
+  for (const file of files) {
+    const rel = path.relative(root, file);
+    if (rel.split(path.sep).join("/") === "scripts/secret-scan.js") continue;
+    let text;
+    try { text = fs.readFileSync(file, "utf8"); }
+    catch (error) { errors.push(`${rel}: cannot read file (${error.code || error.message})`); continue; }
+    for (const { re, why } of PATTERNS) {
+      if (re.test(text)) findings.push({ file: rel, why });
+    }
+  }
+  return { findings, errors };
 }
 
-const findings = [];
-for (const file of walk(ROOT)) {
-  const rel = path.relative(ROOT, file);
-  if (rel.startsWith("scripts/secret-scan.js")) continue;
-  const text = fs.readFileSync(file, "utf8");
-  for (const { re, why } of PATTERNS) {
-    if (re.test(text)) findings.push({ file: rel, why });
-  }
+let rootStat;
+try { rootStat = fs.statSync(ROOT); }
+catch (error) {
+  console.error(`secret-scan: cannot access root: ${error.code || error.message}`);
+  process.exit(2);
+}
+if (!rootStat.isDirectory()) {
+  console.error(`secret-scan: root is not a directory: ${ROOT}`);
+  process.exit(2);
+}
+const { findings, errors } = scan(ROOT);
+if (errors.length) {
+  console.error("secret-scan: scan incomplete");
+  for (const error of errors) console.error(`  ${error}`);
 }
 if (findings.length) {
   console.error("secret-scan: findings");
   for (const f of findings) console.error(`  ${f.file}: ${f.why}`);
-  process.exit(1);
 }
+if (errors.length) process.exit(2);
+if (findings.length) process.exit(1);
 console.log("secret-scan: clean");
+module.exports = { scan };
