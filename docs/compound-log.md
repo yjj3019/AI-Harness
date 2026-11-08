@@ -178,6 +178,24 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Pair membership, context, incompleteness and the separation between selection and final assessment were not made explicit.
 - **Resolution/Pattern**: Report all four paired verdict cells plus unknown and NA counts; keep incompatible or missing declared context inconclusive, reject missing planned results, and preserve original attempts. Snapshot programmatic inputs before validation and classification. Matching labels and these arithmetic counts remain unverified claims, not a sandbox, proof of preregistration, independent evaluation or authorization to promote.
 
+### [2026-11-08] Session handoff - A clean tree is not a synced tree
+
+- **Issue/Risk**: An earlier session-state read reported `git rev-list --left-right --count origin/main...HEAD` as `0 0` and the working tree clean, which was taken to mean local and remote matched. Both were true of a stale local ref: `origin/main` had not been fetched, and four commits (PR #34, #35 and their fixes) existed only on the remote.
+- **Root Cause**: Local cleanliness and local comparison against a cached remote ref were treated as evidence of synchronization. `git status` and a remote-count read do not fetch.
+- **Resolution/Pattern**: Run `git fetch` before any ahead/behind or branch-divergence claim, and quote the fetched commit IDs on both sides. Report CI/remote state as `[unverified]` until a fetch or API read succeeds. A clean worktree only means no uncommitted local changes.
+
+### [2026-11-08] Documentation edits - Verify the anchor text before replacing
+
+- **Issue/Risk**: Two edits to `docs/HANDOFF.md` and `docs/PHASES.md` were applied at a wrong location because the search text in the tool call did not match the file exactly; the first edit silently rewrote a sentence with different content, and the second inserted a section at a fabricated marker.
+- **Root Cause**: The replacement anchor was reconstructed rather than copied from a fresh read, and the edit result was not diffed against the file before continuing.
+- **Resolution/Pattern**: Copy anchors verbatim from a `Read` in the same turn, diff immediately after every documentation edit (`git diff -- <file>`), and revert with `git checkout -- <file>` rather than layering a second edit over a bad one. Prefer a failure-visible replacement (assert the marker exists) for multi-line insertions.
+
+### [2026-11-08] Test invocation - A directory argument is not a suite
+
+- **Issue/Risk**: `node --test tests/toolbroker/` failed with `MODULE_NOT_FOUND`, which read as a red test suite rather than an invocation error.
+- **Root Cause**: `run-all.sh` expands `tests/*.test.js` to files and never passes a directory; the direct invocation copied the directory form.
+- **Resolution/Pattern**: Run the same command shape the entry point uses (`node --test tests/*.test.js`). Read the failure text before attributing it to the code under test; an invocation error and a test failure are both `exit != 0` but need different responses.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
