@@ -69,4 +69,15 @@ Copy into the Phases section below. Code fences are ignored by the runner, so th
 
 ## Phases
 
-(none defined. Add `### Phase <id>: <Title>` sections here.)
+### Phase evidence-baseline: Evidence chain verification baseline
+
+**Goal**: Prove the evidence chain works end-to-end on this repository by defining the first real Phase and recording each step with the gate, replacing the current zero-phase state where CI attestations verify nothing.
+
+**Checklist**:
+- [ ] `docs/PHASES.md` contains a parseable `### Phase <id>:` section that the gate doctor accepts
+- [ ] Test step runs a real suite via `--require-test-summary --require-bound-tree` with nonzero recognized test counts
+- [ ] Verify/review/compound reports exist under `.phase-evidence/` and are recorded through `phase-gate.js record`
+- [ ] `phase-gate.js check evidence-baseline --require-bound-tree` exits 0
+- [ ] `phase-gate.js attest evidence-baseline` writes documentation under `docs/attestations/`
+
+**Completion Criteria**: `check` exit 0 with five recorded steps and a matching tree snapshot; evidence paths and command output are quoted in the compound report. This proves the chain mechanics, not model quality, host isolation, or that the tests cover every requirement.
