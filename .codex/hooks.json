@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PROJECT_DIR}/.codex/hooks/evidence-guard.sh\" auto",
+            "command": "\"$(git rev-parse --show-toplevel)/.codex/hooks/evidence-guard.sh\" auto",
             "timeout": 10
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PROJECT_DIR}/.codex/hooks/block-destructive.sh\"",
+            "command": "\"$(git rev-parse --show-toplevel)/.codex/hooks/block-destructive.sh\"",
             "timeout": 10
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PROJECT_DIR}/.codex/hooks/read-tracker.sh\"",
+            "command": "\"$(git rev-parse --show-toplevel)/.codex/hooks/read-tracker.sh\"",
             "timeout": 10
           }
         ]
