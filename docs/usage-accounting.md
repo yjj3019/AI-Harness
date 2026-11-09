@@ -11,9 +11,9 @@ node scripts/usage-accounting.js <record.json>
 
 - Sums counters per **source** (`provider` vs `estimate`). A provider total never absorbs an estimate and the reverse is also refused, so a mixed record cannot present one blend as real usage.
 - Keeps **retries nested**: `top_level` covers declared tasks only, `including_retries` adds every retry. Retries are never folded into the parent entry.
-- Reports absent values as **`null`**, never `0`. Every missing field also increments `unknown_fields`, so a caller cannot read a total as complete.
+- Requires the schema's fields to be present; use **`null`** for an unavailable counter, elapsed time, or cost. Each null value increments `unknown_fields` rather than being treated as zero.
 - Reports `cost.currency` as `null` when no cost was supplied and `"MIXED"` when several currencies appear. Mixing currencies would fabricate a comparable number.
-- Rejects unknown keys, so prompt text, secrets or customer data cannot be stored. Only `id`, `source`, `usage`, `elapsed_ms`, `cost` and `retries` are accepted.
+- Rejects unknown keys. Allowed string values such as `id` and `cost.currency` are not scrubbed; duplicate-ID errors can echo the ID and output can include the currency. Do not put secrets, prompts or customer data in these values or input files.
 
 ## Record shape
 
@@ -28,7 +28,7 @@ node scripts/usage-accounting.js <record.json>
       "retries": [] } ] }
 ```
 
-Any counter, `elapsed_ms` or `cost` may be `null` to mean "not provided".
+Every key in the record shape is required. Any counter, `elapsed_ms` or `cost` may be `null` to mean "not provided"; omitting a key is rejected.
 
 ## Limits
 
