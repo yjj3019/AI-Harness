@@ -76,8 +76,21 @@ test('unknown fields are rejected rather than silently stored', () => {
   assert.throws(() => report(record({ usage: { input_tokens: -1, output_tokens: 1, cache_read_tokens: 0, cache_write_tokens: 0, calls: 1 } })), /non-negative/);
 });
 
+test('required keys must be present even when their values are unknown', () => {
+  const input = record();
+  delete input.entries[0].usage.input_tokens;
+  assert.throws(() => report(input), /expected exactly/);
+});
+
 test('duplicate entry ids are rejected', () => {
   assert.throws(() => report({ version: 1, entries: [record().entries[0], record().entries[0]] }), /duplicate entry id/);
+});
+
+test('allowed strings are not redacted by the key allowlist', () => {
+  const marker = 'synthetic-marker';
+  assert.equal(report(record({ cost: { amount: 1, currency: marker } })).top_level.cost.currency, marker);
+  const item = record({ id: marker }).entries[0];
+  assert.throws(() => report({ version: 1, entries: [item, structuredClone(item)] }), /duplicate entry id: synthetic-marker/);
 });
 
 test('CLI exits 1 on invalid input and 2 on usage error', () => {

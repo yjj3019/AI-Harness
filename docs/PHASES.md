@@ -71,7 +71,7 @@ Copy into the Phases section below. Code fences are ignored by the runner, so th
 
 ### Phase evidence-baseline: Evidence chain verification baseline
 
-**Goal**: Prove the evidence chain works end-to-end on this repository by defining the first real Phase and recording each step with the gate, replacing the current zero-phase state where CI attestations verify nothing.
+**Goal**: Prove the evidence chain works end-to-end on this repository by recording each step of this defined Phase with the gate. Defining a Phase alone does not establish completion.
 
 **Checklist**:
 - [ ] `docs/PHASES.md` contains a parseable `### Phase <id>:` section that the gate doctor accepts
