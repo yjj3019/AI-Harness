@@ -21,6 +21,8 @@ const PRODUCTION_FILES = [
   ".claude/hooks/block-destructive.sh",
   ".claude/hooks/evidence-guard.sh",
   ".claude/hooks/read-tracker.sh",
+  ".codex/hooks/block-destructive.sh",
+  ".codex/hooks/evidence-guard.sh",
   ".claude/settings.json",
   ".claude/agents/coding.md",
   ".claude/agents/test.md",
