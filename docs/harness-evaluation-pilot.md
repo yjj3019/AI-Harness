@@ -44,6 +44,12 @@ W/R/S 통합 설명·우선순위: 6장 갭(한국어 W 사례)은 보강 제안
 
 This is a small, manual evaluation design, not a report of executions, authorization, security, model quality, or production readiness. Nothing here enables an action or changes an existing gate. No model, network, installation, scheduled job, or new runtime framework is required to prepare or review this proposal. Any later execution is separately scoped and authorized; if suitable enforcement or evidence is unavailable, stop and record `UNKNOWN`. Use synthetic data and disposable fixtures. Existing guidance in `docs/agent-harness-integration-2026-10-26.md`, `docs/local-evaluation-poc.md`, and `docs/compound-log.md` remains authoritative for its stated scope.
 
+For an audit, record the permitted target and revision, reviewed entry points and exclusions, evidence references, candidate status, a concrete counterexample or falsification attempt and its outcome, and whether the reviewer was separate or self-review. Mark unexamined surfaces, untested candidates and unavailable independent review `UNKNOWN` or `NEEDS VALIDATION`; a completed ledger is not proof that vulnerabilities are absent or that reviewers are independent.
+
+For an authorized UI comparison, record the target, capture times, viewport, browser and observed user flow for both states. Classify each observed issue as persistent, new or no longer observed only when the relevant states are comparable; otherwise use `UNKNOWN`. Screenshots alone do not establish interaction, accessibility conformance or visual quality. No browser or renderer has been run by this proposal.
+
+For output-reduction experiments, retain an authorized reference to the original and compare excerpts against it for exit status, errors, failure and skip counts, zero-test results and truncation. Measure tokens only with separately identified provider-reported or estimated usage; preserve quality failures and unknowns, and do not infer cost savings from fewer bytes.
+
 ## Minimal permission boundary
 
 The following is a proposed policy for a future pilot, not a statement that any current host enforces it. Fixture evidence applies only to the named fixture and configuration; live behavior is **UNVERIFIED** until separately authorized and observed. A prompt, hook, dry-run label, directory name, or model assertion is not an enforcement boundary.

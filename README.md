@@ -362,7 +362,7 @@ ode --test tests/*.test.js run takes roughly 20 minutes. Budget CI accordingly o
   evaluation-accounting tests). If flakes appear in CI on Windows, pin HARNESS_BASH to a fast
   native bash or run suites with reduced --test-concurrency.
 
-- Distilled memory stores (dreaming/memory-distill): `node scripts/memory-guard.js <store>` fails on broken links, missing `_index.md` and secret-shaped tokens and warns on undated facts (TTL policy) and email-like PII; covered by tests/memory-guard.test.js.
+- Distilled memory stores (dreaming/memory-distill): `node scripts/memory-guard.js <store>` fails on broken links, missing `_index.md` and secret-shaped tokens and warns on undated facts and email-like PII; covered by tests/memory-guard.test.js. It does not enforce expiry or verify provenance, confidence, promotion decisions, or factual truth.
 
 
 ## 최근 갱신 (2026-11-05) — 테스트 격리 하드닝 · 시크릿 스캔 확장 · memory-guard
