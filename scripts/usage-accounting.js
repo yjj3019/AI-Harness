@@ -2,7 +2,7 @@
 
 // Offline accounting of caller-supplied usage records. Declared values are not
 // provider truth: every number carries a source, and an absent value stays null.
-// Prompt text, secrets and customer data are rejected by key allowlist, not stored.
+// Unknown keys are rejected; allowed string values are not scrubbed for sensitive data.
 const fs = require('node:fs');
 const { TextDecoder } = require('node:util');
 

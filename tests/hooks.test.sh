@@ -107,6 +107,41 @@ ta test 2 Bash command "cat .phase-evidence/x"
 ta coding 0 Write file_path "src/app.js"
 ta coding 0 Bash command "npm test"
 
+echo "== Windows native drive paths on both hooks =="
+for hook in .claude/hooks/block-destructive.sh .codex/hooks/block-destructive.sh; do
+  for cmd in 'rm -rf C:\Users' 'rm -rf C:\*'; do
+    got=$(jq -n --arg c "$cmd" '{tool_input:{command:$c}}' | bash "$hook" >/dev/null 2>&1; echo $?)
+    total=$((total + 1))
+    [ "$got" = 2 ] || { fails=$((fails + 1)); echo "FAIL $hook: $cmd"; }
+  done
+done
+
+echo "== Codex patch payload =="
+for path in '.phase-evidence/x' '.phase-evidence./x' '.phase-evidence /x' '.claude/workflows/phase-gate.js'; do
+  got=$(jq -n --arg c "*** Begin Patch
+*** Update File: $path
+*** End Patch" '{tool_name:"apply_patch",tool_input:{command:$c},agent_id:"x",agent_type:"coding"}' | bash .codex/hooks/evidence-guard.sh auto >/dev/null 2>&1; echo $?)
+  total=$((total + 1))
+  [ "$got" = 2 ] || { fails=$((fails + 1)); echo "FAIL Codex patch: $path"; }
+done
+
+got=$(jq -n '{tool_name:"apply_patch",tool_input:{command:"*** Begin Patch\n*** Update File: src/app.js\n*** End Patch"},agent_id:"x",agent_type:"coding"}' | bash .codex/hooks/evidence-guard.sh auto >/dev/null 2>&1; echo $?)
+total=$((total + 1))
+[ "$got" = 0 ] || { fails=$((fails + 1)); echo "FAIL Codex patch: ordinary source"; }
+
+echo "== Codex guard input classification =="
+for spec in main agent newline invalid; do
+  case "$spec" in
+    main) input='{"tool_name":"Bash","tool_input":{"command":"cat .phase-evidence/x"}}'; want=0 ;;
+    agent) input='{"tool_name":"Bash","agent_id":"x","tool_input":{"command":"cat .phase-evidence/x"}}'; want=2 ;;
+    newline) input='{"tool_name":"Bash\n","agent_id":"x","tool_input":{"command":"cat .phase-evidence/x"}}'; want=2 ;;
+    invalid) input='{invalid'; want=2 ;;
+  esac
+  got=$(printf '%s' "$input" | bash .codex/hooks/evidence-guard.sh auto >/dev/null 2>&1; echo $?)
+  total=$((total + 1))
+  [ "$got" = "$want" ] || { fails=$((fails + 1)); echo "FAIL Codex classification $spec: want $want got $got"; }
+done
+
 echo "== block-destructive: system paths and flag variants =="
 t $B "" 2 Bash command 'rm -rf /*'
 t $B "" 2 Bash command 'rm -rf /usr'

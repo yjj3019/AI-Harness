@@ -127,15 +127,14 @@ for ((pos=0; pos<${#cmd}; pos++)); do
     # Bash removes an unquoted/double-quoted backslash-newline pair before word splitting.
     # Do not activate an empty word; single-quoted text was handled above and stays literal.
     if [[ "${cmd:pos+1:1}" == $'\n' ]]; then pos=$((pos + 1)); continue; fi
+    if [[ "$quote" == '' && ( "$word" =~ ^[A-Za-z]:$ || "$word" =~ ^[A-Za-z]:/ ) ]]; then
+      word+='/'; active=1; continue
+    fi
     escaped=1; active=1; continue
   fi
   if [[ "$quote" == '"' ]]; then
     if [[ "$char" == '"' ]]; then quote=''; else word+=$char; fi
     continue
-  fi
-  # Preserve native drive-path separators in an unquoted token; elsewhere backslash escapes.
-  if [[ "$quote" == '' && "$char" == '\' && ( "$word" =~ ^[A-Za-z]:$ || "$word" =~ ^[A-Za-z]:/ ) ]]; then
-    word+='/'; active=1; continue
   fi
   case "$char" in
     "'"|'"') quote=$char; active=1 ;;
