@@ -239,6 +239,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: 규율이 '복사 금지 → 재구현'까지였고 '최후 수단(제거)'이 명시되지 않음.
 - **Resolution/Pattern**: 헌법 License Safety를 **zero tolerance 결정 사다리**로 강화 — ① 확실하고 문제없음 → 아이디어만 채택 ② 문제 소지 → 원소스 참고 완전 새 로직 재구현 ③ 그마저도 불가 → **소스에서 제거**. 도입 방식 분류에 '제거' 추가. 기록(§7) 동기화.
 
+### [2026-11-11] 문서 파싱 정밀도 반영 - 구조 보존 + 부분 성공 보고 (kordoc 실측, MIT → 아이디어만)
+
+- **Issue/Risk**: 문서 '읽기/추출'의 품질은 '열림'과 다르다 — 병합 셀이 깨지거나 실패 항목을 누락으로 감추면 파싱 결과가 사실과 다르게 보인다.
+- **Root Cause**: 형식 게이트는 '생성/렌더' 중심이고 '추출(파싱)'의 구조 보존·실패 보고 기준이 없었다.
+- **Resolution/Pattern**: kordoc(대표 벤치: HWPX 표 구조 100%)의 패턴을 **자체 기준**으로 옮겨 format-gate.md에 '파싱 정밀도' 절 신설 — 구조 보존(병합 셀)·소비자별 출력 분리·부분 성공 보고·스캔 계층 표기·회복적 파싱·벤치 관리. 설치·실행 없이 아이디어만.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
