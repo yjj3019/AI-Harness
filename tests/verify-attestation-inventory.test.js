@@ -109,6 +109,21 @@ test("gate failure aborts and does not report success", () => {
   });
 });
 
+test("reports a replay timeout as a timeout", () => {
+  const child = require("node:child_process");
+  const original = child.spawnSync;
+  child.spawnSync = () => ({ error: Object.assign(new Error("spawnSync timed out"), { code: "ETIMEDOUT" }), status: null });
+  delete require.cache[checker];
+  const { verifyInventory } = require(checker);
+  child.spawnSync = original;
+  delete require.cache[checker];
+  fixture(({ root, manifest, att }) => {
+    att("1");
+    fs.writeFileSync(manifest, '["1"]');
+    assert.throws(() => verifyInventory(manifest, { root }), /phase 1 verification timed out.*descendant cleanup is not guaranteed/);
+  });
+});
+
 test("real gate rejects a malformed attestation in a fixture root", () => {
   fixture(({ root, manifest, att }) => {
     att("1");
@@ -138,6 +153,12 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
     ok(run("git", ["init", "-q"]), "git init");
     fs.mkdirSync(path.join(root, "docs"), { recursive: true });
     fs.mkdirSync(path.join(root, ".phase-evidence"));
+    fs.mkdirSync(path.join(root, "scripts"));
+    fs.mkdirSync(path.join(root, ".claude", "workflows"), { recursive: true });
+    fs.copyFileSync(checker, path.join(root, "scripts", "verify-attestation-inventory.js"));
+    fs.copyFileSync(path.resolve(__dirname, "../scripts/context-contract.js"), path.join(root, "scripts", "context-contract.js"));
+    fs.copyFileSync(gate, path.join(root, ".claude", "workflows", "phase-gate.js"));
+    fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/test-summary.js"), path.join(root, ".claude", "workflows", "test-summary.js"));
     fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: One\n### Phase 2: Two\n");
     const manifest = path.join(root, "manifest.json");
     fs.writeFileSync(manifest, '["1","2"]');
@@ -155,8 +176,7 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
       ok(gateRun("check", id, "--require-bound-tree"), `check ${id}`);
       ok(gateRun("attest", id), `attest ${id}`);
     }
-    const runner = `require(${JSON.stringify(checker)}).verifyInventory(${JSON.stringify(manifest)}, {root:${JSON.stringify(root)}, gatePath:${JSON.stringify(gate)}})`;
-    const inventory = () => run(process.execPath, ["-e", `try { ${runner} } catch(e) { console.error(e.message); process.exitCode=1; }`]);
+    const inventory = () => run(process.execPath, [path.join(root, "scripts", "verify-attestation-inventory.js"), manifest]);
     const valid = inventory();
     ok(valid, "inventory");
     assert.match(valid.stdout, /deterministic fixture[\s\S]*Phase 1 attestation verified[\s\S]*deterministic fixture[\s\S]*Phase 2 attestation verified[\s\S]*Verified 2 required attestation/);
@@ -175,6 +195,13 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
     assert.match(corrupt.stdout, /Phase 1 attestation verified/);
     assert.match(corrupt.stderr, /attestation for phase 2: invalid JSON[\s\S]*phase 2 verification failed/i);
     assert.doesNotMatch(corrupt.stdout, /Phase 2 attestation verified|Verified 2 required/);
+
+    fs.writeFileSync(second, original);
+    fs.appendFileSync(path.join(root, "fixture.test.js"), "\n// changed after attestation\n");
+    const changed = inventory();
+    assert.notEqual(changed.status, 0);
+    assert.match(changed.stderr, /attestation for phase 1: code changed after the attestation[\s\S]*phase 1 verification failed/i);
+    assert.doesNotMatch(changed.stdout, /deterministic fixture|attestation verified|Verified 2 required/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

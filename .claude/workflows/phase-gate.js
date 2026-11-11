@@ -10,7 +10,7 @@
  * Commands:
  *   list                                     List valid phase ids from docs/PHASES.md
  *   run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>  Run and record a test
- *   record <phase> <step> --status PASS|FAIL [--report <file>]
+ *   record <phase> <step> --status PASS|FAIL [--report <file>] [--require-read-proof]
  *                                            Record coding|verify|review|compound evidence
  *   check <phase> [--require-bound-tree]     Verify all five steps; exit 0 only if complete
  *   doctor                                   Check that the guards can run here (jq, sha256sum, realpath, git,
@@ -84,7 +84,7 @@ function usage() {
       "Usage:",
       "  node phase-gate.js list",
       "  node phase-gate.js run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>",
-      "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>] [--meta key=value ...]",
+      "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>] [--meta key=value ...] [--require-read-proof]",
       "  node phase-gate.js check <phase> [--require-bound-tree]",
       "  node phase-gate.js doctor",
       "  node phase-gate.js attest <phase>",
@@ -232,6 +232,7 @@ function writeEvidence(phase, step, fields) {
           ...(fields.require_test_summary ? { require_test_summary: true } : {}) }
       : {}),
     artifacts: fields.artifacts,
+    ...(fields.require_read_proof ? { require_read_proof: true } : {}),
     ...(fields.meta && Object.keys(fields.meta).length ? { meta: fields.meta } : {}),
     prev: fields.prev,
   };
@@ -260,10 +261,21 @@ function cmdList() {
 
 // Default-FAIL: verify PASS needs proof that the verify subagent opened the test artifacts as recorded.
 // Enforced only when read-tracker.sh is registered in .claude/settings.json (otherwise nothing writes the log).
-function readTrackingArmed() {
+function readTrackingArmed(strict = false) {
   try {
     const st = JSON.parse(fs.readFileSync(path.join(ROOT, ".claude", "settings.json"), "utf8"));
-    return JSON.stringify((st.hooks || {}).PostToolUse || []).includes("read-tracker.sh");
+    const post = (st.hooks || {}).PostToolUse || [];
+    if (!strict) return JSON.stringify(post).includes("read-tracker.sh");
+    return Array.isArray(post) && post.some((group) => {
+      if (!group || typeof group !== "object" || !Array.isArray(group.hooks)) return false;
+      let matches;
+      try { matches = group.matcher == null || group.matcher === "" || group.matcher === "*" ||
+        (typeof group.matcher === "string" && new RegExp(group.matcher).test("Read")); } catch { return false; }
+      return matches && group.hooks.some((hook) => hook && hook.type === "command" &&
+        typeof hook.command === "string" && (
+          /^(?:[A-Za-z0-9_.:/\\-]+[\\/])?read-tracker\.sh$(?![\s\S])/.test(hook.command) ||
+          /^"(?:\$\{CLAUDE_PROJECT_DIR\})?[A-Za-z0-9_.:/\\ -]*[\\/]read-tracker\.sh"$(?![\s\S])/.test(hook.command)));
+    });
   } catch {
     return false;
   }
@@ -279,8 +291,10 @@ function rotateReadToken(phase) {
   fs.writeFileSync(readTokenFile(phase), crypto.randomBytes(32).toString("hex") + "\n");
 }
 
-function requireEvidenceRead(phase) {
-  if (!readTrackingArmed()) return;
+function requireEvidenceRead(phase, required = false) {
+  const armed = readTrackingArmed(required);
+  if (!armed && required) die(2, "ERROR: --require-read-proof requires read-tracker.sh registration in valid .claude/settings.json");
+  if (!armed) return;
   const t = loadEvidence(phase, "test");
   let token;
   try { token = fs.readFileSync(readTokenFile(phase), "utf8").trim(); } catch { token = ""; }
@@ -319,8 +333,12 @@ function cmdRecord(args) {
   // Stored under `meta` in the evidence file; absent keys are not materialized.
   const meta = {};
   const plain = [];
+  let requireReadProof = false;
   for (let i = 0; i < rest.length; i += 1) {
-    if (rest[i] === "--meta" && rest[i + 1] && rest[i + 1].includes("=")) {
+    if (rest[i] === "--require-read-proof") {
+      if (requireReadProof) usage();
+      requireReadProof = true;
+    } else if (rest[i] === "--meta" && rest[i + 1] && rest[i + 1].includes("=")) {
       const eq = rest[i + 1].indexOf("=");
       meta[rest[i + 1].slice(0, eq)] = rest[i + 1].slice(eq + 1);
       i += 1;
@@ -331,13 +349,14 @@ function cmdRecord(args) {
   const opts = parseFlags(plain, ["status", "report"]);
   const status = (opts.status || "").toUpperCase();
   if (status !== "PASS" && status !== "FAIL") die(1, "ERROR: --status must be PASS or FAIL");
+  if (requireReadProof && (step !== "verify" || status !== "PASS")) die(1, "ERROR: --require-read-proof requires verify PASS");
   if (status === "PASS" && !opts.report) die(1, "ERROR: PASS requires --report <file under .phase-evidence/>");
   const artifacts = opts.report ? [artifactFor(opts.report, false)] : [];
   const prev = prevLink(phase, step);
-  if (step === "verify" && status === "PASS") requireEvidenceRead(phase);
+  if (step === "verify" && status === "PASS") requireEvidenceRead(phase, requireReadProof);
   // Consume the current signal before publishing a verdict; a failed write requires a new read.
   if (step === "verify") rotateReadToken(phase);
-  writeEvidence(phase, step, { status, artifacts, prev, meta });
+  writeEvidence(phase, step, { status, artifacts, prev, meta, require_read_proof: requireReadProof });
   console.log(`Recorded phase ${phase} ${step}: ${status}`);
 }
 

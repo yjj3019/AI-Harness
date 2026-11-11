@@ -28,8 +28,7 @@ jobs:
         run: bash tests/run-all.sh
       # Independent re-verification: every committed attestation is checked against the checked-out
       # code and its test command is run again here, not trusted from the local session.
-      # Attestations that share the same tree hash and test argv are identical claims; replay the
-      # command once per fingerprint so CI does not re-run the same suite repeatedly.
+      # Verify every file, even when multiple attestations name the same tree and test command.
       - name: Verify phase attestations
         run: |
           shopt -s nullglob
@@ -38,17 +37,9 @@ jobs:
           if [ "${#attestations[@]}" -eq 0 ]; then
             echo "No attestations verified; this does not prove any phase is complete."
           fi
-          # macOS runners ship bash 3.2 (no associative arrays); a plain list is fine at this scale.
-          seen_fingerprints=""
           for f in "${attestations[@]}"; do
             id=${f#docs/attestations/phase-}; id=${id%.json}
-            fp=$(jq -c '[.tree, .argv]' "$f")
-            if printf '%s\n' "$seen_fingerprints" | grep -qxF "$fp"; then
-              echo "Skipping replay for $(basename "$f"): same tree+argv as a verified attestation"
-            else
-              node .claude/workflows/phase-gate.js verify-attestation "$id"
-              seen_fingerprints="${seen_fingerprints}${fp}"$'\n'
-            fi
+            node .claude/workflows/phase-gate.js verify-attestation "$id"
           done
 
   portability:
