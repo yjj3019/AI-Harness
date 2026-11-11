@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Malgun Gothic, sans-serif">
+  <rect x="0" y="0" width="1600" height="900" fill="#0f1b2d"/>
+  <text x="80" y="70" font-size="40" fill="#93c5fd" font-weight="bold">OpenShift Virtualization — 통합 운영 개념도 (실습용 개요)</text>
+  <text x="80" y="108" font-size="22" fill="#9fb3c8">확인(F1·F2): Red Hat 공식 페이지 2026-11-11 / 설계 세부(F3): 미검증(403 — 재실측 필요)</text>
+
+  <rect x="80" y="150" width="700" height="300" rx="16" fill="#12314e" stroke="#38bdf8" stroke-width="3"/>
+  <text x="110" y="200" font-size="28" fill="#e0f2fe" font-weight="bold">컨테이너 워크로드</text>
+  <rect x="120" y="230" width="300" height="80" rx="10" fill="#0ea5e9"/>
+  <text x="140" y="278" font-size="24" fill="#083344">마이크로서비스</text>
+  <rect x="450" y="230" width="300" height="80" rx="10" fill="#0ea5e9"/>
+  <text x="470" y="278" font-size="24" fill="#083344">클라우드 네이티브 앱</text>
+  <text x="110" y="410" font-size="20" fill="#7dd3fc">→ '함께 마이그레이션·실행·관리'(F1)</text>
+
+  <rect x="820" y="150" width="700" height="300" rx="16" fill="#3b1d4d" stroke="#c084fc" stroke-width="3"/>
+  <text x="850" y="200" font-size="28" fill="#f3e8ff" font-weight="bold">가상 머신 워크로드</text>
+  <rect x="860" y="230" width="300" height="80" rx="10" fill="#a855f7"/>
+  <text x="880" y="278" font-size="24" fill="#2e1065">기존 VM</text>
+  <rect x="1190" y="230" width="300" height="80" rx="10" fill="#a855f7"/>
+  <text x="1210" y="278" font-size="24" fill="#2e1065">레거시 앱</text>
+  <text x="850" y="410" font-size="20" fill="#d8b4fe">하이퍼바이저 기반 가상화 정의(F2 · 일반 정의)</text>
+
+  <rect x="80" y="500" width="1440" height="150" rx="16" fill="#0d1b2e" stroke="#f59e0b" stroke-width="3"/>
+  <text x="110" y="555" font-size="28" fill="#fde68a" font-weight="bold">공통 운영 체계(제안 축 — F5)</text>
+  <text x="110" y="610" font-size="22" fill="#fcd34d">동일 정책 · 검증 게이트 · 근거표 공유 · 미검증 라벨(설계 세부 F3: 403 → 재실측 필요)</text>
+
+  <text x="80" y="740" font-size="24" fill="#93c5fd" font-weight="bold">확인        : 컨테이너와 VM을 한 플랫폼에서 함께 다루는 방향(F1) · 가상화 일반 정의(F2)</text>
+  <text x="80" y="790" font-size="24" fill="#fda4af" font-weight="bold">미검증(403) : 컴포넌트·CRD·라이브 마이그레이션·지원 버전(F3·F4) → 설치·문서 재실측이 있는 별도 세션 전용</text>
+  <text x="80" y="850" font-size="20" fill="#9fb3c8">확인일 2026-11-11 · 01-facts.md (F1~F5)</text>
+</svg>

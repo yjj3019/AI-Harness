@@ -245,6 +245,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: 형식 게이트는 '생성/렌더' 중심이고 '추출(파싱)'의 구조 보존·실패 보고 기준이 없었다.
 - **Resolution/Pattern**: kordoc(대표 벤치: HWPX 표 구조 100%)의 패턴을 **자체 기준**으로 옮겨 format-gate.md에 '파싱 정밀도' 절 신설 — 구조 보존(병합 셀)·소비자별 출력 분리·부분 성공 보고·스캔 계층 표기·회복적 파싱·벤치 관리. 설치·실행 없이 아이디어만.
 
+### [2026-11-11] 4종 저장소 실측 반영 - 독자 라이선스·신뢰 라벨·credit 유지
+
+- **Issue/Risk**: 포괄적인 '오픈소스'처럼 보여도 독자 라이선스(소스공개형 프리뷰, vork)나 미판정 소스가 있으면 복사·재배포 시 위반 가능성 — 라이선스 파일 원문 판독 없이 '오픈소스'로 단정하는 실수.
+- **Root Cause**: README 문구('free'·'source-available')와 라이선스 종류는 다르다 — MIT/독자/GPL 구분은 LICENSE 원문 판독에만 근거해야 함.
+- **Resolution/Pattern**: 4종 LICENSE 원문 직접 취득(MIT 2 · 독자 1 · 미판정 1) → 신뢰 라벨(확인/추정/가설)+credit 라벨을 형식 게이트 공통 항목으로 반영, 복사 0건(아이디어만).
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
