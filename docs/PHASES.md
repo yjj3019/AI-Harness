@@ -9,12 +9,13 @@ Define incremental development phases with explicit completion criteria.
 
 ## Evidence
 
-Evidence is recorded only through `.claude/workflows/phase-gate.js`. Never write `.phase-evidence/*` by hand.
+Phase records are written only through `.claude/workflows/phase-gate.js`; never hand-write gate records. The orchestrator may save report inputs under `.phase-evidence/` for `record`.
 
 - `coding`, `verify`, `review`, `compound`: save the agent's report under `.phase-evidence/`, then run
   `node .claude/workflows/phase-gate.js record <id> <step> --status PASS|FAIL --report .phase-evidence/<file>.md`
+- For a new Phase's verify PASS, add `--require-read-proof`. This requires a matching read signal and a supported read-tracker command form in valid `.claude/settings.json`; missing or invalid configuration fails. The command check does not establish script identity or execution; neither it nor the signal authenticates the record or proves host integration. If the host cannot produce the signal, report the Phase blocked instead of synthesizing one. Confirm `require_read_proof: true` in the verify record separately; legacy records do not have it.
 - `test`: for a new Phase, run `node .claude/workflows/phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <command>`. The runner records the actual exit status and validates recognized Node TAP / pytest counts. Missing summary, zero tests, and all-skipped tests fail with the summary flag. Add a reviewed adapter for other runners; legacy no-summary commands retain compatibility but do not prove executed tests.
-- Gate: `node .claude/workflows/phase-gate.js check <id> --require-bound-tree` requires five valid steps and a present, matching tree snapshot. The flag is per invocation; omitting it permits legacy unbound checks when Git is unavailable. It cannot prove historical snapshot completeness or authenticate evidence, and endpoint snapshots are not isolation.
+- Gate: `node .claude/workflows/phase-gate.js check <id> --require-bound-tree` requires five valid steps and a present, matching tree snapshot. Independently verify the checklist, including `require_test_summary: true` in the test evidence: the check only validates a summary when the recorded test requires one. The tree flag is per invocation; omitting it permits legacy unbound checks when Git is unavailable. It cannot prove historical snapshot completeness or authenticate evidence, and endpoint snapshots are not isolation.
 
 Each `.phase-evidence/phase-<id>-<step>.json` holds the status, the SHA-256 of its report or log, and the SHA-256 of the previous step's file. A step cannot be recorded until the previous step is PASS. Recording a step clears the steps after it, so a changed result must be re-tested and re-verified.
 

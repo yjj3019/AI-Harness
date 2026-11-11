@@ -333,6 +333,62 @@ function verifyPass(root) {
   return gate(root, "record", "1", "verify", "--status", "PASS", "--report", report(root, "1-verify.md"));
 }
 
+test("strict read proof cannot be skipped by missing, invalid, or unregistered settings", () =>
+  withRoot((root) => {
+    recordPass(root, "1", "coding");
+    assert.equal(runTest(root, "1", 0).status, 0);
+    const verdict = report(root, "1-strict-verify.md");
+    const verify = (...flags) => gate(root, "record", "1", "verify", "--status", "PASS", "--report", verdict, ...flags);
+    const settings = path.join(root, ".claude", "settings.json");
+    // A matching fixture signal must not replace valid registration.
+    logRead(root, ".phase-evidence/phase-1-test.log");
+    for (const input of [null, "{broken", JSON.stringify({ hooks: { PostToolUse: [] } }),
+      JSON.stringify({ hooks: { PostToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "x/read-tracker.sh" }] }] } }),
+      JSON.stringify({ hooks: { PostToolUse: [{ matcher: "[", hooks: [{ type: "command", command: "x/read-tracker.sh" }] }] } }),
+      JSON.stringify({ hooks: { PostToolUse: [{ matcher: "Read", description: "read-tracker.sh", hooks: [] }] } }),
+      ...["echo /read-tracker.sh", "x/read-tracker.sh; echo bypass", "x/read-tracker.sh --arg", "x/read-tracker.sh && true", "x/read-tracker.sh\n"]
+        .map((command) => JSON.stringify({ hooks: { PostToolUse: [{ matcher: "Read", hooks: [{ type: "command", command }] }] } })),
+    ]) {
+      if (input !== null) {
+        fs.mkdirSync(path.dirname(settings), { recursive: true });
+        fs.writeFileSync(settings, input);
+      }
+      const result = verify("--require-read-proof");
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, /requires read-tracker\.sh registration/);
+      assert.equal(fs.existsSync(path.join(root, ".phase-evidence", "phase-1-verify.json")), false);
+    }
+    arm(root);
+    fs.writeFileSync(path.join(root, ".phase-evidence", ".reads.jsonl"), "");
+    const noRead = verify("--require-read-proof");
+    assert.equal(noRead.status, 2, noRead.stderr);
+    assert.match(noRead.stderr, /opened the test artifacts/);
+    // A matching record is a fixture input, not evidence of a live host read.
+    logRead(root, ".phase-evidence/phase-1-test.log");
+    const accepted = verify("--require-read-proof");
+    assert.equal(accepted.status, 0, accepted.stderr);
+    const ev = JSON.parse(fs.readFileSync(path.join(root, ".phase-evidence", "phase-1-verify.json"), "utf8"));
+    assert.equal(ev.require_read_proof, true);
+    const realSettings = path.resolve(__dirname, "../.claude/settings.json");
+    fs.copyFileSync(realSettings, settings);
+    logRead(root, ".phase-evidence/phase-1-test.log");
+    const actualConfig = verify("--require-read-proof");
+    assert.equal(actualConfig.status, 0, actualConfig.stderr);
+  }));
+
+test("strict read proof flag is limited to verify PASS and cannot be repeated", () =>
+  withRoot((root) => {
+    const verdict = report(root, "invalid-proof.md");
+    for (const [step, status, flags] of [
+      ["coding", "PASS", ["--require-read-proof"]],
+      ["verify", "FAIL", ["--require-read-proof"]],
+      ["verify", "PASS", ["--require-read-proof", "--require-read-proof"]],
+    ]) {
+      const result = gate(root, "record", "1", step, "--status", status, "--report", verdict, ...flags);
+      assert.equal(result.status, 1, result.stderr);
+    }
+  }));
+
 test("verify PASS is refused without a read record when tracking is armed", () =>
   withRoot((root) => {
     arm(root);
