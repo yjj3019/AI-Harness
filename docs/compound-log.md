@@ -209,6 +209,30 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: In the word-splitting loop the unquoted-backslash handler (`escaped=1; continue`) consumes `\` before the drive-path rewrite can see it, so the `"$char" == '\' && "$word" =~ ^[A-Za-z]:` branch is unreachable dead code. The lexer also only inspects a command whose first word is `rm` or `chmod`, so native Windows deletion verbs are never in scope. The same defect exists unchanged in `.claude/hooks/block-destructive.sh`; the port reproduced it faithfully rather than introducing it.
 - **Resolution/Pattern**: Reachability of a guard branch must be tested, not read: assert that the intended input shape actually hits the branch (here, that `C:\Users` is denied). A guardrail copied between hosts inherits every gap, so a faithful port is not a fixed port. Do not describe a lexical guard as shared protection without a deny-path probe per platform.
 
+### [2026-11-11] 외부 조사 반영 - README 실측 후 패턴만 반영
+
+- **Issue/Risk**: 외부 생성 스킬 후보 조회(추천도라는 주관 평가가 포함됨)를 '사실'로 받고 도입 범위를 정하면 출처 검증 규율과 충돌하고, 문체 개선이 증거 검증·게이트 승인처럼 오독될 수 있다.
+- **Root Cause**: 후보 요약표에 주관(추천도)과 사실(기능·라이선스)이 섞여 있고, '탐지 회피'로 취급하면 evidence-first 규율과 용도가 합쳐질 수 있다.
+- **Resolution/Pattern**: 후보마다 GitHub raw README를 직접 취득해 사실(기능·라이선스·명시 한계)만 채택하고 주관은 의견으로 표기, 탐지 회피·저자 판정 목적 금지를 선언하며, third-party 실행 없이 패턴만 반영 기록으로 남긴다. README 실측은 자료 실측이며 실행 테스트·보안 감사·무결점이 아니다.
+
+### [2026-11-11] 외부 소스 도입 - 라이선스 안전 규율
+
+- **Issue/Risk**: 외부 소스가 라이선스 미표기·불명확·바이러스성(예: canvas-design 프론트매터 `license: Complete terms in LICENSE.txt`처럼 라이선스 파일을 판독하기 전에는 판정 불가)일 때 원문을 복사하면 배포·라이선스 충돌이 발생할 수 있다.
+- **Root Cause**: 프론트매터 문자열만 보고 라이선스를 '확인한 것처럼' 간주하기 쉽다.
+- **Resolution/Pattern**: 출처·라이선스·조항 실측 → 아이디어·패턴만 취해 자체 구현 → 불명확하면 원문 복사 금지, **새 로직 재구현** → 도입 기록에 출처 + 라이선스 + 도입 방식(복사/아이디어만/재구현) 명시. 헌법 Primary Rules **License Safety**로 반영, `scripts/skill-audit.js`가 메타데이터 라이선스(기본 Apache-2.0)를 강제한다.
+
+### [2026-11-11] 신규 스킬 반영 - 라우터 등록·점수 수식·기록 구조 점검
+
+- **Issue/Risk**: 스킬을 '만들기만' 하면 skill-router에서 발각되지 않아 실제로 사용되지 않고, 7축 점수표는 축 배점(20/15·…)과 "체크 각 1점"이 맞물리지 않아 합계 100이 성립하지 않으며, 반영 기록 제목(Anti-AI)이 이후 확장(디자인/글쓰기/문서)을 담지 못한다.
+- **Root Cause**: 반영(생성)과 통합(라우터·합산·목차)을 분리하지 않고, 최초 문서 제목을 재사용하면서 범위가 커져도 구조를 갱신하지 않았다.
+- **Resolution/Pattern**: 신규 스킬 반영 체크리스트 — ① 라우팅 표에 등록 ② 점수/게이트 수식 합계 검산(배점 체크 분배 규칙 명시) ③ 기록 제목·목차를 현재 범위로 갱신 ④ 게이트 실측 후 보고.
+
+### [2026-11-11] Harness·Loop 조사 반영 - 보유 규율 대조 후 기록만
+
+- **Issue/Risk**: 하네스/루프 조사가 들어올 때 '무엇이 정말 새로운가'를 보유 규율과 대조하지 않으면 이미 있는 것(반복 상한 · verify 분리 · 승인 · 근거 우선 · HANDOFF)을 중복 도입하거나 반대로 틈새(kill-switch/Default-FAIL 훅, 완료 지표)인 것을 '보유'로 착각할 수 있다.
+- **Root Cause**: 추천 목록의 기능 명세만 보고 이 저장소의 규율과 겹침 여부를 실측하지 않으면 판단이 문구에 끌린다.
+- **Resolution/Pattern**: 보유 규율 컬럼과 대조 표로 '보유/틈새'를 나누고 실측(README 직접 취득) 2건만 채택 — 신규 스킬은 불필요(중복), 틈새는 구현 후보로 명시만. 설치·실행 없이 기록으로만 반영.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
