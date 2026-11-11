@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: Meta-skill that maps user intent to the correct master skill. Use at the start of any non-trivial task, or when unsure which skill applies. Routes to coding-master, debugging-master, security-master, observability-master,  performance-master, design-master, document-master, ppt-master, or others.
+description: Meta-skill that maps user intent to the correct master skill. Use at the start of any non-trivial task, or when unsure which skill applies. Routes to coding-master, debugging-master, security-master, observability-master,  performance-master, design-master, document-master, ppt-master, writer-master, visual-artist, anti-ai-harness, office-master, or others.
 license: Apache-2.0
 ---
 
@@ -19,12 +19,18 @@ This is a meta-skill. It does not perform the work itself. It selects and hands 
 | Security, auth, secrets, input validation, OWASP, audit | `skills/security-master/SKILL.md` |
 | Logs, metrics, traces, observability, instrumentation | `skills/observability-master/SKILL.md` |
 | Slow, performance, latency, optimize, profile | `skills/performance-master/SKILL.md` |
-| UI design, visual, brand, layout, anti-slop | `skills/design-master/SKILL.md` |
+| UI design, brand system, layout, tokens | `skills/design-master/SKILL.md` |
 | Document, README, guide, Diátaxis, plain language | `skills/document-master/SKILL.md` |
 | PPT, slides, presentation, deck | `skills/ppt-master/SKILL.md` |
+| Writing, tech blog, report, essay, copy, fact-check | `skills/writer-master/SKILL.md` |
+| Poster, chart, infographic, shapes, static visual, aesthetics | `skills/visual-artist/SKILL.md` |
+| Prose style, anti-slop, AI tells (writing style only) | `skills/anti-ai-harness/SKILL.md` |
+| Office file, docx, pptx, xlsx, pdf, hwpx, deck/report/sheet | `skills/office-master/SKILL.md` |
 | Browser, Playwright, E2E, screenshot evidence | `skills/browser-evidence/SKILL.md` |
 | Check external skill safety | `skills/skill-audit/SKILL.md` |
 | Multiple skills needed for one feature | `skills/skill-composition/SKILL.md` |
+
+중복 신호 우선 구분: "보고서·문서"는 **내용(writer-master)** 과 **파일(office-master)** 을 먼저 가른다. 모호하면 표의 첫 일치 대신 1문장으로 확인한다.
 
 ## Process
 
