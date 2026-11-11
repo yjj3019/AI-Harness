@@ -233,6 +233,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: 추천 목록의 기능 명세만 보고 이 저장소의 규율과 겹침 여부를 실측하지 않으면 판단이 문구에 끌린다.
 - **Resolution/Pattern**: 보유 규율 컬럼과 대조 표로 '보유/틈새'를 나누고 실측(README 직접 취득) 2건만 채택 — 신규 스킬은 불필요(중복), 틈새는 구현 후보로 명시만. 설치·실행 없이 기록으로만 반영.
 
+### [2026-11-11] 라이선스 제로 허용 강화 - 결정 사다리(채택 → 완전 재구현 → 제거)
+
+- **Issue/Risk**: "문제 소지 라이선스"일 때 "재구현"만 규칙에 있으면, 재구현이 안전하지 않을 경우 소스에 위험 항목이 남을 수 있다. 라이선스 문제는 절대 발생해서는 안 된다(사용자 지시).
+- **Root Cause**: 규율이 '복사 금지 → 재구현'까지였고 '최후 수단(제거)'이 명시되지 않음.
+- **Resolution/Pattern**: 헌법 License Safety를 **zero tolerance 결정 사다리**로 강화 — ① 확실하고 문제없음 → 아이디어만 채택 ② 문제 소지 → 원소스 참고 완전 새 로직 재구현 ③ 그마저도 불가 → **소스에서 제거**. 도입 방식 분류에 '제거' 추가. 기록(§7) 동기화.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
