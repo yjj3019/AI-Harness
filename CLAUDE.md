@@ -100,8 +100,10 @@ If test, verify, or review returns FAIL or [BLOCKING], automatically return to c
 
 Maximum retry budget: 3 iterations.
 
-Run a Phase with `/phase-harness <id>`. Evidence is recorded only through `.claude/workflows/phase-gate.js`; never write `.phase-evidence/*` by hand, and subagents cannot. A Phase is complete only when `node .claude/workflows/phase-gate.js check <id>` exits 0. After it passes, `phase-gate.js attest <id>` writes the attestation that CI re-verifies.
+Run a Phase with `/phase-harness <id>`. Only `.claude/workflows/phase-gate.js` writes Phase records; do not hand-write gate records. The orchestrator may save report inputs under `.phase-evidence/` for `record`; subagents cannot write there. For a new Phase, use `run <id> test --require-test-summary --require-bound-tree -- <command>` and require `check <id> --require-bound-tree` to exit 0; independently verify all checklist and completion criteria, including `require_test_summary: true` in the test evidence. A successful check alone does not establish that the test used the required summary flag. After it passes, `phase-gate.js attest <id>` writes the attestation that CI re-verifies.
 
 Always check `docs/compound-log.md` before starting any task.
+
+For a new Phase, record verify PASS with `--require-read-proof` and independently confirm `require_read_proof: true` in its verify record. If the host cannot supply a valid read signal, stop rather than fabricate one. This signal is not authentication or proof of host isolation.
 
 After a Phase fully passes, update `docs/HANDOFF.md` and prefer a new session for the next Phase.
