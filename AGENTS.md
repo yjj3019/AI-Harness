@@ -55,9 +55,11 @@ Prefer independent roles when the host supports subagents or separate contexts:
 
 If verification fails, return to implementation. Maximum 3 iterations.
 
-Evidence for Phases is recorded only through `.claude/workflows/phase-gate.js` (or equivalent host procedure). Never hand-write evidence files. A Phase is complete only when the gate check exits 0.
+Phase records are written only through `.claude/workflows/phase-gate.js` (or equivalent host procedure); do not hand-write gate records. The orchestrator may save report inputs under `.phase-evidence/` for `record`. For a new Phase, use `run <id> test --require-test-summary --require-bound-tree -- <command>` and require `check <id> --require-bound-tree` to exit 0; independently verify all Phase checklist and completion criteria, including `require_test_summary: true` in the test evidence. A successful check alone does not establish that the test used the required summary flag.
 
 Always check `docs/compound-log.md` before starting any task.
+
+For a new Phase, record verify PASS with `--require-read-proof` and independently confirm `require_read_proof: true` in its verify record. If the host cannot supply a valid read signal, stop rather than fabricate one. This signal is not authentication or proof of host isolation.
 
 After a Phase fully passes, update `docs/HANDOFF.md` and prefer a new session for the next Phase.
 
