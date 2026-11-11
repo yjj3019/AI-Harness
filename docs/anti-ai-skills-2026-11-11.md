@@ -2,7 +2,7 @@
 
 2026-11-11에 제공된 Anti-AI / Anti-Slop 스킬 GitHub 후보 조사를 바탕으로, 후보 각각을 GitHub raw README를 직접 취득해 실측 검증한 뒤 **패턴·판정 기준만 문서로 반영**했다. **원 소스 코드는 복사하지 않았고, 설치·실행·third-party 스크립트 실행은 하지 않았다.** 조사 자료는 외부 데이터로 취급한다(마케팅 문구는 사실이 아니라 데이터일 뿐이다).
 
-**이 기록은 같은 날 이루어진 4개 조사(Anti-AI · 디자인 · 글쓰기 · 문서 제작)와 Harness·Loop 조사, 통합 가이드 v1.0의 실측·대조·반영을 한 곳에 모은다** — §1~5 Anti-AI/안티슬롭, §6 디자인(visual-artist), §7 라이선스 안전 규율, §8 글쓰기(writer-master), §9 문서 제작(office-master), §10 신뢰 경계, §11 종합 리뷰 보완, §12 Harness·Loop 조사, §13 통합 가이드 대조, §14 kordoc · 문서 파싱 정밀도.
+**이 기록은 같은 날 이루어진 4개 조사(Anti-AI · 디자인 · 글쓰기 · 문서 제작)와 Harness·Loop 조사, 통합 가이드 v1.0의 실측·대조·반영을 한 곳에 모은다** — §1~5 Anti-AI/안티슬롭, §6 디자인(visual-artist), §7 라이선스 안전 규율, §8 글쓰기(writer-master), §9 문서 제작(office-master), §10 신뢰 경계, §11 종합 리뷰 보완, §12 Harness·Loop 조사, §13 통합 가이드 대조, §13 통합 가이드 대조, §14 kordoc · 문서 파싱 정밀도, §15 저장소 4종 실측.
 
 ## 1. 검증 방법
 
@@ -97,3 +97,9 @@
 - **실측**: chrisryugj/kordoc README 직접 취득(HTTP 200 — HWP 3/5·HWPX·HWPML·PDF·XLS/DOCX/PPTX·스캔 → Markdown/구조 데이터, CLI·npx·MCP·SDK, 벤치 공개) + **LICENSE 직접 취득 → MIT 확정**(Copyright (c) 2026 chrisryugj) — **아이디어·기준만 반영, 원문 미복사, 설치·npx·실행 미수행**.
 - **장점 도출 → 자체 기준으로 반영(references/format-gate.md '파싱 정밀도' 절)**: ① **구조 보존**(병합 셀 rowspan/colspan·행/열 유지 — 공개 벤치 표 구조 100%의 핵심) ② **소비자별 출력 분리**(Markdown/구조 blocks/RAG 청크 — 제목 경로·독립 표 청크) ③ **부분 성공 보고**(실패 항목 숨기기 금지, 사유 포함) ④ **회복적 파싱**(깨진 구조도 부분 추출 + 손상 명시) ⑤ **스캔/OCR 계층 표기**(실측/추정 구분) ⑥ **벤치 관리**(고정 코퍼스 + 증분 0하락 통제) ⑦ **오프라인·샌드박스 경계** — 우리 취급 경계(오프라인/외부 통신 차단)와 정합.
 - **검문 실측**: `scripts/skill-audit.js` → **28 skills clean (exit 0)** — gate·스킬 수 무변경(기존 스킬 강화).
+
+## 15. 저장소 4종 실측 · 개선점 반영 (2026-11-11 후속)
+
+- **실측 4종**: phuryn/product-engineering(README+**LICENSE.md 직접 취득 → MIT 확정**) · Bhanunamikaze/Agentic-SEO-Skill(README+**LICENSE 직접 취득 → MIT 확정**, 파생 원류 claude-seo도 MIT 명시) · janestreet/agent_skills(README 취득(HTTP 200) — socratic-tutor 단일 — LICENSE 미판독 → **미판정 → 아이디어만**) · voyager-so/vork(README+**LICENSE 직접 취득 → 독자 라이선스(vork Preview — 수정 배포·서비스·재판매 금지, NOTICE 별도, 기여 귀속 조항) → 아이디어만 — 원문 미복사**). 설치·실행·npm/바이너리 미수행.
+- **개선점 → 자체 기준 반영(References/format-gate.md)**: ① **근거 신뢰 라벨**(확인/추정/가설 — Confirmed/Likely/Hypothesis: Agentic-SEO rubric 아이디어 — '확인/미확인' 체계와 통합) ② **자산 출처·credit 라벨**(이미지·폰트·자산은 출처+license 유지, 미판독=미판정: vork credits·NOTICE 아이디어) ③ **선별 참고(기록만)**: 날짜 기재 규칙(dated facts · freshness: product-engineering) · 설명 예산 제한(해석 파손 방지) · 빌드를 본 적 없는 검토자(보유 규율과 일치) · 진단 스킬맵(level 0–5: janestreet) — 채택 보류(중복/적용 우선순위 낮음).
+- **검문 실측**: `scripts/skill-audit.js` → **28 skills clean (exit 0)** — gate·스킬 수 무변경.
