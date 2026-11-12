@@ -251,6 +251,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: README 문구('free'·'source-available')와 라이선스 종류는 다르다 — MIT/독자/GPL 구분은 LICENSE 원문 판독에만 근거해야 함.
 - **Resolution/Pattern**: 4종 LICENSE 원문 직접 취득(MIT 2 · 독자 1 · 미판정 1) → 신뢰 라벨(확인/추정/가설)+credit 라벨을 형식 게이트 공통 항목으로 반영, 복사 0건(아이디어만).
 
+### [2026-11-12] Craft gate - 미적 감각·문장은 외재화·강제 대상이다 (모델 능력 아님)
+
+- **Issue/Risk**: 산출물 5개 버전 연속에서 사용자 리뷰가 "10/100 → 50 → 70 → AI 티/세련미 부족"으로만 상승 — 매 라운드 디자인 언어를 새롭고, "콘텐츠만 추가한 느낌"이 반복됐다.
+- **Root Cause**: 미적 감각과 글쓰기 품질이 외재화·강제된 적이 없어서 매 라운드 즉흥 재발명(템플릿+패치)으로 수렴했다. 저장소에는 이미 크래프트 스택이 존재했으나(ppt-master: 액션 타이틀·고스트 덱·디자인 스펙 잠금 / visual-artist: 7축 100점 스코어카드·신선한 시선 재채점 / writer-master: 뷰포인트 퍼스트·7단계 편집·발행 게이트 / anti-ai-harness: anti-AI 패턴 체크리스트·4블록 보고서) 산출물 작성 과정에서 **로드조차 안 했다** — 존재하는 게이트를 우회하면 출력은 템플릿 분포로 회귀한다.
+- **Resolution/Pattern**: 산출물급 작업에 크래프트 스택을 게이트로 강제한다 — ① 작성 전 design_spec(소스 오브 트루스) + 액션 타이틀(고스트 덱 테스트) ② 시각 산출물은 렌더 후 7축 스코어카드 ≥70 채점(0점 실패 축 있으면 FAIL) ③ 롱폼은 뷰포인트 퍼스트 문어체 편집 + anti-AI 패턴 체크 ④ 출하 전 4블록 보고서(변경/유지/근거/미검수). 'AI 티'의 원인은 모델의 감각이 아니라 **게이트 부재** — 이번 로그를 시작 전 필독 목록(compound-first)에 둔다. 실증: OpenShift Virtualization 실습 v6(액션 타이틀 10장, 스코어카드 90.5/100, 심층 글 2,164자 문어체 편집).
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
