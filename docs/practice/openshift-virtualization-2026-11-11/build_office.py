@@ -284,18 +284,19 @@ shape_text(strip, [("※ 일반 배경 지식(교육용) — OpenShift Virtualiz
 # ===== S6 decision axes =====
 s = new_slide(); header(s, "05 · 결정 (DECISION)", "의사결정 4개 축 (제안 F5 — 판단의 틀)", 6)
 axes = [
-    ("1", "워크로드 경계", ["어느 VM을 남기고, 무엇을 컨테이너로?", "의존성·라이선스·레거시 미들웨어 제약은?", "컨테이너화할 팀 역량은 충분한가?"], PURPLE),
-    ("2", "운영 통합 수준", ["인증·로그·백업·네트워크를 얼마나 하나로?", "통합 1점당 검증 범위가 커지는가?", "단계적 통합 로드맵은 있는가?"], BLUE),
-    ("3", "검증 방법", ["통과/실패 기준을 관측 가능하게 쓸 수 있나?", "측정 전 점수를 보고하지 않는가?", "근거(날짜·출처)가 모든 주장에 붙는가?"], GREEN),
-    ("4", "마이그레이션 우선순위", ["낮은 위험 + 높은 가치부터인가?", "가장 어려운 것은 검증 인프라 완성 후로?", "회귀(rollback) 경로가 있는가?"], AMBER),
+    ("1", "워크로드 경계", ["어느 VM을 남기고, 무엇을 컨테이너로?", "의존성·라이선스·레거시 미들웨어 제약은?", "컨테이너화할 팀 역량은 충분한가?"], PURPLE, "0.30", PURPLE_D, PURPLE_L),
+    ("2", "운영 통합 수준", ["인증·로그·백업·네트워크를 얼마나 하나로?", "통합 1점당 검증 범위가 커지는가?", "단계적 통합 로드맵은 있는가?"], BLUE, "0.30", BLUE_D, BLUE_L),
+    ("3", "검증 방법", ["통과/실패 기준을 관측 가능하게 쓸 수 있나?", "측정 전 점수를 보고하지 않는가?", "근거(날짜·출처)가 모든 주장에 붙는가?"], GREEN, "0.25", GREEN_D, GREEN_L),
+    ("4", "마이그레이션 우선순위", ["낮은 위험 + 높은 가치부터인가?", "가장 어려운 것은 검증 인프라 완성 후로?", "회귀(rollback) 경로가 있는가?"], AMBER, "0.15", AMBER_D, AMBER_L),
 ]
-for i, (num, t, qs, acc) in enumerate(axes):
+for i, (num, t, qs, acc, wt, wtd, wtl) in enumerate(axes):
     x = 0.6 + (i % 2) * 6.22
     y = 1.78 + (i // 2) * 2.52
     card = rect(s, x, y, 5.9, 2.34, WHITE, line_color=LINE, line_w=1.25, rounded=True, radius=0.05)
     rect(s, x, y, 0.09, 2.34, acc)
     icon_chip(s, x + 0.26, y + 0.22, 0.46, num, acc, "FFFFFF", size=17)
-    tb(s, x + 0.88, y + 0.2, 4.8, 0.5, [(t, {"size": 17, "color": INK, "bold": True})])
+    tb(s, x + 0.88, y + 0.2, 3.9, 0.5, [(t, {"size": 17, "color": INK, "bold": True})])
+    pill(s, x + 4.55, y + 0.27, 1.1, 0.36, "가중치 %s" % wt, wtd, wtl, size=10)
     lines = [(q, {"size": 12, "color": SUB, "sa": 5, "ls": 1.1}) for q in qs]
     tb(s, x + 0.3, y + 0.85, 5.35, 1.4, lines)
 
@@ -309,7 +310,7 @@ rows = [("기준 (의사결정 축)", "가중치", "점수 (1~5)", "가중합", 
         ("합계", "= 1.00", "—", "= 3.55 *", "제안")]
 ty = 1.85
 for ri, row in enumerate(rows):
-    rh = 0.6
+    rh = 0.52
     colw = [4.9, 1.5, 1.7, 1.6, 1.5]
     cx = 0.6
     for ci, cell in enumerate(row):
@@ -323,17 +324,18 @@ for ri, row in enumerate(rows):
            [(cell, {"size": 12.5 if ri else 12, "color": tc_, "bold": bd, "align": align})], anchor=MSO_ANCHOR.MIDDLE)
         cx += colw[ci]
     ty += rh
-tb(s, 0.6, ty + 0.1, 11.2, 0.35, [("* 점수 3·4·4·3 = 예시 — 실제 채점은 결정자가 입력 (수식은 자동 합산). 가중치 합 1.0 검증됨.", {"size": 11, "color": MUT, "italic": True})])
-tb(s, 0.6, ty + 0.5, 8.9, 1.0, [
-    ("읽는 법: 가중합이 큰 축이 '먼저 답해야 할 질문'이다.", {"size": 13, "color": INK, "bold": True, "sa": 5}),
-    ("예시에서 운영 통합(1.20)·검증 방법(1.00)이 상위에 오르면, 그 두 축의 질문을 먼저 관측 가능한 판정 기준으로 설계해야 한다는 뜻이다.", {"size": 12, "color": SUB, "ls": 1.25}),
-])
-rc = rect(s, 9.85, ty + 0.5, 2.88, 1.0, CARD, rounded=True, radius=0.08)
-shape_text(rc, [
-    ("사용 규칙", {"size": 12, "color": INK, "bold": True, "sa": 3}),
-    ("· 가중치 합 = 1.0 (검증됨) · 점수 1~5", {"size": 10.5, "color": SUB, "sa": 2}),
-    ("· 제안 프레임 — 측정값 아님", {"size": 10.5, "color": AMBER_D}),
-], ml=0.15, mt=0.1)
+tb(s, 0.6, ty + 0.08, 9.0, 0.3, [("* 점수 3·4·4·3 = 예시 — 실제 채점은 결정자가 입력 (수식은 자동 합산) · 가중치 합 1.0 검증됨", {"size": 10.5, "color": MUT, "italic": True})])
+tb(s, 0.6, 5.42, 8.9, 0.32, [("가중합 시각화 — 큰 축이 '먼저 답할 질문'", {"size": 12.5, "color": INK, "bold": True})])
+for i, (lbl, val, col) in enumerate([("경계", 0.90, PURPLE), ("통합", 1.20, BLUE), ("검증", 1.00, GREEN), ("우선순위", 0.45, AMBER)]):
+    y = 5.78 + i * 0.33
+    tb(s, 0.6, y - 0.04, 1.1, 0.3, [(lbl, {"size": 11, "color": SUB, "bold": True, "align": PP_ALIGN.RIGHT})])
+    rect(s, 1.9, y, 5.5, 0.2, "EEF2F7", rounded=True, radius=0.5)
+    rect(s, 1.9, y, 5.5 * val / 1.5, 0.2, col, rounded=True, radius=0.5)
+    tb(s, 7.5, y - 0.04, 0.8, 0.3, [("%.2f" % val, {"size": 11, "color": INK, "bold": True})])
+rect(s, 9.85, 5.42, 2.88, 1.45, CARD, rounded=True, radius=0.08)
+tb(s, 9.85, 5.52, 2.88, 0.3, [("예시 가중합 총점", {"size": 11, "color": MUT, "bold": True, "align": PP_ALIGN.CENTER})])
+tb(s, 9.85, 5.8, 2.88, 0.65, [("3.55 *", {"size": 32, "color": BLUE_D, "bold": True, "align": PP_ALIGN.CENTER})])
+tb(s, 9.85, 6.46, 2.88, 0.35, [("· 제안 프레임 — 측정값 아님", {"size": 10, "color": AMBER_D, "align": PP_ALIGN.CENTER})])
 
 # ===== S8 pipeline =====
 s = new_slide(); header(s, "07 · 프로세스 (PROCESS)", "8단계 파이프라인 → 산출물 8종", 8)
@@ -357,56 +359,57 @@ tb(s, 0.6, 5.25, 12.1, 1.4, [
 
 # ===== S9 gates =====
 s = new_slide(); header(s, "08 · 검증 (GATES)", "형식별 검증 게이트 + 이번 실행 결과", 9)
-grows = [("PPTX", "12슬라이드 (요구 10~12) · 구조 검사 · 전 슬라이드 렌더(겹침·잘림 0)", "PASS"),
-         ("DOCX", "구조 검사 · 표 무결성 · 전 페이지 렌더 (스타일링)", "PASS"),
-         ("XLSX", "수식 재계산 · 3시트 · 가중치 합 1.0 확인", "PASS"),
-         ("PDF", "변환 성공 · 헤더 %PDF 검증 · 원본 DOCX 렌더 기준", "PASS"),
-         ("HWPX", "생성 도구 부재 → unavailable 명시 (생성 안 함)", "unavailable")]
-ty = 1.85
-for ri, (fmt, gate, res) in enumerate(grows):
-    rh = 0.78
-    widths = [1.3, 7.4, 3.43]
-    cx = 0.6
-    vals = [fmt, gate, res]
-    for ci in range(3):
-        fc = WHITE if ri % 2 else CARD
-        tc_ = INK if ci < 2 else (GREEN_D if res == "PASS" else RED)
-        rect(s, cx, ty, widths[ci], rh, fc, line_color=LINE, line_w=0.75)
-        align = PP_ALIGN.LEFT if ci in (0, 1) else PP_ALIGN.CENTER
-        tb(s, cx + (0.18 if ci < 2 else 0.05), ty, widths[ci] - 0.25, rh,
-           [(vals[ci], {"size": 13 if ci < 2 else 13.5, "color": tc_, "bold": True, "align": align})], anchor=MSO_ANCHOR.MIDDLE)
-        cx += widths[ci]
-    ty += rh
-tb(s, 0.6, ty + 0.1, 12.1, 0.6, [("검증 도구: LibreOffice Kit (구조 검사 · 렌더 · 재계산 · 변환) — 전 결과: 08-verification-log.md", {"size": 11, "color": MUT})])
+grows = [("PPTX", "12슬라이드 (요구 10~12) · 구조 검사 · 전 슬라이드 렌더 · 시각 실독 9장", "PASS", "✓", GREEN, GREEN_L),
+         ("DOCX", "네이비 커버·상태색 표 · 구조 검사 · 3/3 페이지 렌더", "PASS", "✓", GREEN, GREEN_L),
+         ("XLSX", "3시트 · 수식 재계산 — 가중치 합 1.0 확인 (B8)", "PASS", "✓", GREEN, GREEN_L),
+         ("PDF", "변환 성공 · 헤더 %PDF 검증 (원본 DOCX 렌더 기준)", "PASS", "✓", GREEN, GREEN_L),
+         ("HWPX", "생성 도구 부재 → unavailable 명시 (생성 안 함 · 게이트 규칙)", "unavailable", "!", RED, RED_L)]
+for i, (fmt, gate, res, g, col, bgc) in enumerate(grows):
+    y = 1.85 + i * 1.0
+    rect(s, 0.6, y, 12.13, 0.86, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.1)
+    icon_chip(s, 0.85, y + 0.22, 0.42, g, col, "FFFFFF", size=16)
+    tb(s, 1.5, y, 1.1, 0.86, [(fmt, {"size": 15, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
+    tb(s, 2.75, y, 7.4, 0.86, [(gate, {"size": 12.5, "color": SUB})], anchor=MSO_ANCHOR.MIDDLE)
+    pill(s, 10.35, y + 0.22, 2.1, 0.42, res, col, bgc, size=12)
 
-# ===== S10 limits =====
-s = new_slide(); header(s, "09 · 한계 (LIMITS)", "한계와 미수행 — 정직하게", 10)
-lims = [
-    ("설치·클러스터 구동·기능/성능 실측", "미수행 — 별도 세션의 재실측 체크리스트로 이관"),
-    ("설계 세부 (F3) · 지원 범위 (F4)", "공식 문서 HTTP 403 — 미검증 라벨 유지, 재실측 필요"),
-    ("수치·기능 주장", "0건 — 측정값·확인일·출처·재현 방법이 함께 올 때만 허용"),
-    ("HWPX 산출물", "생성 도구 부재 — unavailable으로 보고 (숨기지 않음)"),
-    ("렌더 기준", "LibreOffice 기준 — PowerPoint·한컴오피스와의 픽셀 일치 보장 아님"),
-]
-for i, (t, d) in enumerate(lims):
-    y = 1.85 + i * 0.95
-    rect(s, 0.6, y, 12.13, 0.82, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.1)
-    rect(s, 0.6, y, 0.09, 0.82, RED)
-    tb(s, 0.9, y, 4.6, 0.82, [(t, {"size": 14, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-    tb(s, 5.7, y, 6.9, 0.82, [(d, {"size": 12.5, "color": SUB})], anchor=MSO_ANCHOR.MIDDLE)
+# ===== S10 limits + next steps (merged) =====
+s = new_slide(); header(s, "09 · 한계 + 다음 단계 (LIMITS + NEXT)", "정직한 한계, 그리고 그 다음 4걸음", 10)
+rect(s, 0.6, 1.8, 5.95, 5.0, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.05)
+rect(s, 0.6, 1.8, 0.09, 5.0, RED)
+icon_chip(s, 0.9, 2.05, 0.4, "!", RED, "FFFFFF", size=15)
+tb(s, 1.45, 2.02, 4.9, 0.45, [("미수행 · 미검증 — 지금 못 하는 것", {"size": 15, "color": INK, "bold": True})])
+for i, t in enumerate(["설치·클러스터 구동·기능/성능 실측", "F3(설계 세부)·F4(지원 범위) — 403, 재실측 필요", "수치·기능 주장 0건 (근거 4요소 갖춰야 진입)", "HWPX 산출물 — 도구 부재, unavailable 명시", "타 앱(파워포인트·한컴) 픽셀 일치 보장"]):
+    y = 2.68 + i * 0.8
+    oval(s, 0.95, y + 0.09, 0.12, 0.12, RED)
+    tb(s, 1.2, y - 0.06, 5.15, 0.75, [(t, {"size": 11.5, "color": SUB, "ls": 1.1})])
+rect(s, 6.78, 1.8, 5.95, 5.0, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.05)
+rect(s, 6.78, 1.8, 0.09, 5.0, BLUE)
+icon_chip(s, 7.08, 2.05, 0.4, "→", BLUE, "FFFFFF", size=15)
+tb(s, 7.63, 2.02, 4.9, 0.45, [("재실측 체크리스트 — 그 다음 4걸음", {"size": 15, "color": INK, "bold": True})])
+for i, (n, t, d) in enumerate([("1", "공식 문서 재실측", "F3·F4를 확인/미검증으로 재분류"),
+                               ("2", "설치·클러스터 실습", "공존 실행 → 기능 검증 (성능 벤치는 조건 명시)"),
+                               ("3", "수치 주장 허용", "실측값+확인일+출처+재현 4요소 갖출 때"),
+                               ("4", "산출물 v2 갱신", "재구성된 근거표로 8종 재생성 → paired 비교")]):
+    y = 2.68 + i * 1.0
+    icon_chip(s, 7.08, y + 0.05, 0.4, n, BLUE, "FFFFFF", size=14)
+    tb(s, 7.63, y - 0.05, 4.9, 0.4, [(t, {"size": 13, "color": INK, "bold": True})])
+    tb(s, 7.63, y + 0.3, 4.9, 0.6, [(d, {"size": 10.5, "color": SUB, "ls": 1.1})])
 
-# ===== S11 next steps =====
-s = new_slide(); header(s, "10 · 다음 단계 (NEXT)", "재실측 체크리스트 (별도 세션)", 11)
-for i, (n, t, d) in enumerate([
-    ("1", "공식 설계 문서 재실측", "접근 경로 교체로 docs 재취득 → F3·F4를 확인/미검증으로 재분류"),
-    ("2", "설치·클러스터 실습", "별도 세션에서 VM/컨테이너 공존 실행 → 기능 검증 (성능 벤치는 명시된 조건과 함께)"),
-    ("3", "수치·기능 주장 허용", "실측값 + 확인일 + 출처 + 재현 방법이 함께 있을 때만 산출물에 진입"),
-    ("4", "산출물 v2 갱신", "재구성된 근거표로 8종 재생성 → 이전 버전과 paired 비교")]):
-    y = 1.9 + i * 1.18
-    rect(s, 0.6, y, 12.13, 1.0, CARD, rounded=True, radius=0.1)
-    icon_chip(s, 0.85, y + 0.22, 0.56, n, BLUE, "FFFFFF", size=18)
-    tb(s, 1.75, y, 4.3, 1.0, [(t, {"size": 15.5, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-    tb(s, 6.1, y, 6.5, 1.0, [(d, {"size": 12, "color": SUB, "ls": 1.2})], anchor=MSO_ANCHOR.MIDDLE)
+# ===== S11 conclusion =====
+s = new_slide(); header(s, "10 · 결론 (CONCLUSION)", "지금 이 자리에서 — 아는 것, 모르는 것, 해야 할 것", 11)
+for x, acc, g, title, lines in [
+    (0.6, GREEN, "✓", "확인 — 방향은 확인됨", ["F1: VM+컨테이너 통합 운영은 제품 설명(200)", "F2: 가상화 정의 — 하이퍼바이저 기반(200)", "→ '공존'은 근거 있는 방향, 추측 아님"]),
+    (4.78, RED, "!", "미검증 — 아직 못 말하는 것", ["F3: 설계 세부 (API·컴포넌트) — 403", "F4: 지원 범위 (버전·플랫폼) — 403", "→ 재실측 전 어떤 수치도 주장하지 않음"]),
+    (8.96, AMBER, "?", "제안 — 판단의 틀", ["F5: 4축 + 가중치 프레임 (측정값 아님)", "XLSX(06): 채점 구조 자동화", "→ 실측 데이터가 들어야 비로소 결정"])]:
+    card = rect(s, x, 1.8, 3.77, 3.6, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.05)
+    rect(s, x, 1.8, 3.77, 0.12, acc)
+    icon_chip(s, x + 0.25, 2.18, 0.46, g, acc, "FFFFFF", size=17)
+    tb(s, x + 0.85, 2.16, 2.85, 0.55, [(title, {"size": 14, "color": INK, "bold": True})])
+    tl = [(t, {"size": 11, "color": (SUB if not t.startswith("→") else acc), "bold": t.startswith("→"), "sa": 7, "ls": 1.2}) for t in lines]
+    tb(s, x + 0.28, 2.95, 3.25, 2.35, tl)
+strip = rect(s, 0.6, 5.75, 12.13, 0.95, NAVY, rounded=True, radius=0.09)
+tb(s, 0.95, 5.88, 11.5, 0.4, [("지금 내려야 할 결정", {"size": 13, "color": NAVY_TX2, "bold": True})])
+tb(s, 0.95, 6.22, 11.5, 0.45, [("① F3·F4 재실측  →  ② 4축에 실측 데이터로 채점  →  ③ 그 순서로 경계 결정", {"size": 15.5, "color": WHITE, "bold": True})])
 
 # ===== S12 closing =====
 s = new_slide(NAVY)
@@ -533,20 +536,27 @@ dset(p.add_run(), "1 근거표 · 2 심층 글(02) · 3 인포그래픽(03) · 4
 
 dhead(doc, "6. 검증 요약")
 p = doc.add_paragraph()
-dset(p.add_run(), "PPTX·DOCX·XLSX 구조 검사 통과, PPTX 12슬라이드 전 렌더(겹침·잘림 0, 표본 시각 실독), XLSX 수식 재계산(가중치 합 1.0), PDF 변환·헤더 검증. 전 결과: 08-verification-log.md.", size=10.5, color=INK)
+dset(p.add_run(), "PPTX·DOCX·XLSX 구조 검사 통과, PPTX 12슬라이드 전 렌더(겹침·잘림·가림 0, 시각 실독 9장), XLSX 수식 재계산(가중치 합 1.0), PDF 변환·헤더 검증. 전 결과: 08-verification-log.md.", size=10.5, color=INK)
 
 dhead(doc, "7. 한계")
-for x in ["설치 · 클러스터 구동 · 기능/성능 실측 미수행 (별도 세션 — 재실측 체크리스트는 발표자료 11번 슬라이드)",
+for x in ["설치 · 클러스터 구동 · 기능/성능 실측 미수행 (별도 세션 — 재실측 체크리스트는 발표자료 10번 슬라이드)",
           "F3·F4 미검증 — 공식 문서 403, 재실측 후 수치·기능 주장 허용",
           "렌더는 LibreOffice 기준 — 타 앱 픽셀 일치 보장 아님"]:
     p = doc.add_paragraph(style="List Bullet")
     dset(p.add_run(), x, size=10.5, color=INK)
 
-dhead(doc, "8. 출처")
+dhead(doc, "8. 결론 — 지금 내려야 할 결정")
+p = doc.add_paragraph()
+dset(p.add_run(), "확인(F1·F2): VM+컨테이너 통합 운영 방향은 제품 설명 기반의 확인된 방향이다. 미검증(F3·F4): 설계 세부·지원 범위는 재실측 전까지 주장하지 않는다. 제안(F5): 4축 프레임은 실측 데이터가 채워져야 비로소 결정이 된다. 다음 결정 순서: ① F3·F4 재실측 → ② 4축 실측 채점 → ③ 경계 결정.", size=10.5, color=INK)
+
+dhead(doc, "9. 출처")
 p = doc.add_paragraph()
 dset(p.add_run(), "developers.redhat.com/products/openshift/virtualization (HTTP 200, 2026-11-11 취득) · docs.redhat.com / docs.openshift.com (F3·F4): 403 → 미검증", size=10, color=SUB)
-doc.save(os.path.join(BASE, "05-report.docx"))
-print("DOCX OK")
+try:
+    doc.save(os.path.join(BASE, "05-report.docx"))
+    print("DOCX OK")
+except PermissionError as e:
+    print("DOCX SAVE FAILED (file locked by another process) - XLSX still saved: %s" % e)
 
 # ---------------- XLSX (v2.1 logic) ----------------
 from openpyxl import Workbook
