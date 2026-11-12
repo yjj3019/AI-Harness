@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""OpenShift Virtualization practice (2026-11-11/12) — v3 design build.
-v3 = narrative arc + real diagrams + icon system + ghost typography.
+"""OpenShift Virtualization practice (2026-11-12) — v5 Swiss/editorial design build.
+v5 = design-language overhaul: hairline rules, typographic hierarchy, single accent,
+no card/chip/ghost-number template patterns. Content and evidence discipline unchanged.
 Generates 04-deck.pptx (12 slides), 05-report.docx, 06-decision.xlsx.
 """
 import os
@@ -13,66 +14,53 @@ from pptx.oxml.ns import qn
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
-NAVY = "0B1F3A"; NAVY2 = "12294A"; BLUE = "2563EB"; BLUE_D = "1B3E6B"; BLUE_L = "DBEAFE"
-PURPLE = "7C3AED"; PURPLE_D = "4C1D95"; PURPLE_L = "EDE9FE"
-GREEN = "16A34A"; GREEN_D = "14532D"; GREEN_L = "DCFCE7"
-AMBER = "F59E0B"; AMBER_D = "92400E"; AMBER_L = "FEF3C7"
-RED = "DC2626"; RED_D = "7F1D1D"; RED_L = "FEE2E2"
-CARD = "F1F5F9"; WHITE = "FFFFFF"; INK = "0F172A"; SUB = "475569"; MUT = "64748B"
-LINE = "E2E8F0"; GHOST = "E4EBF4"; NAVY_TX = "9FB6D4"; NAVY_TX2 = "CFE3FF"
-LATIN = "Segoe UI"; EA = "Malgun Gothic"
+# ---------------- palette (ink/paper + single blue accent; status = dots only) ----------------
+INK = "101418"; PAPER = "FFFFFF"; LINE = "D8DDE4"; MUT = "8A93A3"; SUB = "46505E"
+BLUE = "2563EB"
+INK_TX = "F4F7FB"; INK_TX2 = "93A5BE"; INK_LINE = "2A3648"
+GREEN = "16A34A"; GREEN_TX = "157A3C"
+RED = "DC2626"; RED_TX = "B91C1C"
+AMBER = "D97706"; AMBER_TX = "B45309"
+NUM_GHOST = "D5DAE1"
+DISP = "Bahnschrift"; BODY = "Segoe UI"; MONO = "Consolas"; EA = "Malgun Gothic"
+LATIN = BODY
 
 def C(h): return RGBColor.from_string(h)
 
-def _set_run(r, text, size, color, bold=False, italic=False):
+def _set_run(r, text, size, color, bold=False, italic=False, spc=None, disp=False, mono=False):
     r.text = text
     f = r.font
     f.size = Pt(size); f.bold = bold; f.italic = italic
-    f.color.rgb = C(color); f.name = LATIN
+    f.color.rgb = C(color)
+    f.name = DISP if disp else (MONO if mono else BODY)
     rPr = r._r.get_or_add_rPr()
+    if spc is not None: rPr.set("spc", str(spc))
     for tag in ("a:ea", "a:cs"):
         el = rPr.find(qn(tag))
         if el is None:
             el = rPr.makeelement(qn(tag), {}); rPr.append(el)
         el.set("typeface", EA)
 
-def tb(slide, x, y, w, h, lines, anchor=MSO_ANCHOR.TOP, wrap=True,
-       ml=0.0, mr=0.0, mt=0.0, mb=0.0):
+def tb(slide, x, y, w, h, lines, anchor=MSO_ANCHOR.TOP, wrap=True, ml=0.0, mt=0.0):
     box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = box.text_frame
     tf.word_wrap = wrap
     tf.vertical_anchor = anchor
-    tf.margin_left = Inches(ml); tf.margin_right = Inches(mr)
-    tf.margin_top = Inches(mt); tf.margin_bottom = Inches(mb)
+    tf.margin_left = Inches(ml); tf.margin_right = Inches(0.0)
+    tf.margin_top = Inches(mt); tf.margin_bottom = Inches(0.0)
     for i, (t, o) in enumerate(lines):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.alignment = o.get("align", PP_ALIGN.LEFT)
         if o.get("sa"): p.space_after = Pt(o["sa"])
         if o.get("ls"): p.line_spacing = o["ls"]
         _set_run(p.add_run(), t, o.get("size", 16), o.get("color", INK),
-                 o.get("bold", False), o.get("italic", False))
+                 o.get("bold", False), o.get("italic", False),
+                 o.get("spc"), o.get("disp", False), o.get("mono", False))
     return box
 
-def rect(slide, x, y, w, h, fill, line_color=None, line_w=1.0, rounded=False, radius=0.08):
-    shp = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE if rounded else MSO_SHAPE.RECTANGLE,
+def rect(slide, x, y, w, h, fill, line_color=None, line_w=1.0):
+    shp = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
         Inches(x), Inches(y), Inches(w), Inches(h))
-    if rounded:
-        try: shp.adjustments[0] = radius
-        except Exception: pass
-    if fill is None:
-        shp.fill.background()
-    else:
-        shp.fill.solid(); shp.fill.fore_color.rgb = C(fill)
-    if line_color is None:
-        shp.line.fill.background()
-    else:
-        shp.line.color.rgb = C(line_color); shp.line.width = Pt(line_w)
-    shp.shadow.inherit = False
-    return shp
-
-def oval(slide, x, y, w, h, fill, line_color=None, line_w=1.0):
-    shp = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x), Inches(y), Inches(w), Inches(h))
     if fill is None: shp.fill.background()
     else: shp.fill.solid(); shp.fill.fore_color.rgb = C(fill)
     if line_color is None: shp.line.fill.background()
@@ -80,360 +68,320 @@ def oval(slide, x, y, w, h, fill, line_color=None, line_w=1.0):
     shp.shadow.inherit = False
     return shp
 
-def shape_text(shp, lines, anchor=MSO_ANCHOR.MIDDLE, ml=0.15, mt=0.05):
-    tf = shp.text_frame
-    tf.word_wrap = True
-    tf.vertical_anchor = anchor
-    tf.margin_left = Inches(ml); tf.margin_right = Inches(0.12)
-    tf.margin_top = Inches(mt); tf.margin_bottom = Inches(0.05)
-    for i, (t, o) in enumerate(lines):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.alignment = o.get("align", PP_ALIGN.LEFT)
-        if o.get("sa"): p.space_after = Pt(o["sa"])
-        if o.get("ls"): p.line_spacing = o["ls"]
-        _set_run(p.add_run(), t, o.get("size", 14), o.get("color", INK),
-                 o.get("bold", False))
-
-def icon_chip(slide, x, y, d, glyph, bg, fg, size=None):
-    o = oval(slide, x, y, d, d, bg)
-    shape_text(o, [(glyph, {"size": size or int(d * 26), "color": fg, "bold": True,
-                            "align": PP_ALIGN.CENTER})], ml=0.0, mt=0.0)
+def dot(slide, x, y, d, color):
+    o = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x), Inches(y), Inches(d), Inches(d))
+    o.fill.solid(); o.fill.fore_color.rgb = C(color)
+    o.line.fill.background(); o.shadow.inherit = False
     return o
 
-def pill(slide, x, y, w, h, text, fg, bg, size=11, bold=True, line_color=None):
-    p = rect(slide, x, y, w, h, bg, line_color=line_color, rounded=True, radius=0.5)
-    shape_text(p, [(text, {"size": size, "color": fg, "bold": bold, "align": PP_ALIGN.CENTER})], ml=0.02)
-    return p
+def tri_down(slide, x, y, w, h, color):
+    t = slide.shapes.add_shape(MSO_SHAPE.ISOSCELES_TRIANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
+    t.rotation = 180
+    t.fill.solid(); t.fill.fore_color.rgb = C(color)
+    t.line.fill.background(); t.shadow.inherit = False
+    return t
 
-def vm_icon(slide, x, y, color):
-    for i in range(3):
-        rect(slide, x, y + i * 0.24, 0.52, 0.17, color, rounded=True, radius=0.3)
+def hairline(slide, x, y, w, color=LINE, h=0.011):
+    rect(slide, x, y, w, h, color)
 
-def ct_icon(slide, x, y, color):
-    rect(slide, x, y + 0.18, 0.42, 0.26, color, rounded=True, radius=0.25)
-    rect(slide, x + 0.12, y, 0.42, 0.26, color, rounded=True, radius=0.25)
+META5 = "OPENSHIFT VIRTUALIZATION · 2026-11-11 · 근거 01-facts.md"
+
+def chrome(slide, kicker, title, page):
+    rect(slide, 0.9, 0.665, 0.09, 0.09, BLUE)
+    tb(slide, 1.12, 0.56, 10.5, 0.3, [(kicker.upper(), {"size": 9.5, "color": MUT, "bold": True, "spc": 200})])
+    tb(slide, 0.88, 0.9, 11.6, 0.7, [(title, {"size": 27, "color": INK, "bold": True})])
+    tb(slide, 0.9, 7.16, 8.0, 0.28, [(META5, {"size": 8.5, "color": MUT, "spc": 60})])
+    tb(slide, 11.03, 7.16, 1.4, 0.28, [("%02d / 12" % page, {"size": 8.5, "color": MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
+
+def etable(slide, x, y, colw, header, rows, row_h=0.56, aligns=None, num_cols=(), body_size=11.5, bold_first=False):
+    cx = x
+    for i, htxt in enumerate(header):
+        al = aligns[i] if aligns else PP_ALIGN.LEFT
+        tb(slide, cx + 0.02, y, colw[i] - 0.04, 0.3,
+           [(htxt.upper(), {"size": 9, "color": MUT, "bold": True, "spc": 140, "align": al})])
+        cx += colw[i]
+    rect(slide, x, y + 0.36, sum(colw), 0.022, INK)
+    yy = y + 0.36
+    for ri, row in enumerate(rows):
+        cx = x
+        for i, cell in enumerate(row):
+            al = aligns[i] if aligns else PP_ALIGN.LEFT
+            tb(slide, cx + 0.02, yy + 0.05, colw[i] - 0.04, row_h - 0.08,
+               [(str(cell), {"size": body_size, "color": INK, "mono": i in num_cols,
+                             "bold": (bold_first and i == 0), "align": al})], anchor=MSO_ANCHOR.MIDDLE)
+            cx += colw[i]
+        hairline(slide, x, yy + row_h, sum(colw))
+        yy += row_h
+    return yy
 
 SW, SH = 13.333, 7.5
-META = "OpenShift Virtualization 실습 · 2026-11-11 · 근거: 01-facts.md"
-
-def header(slide, kicker, title, n):
-    rect(slide, 0.6, 0.46, 0.11, 0.11, BLUE)
-    tb(slide, 0.8, 0.4, 9.0, 0.3, [(kicker, {"size": 11, "color": MUT, "bold": True})])
-    tb(slide, 0.6, 0.66, 10.5, 0.7, [(title, {"size": 27, "color": INK, "bold": True})])
-    rect(slide, 0.62, 1.4, 0.5, 0.05, BLUE)
-    tb(slide, 10.2, 0.12, 2.5, 1.3, [("%02d" % n, {"size": 84, "color": GHOST, "bold": True, "align": PP_ALIGN.RIGHT})])
-    rect(slide, 0.6, 7.06, 12.13, 0.012, LINE)
-    tb(slide, 0.6, 7.12, 8.0, 0.3, [(META, {"size": 9, "color": MUT})])
-    tb(slide, 11.6, 7.12, 1.13, 0.3, [("%02d / 12" % n, {"size": 9, "color": MUT, "align": PP_ALIGN.RIGHT})])
-
 prs = Presentation()
 prs.slide_width = Inches(SW); prs.slide_height = Inches(SH)
 blank = prs.slide_layouts[6]
-def new_slide(bg=WHITE):
+def new_slide(bg=PAPER):
     s = prs.slides.add_slide(blank)
-    if bg: rect(s, 0, 0, SW, SH, bg)
+    rect(s, 0, 0, SW, SH, bg)
     return s
 
-# ===== S1 cover =====
-s = new_slide(NAVY)
-rect(s, 9.55, 0, 3.78, SH, NAVY2)
-rect(s, 9.55, 0, 0.02, SH, BLUE)
-rect(s, 0, 0, SW, 0.1, BLUE)
-tb(s, 0.9, 1.05, 11.0, 0.4, [("TECH DECISION BRIEF · 2026-11-11", {"size": 13, "color": NAVY_TX, "bold": True})])
-tb(s, 0.85, 1.55, 8.5, 1.6, [("OpenShift", {"size": 58, "color": WHITE, "bold": True}),
-                             ("Virtualization", {"size": 58, "color": WHITE, "bold": True})])
-tb(s, 0.9, 3.5, 8.3, 0.5, [("가상 머신과 컨테이너의 공존 — 설계 선택과 검증 실습", {"size": 20, "color": NAVY_TX2})])
-rect(s, 0.92, 4.28, 0.7, 0.06, BLUE)
-pills = [
-    (0.9, "✓", GREEN, "확인 2 — F1·F2", "86EFAC", 2.75),
-    (3.85, "!", RED, "미검증 2 — F3·F4 (403)", "FCA5A5", 3.1),
-    (7.05, "?", AMBER, "제안 1 — F5", "FCD34D", 2.4),
-]
-for x, g, col, txt, fg, w in pills:
-    rect(s, x, 4.75, w, 0.6, "0E2A45", line_color="24466B", line_w=1, rounded=True, radius=0.5)
-    icon_chip(s, x + 0.17, 4.89, 0.32, g, col, "FFFFFF", size=14)
-    tb(s, x + 0.58, 4.75, w - 0.7, 0.6, [(txt, {"size": 12, "color": fg, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-tb(s, 0.9, 6.55, 8.3, 0.4, [("통합 산출물 8종 · 구조·렌더·재계산 검증 (08-verification-log.md)", {"size": 11.5, "color": NAVY_TX})])
-tb(s, 9.95, 2.2, 3.0, 1.2, [("8", {"size": 88, "color": NAVY_TX2, "bold": True, "align": PP_ALIGN.CENTER})])
-tb(s, 9.95, 3.55, 3.0, 0.4, [("산출물 (종)", {"size": 14, "color": NAVY_TX, "bold": True, "align": PP_ALIGN.CENTER})])
-rect(s, 10.35, 4.15, 2.2, 0.02, "24466B")
-tb(s, 9.95, 4.4, 3.0, 1.6, [
-    ("근거  01-facts.md", {"size": 11, "color": NAVY_TX, "align": PP_ALIGN.CENTER, "sa": 6}),
-    ("검증  08-verification-log.md", {"size": 11, "color": NAVY_TX, "align": PP_ALIGN.CENTER, "sa": 6}),
-    ("형식 게이트  format-gate.md", {"size": 11, "color": NAVY_TX, "align": PP_ALIGN.CENTER}),
+# ===== S1 cover (ink) =====
+s = new_slide(INK)
+rect(s, 0, 0, SW, 0.05, BLUE)
+tb(s, 0.9, 0.78, 6.0, 0.3, [("TECH DECISION BRIEF", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})])
+tb(s, 6.43, 0.78, 5.1, 0.3, [("2026-11-11", {"size": 10, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
+hairline(s, 0.9, 1.42, 11.53, INK_LINE)
+tb(s, 0.86, 2.3, 11.8, 2.3, [
+    ("OpenShift", {"size": 64, "color": PAPER, "bold": True, "disp": True}),
+    ("Virtualization", {"size": 64, "color": PAPER, "bold": True, "disp": True}),
 ])
+tb(s, 0.9, 4.72, 11.0, 0.5, [("가상 머신과 컨테이너의 공존 — 설계 선택과 검증 실습", {"size": 16, "color": "C7D2E0"})])
+dot(s, 0.92, 5.66, 0.09, GREEN); tb(s, 1.18, 5.56, 2.6, 0.3, [("확인 2 — F1 · F2", {"size": 10.5, "color": INK_TX, "spc": 60})])
+dot(s, 3.75, 5.66, 0.09, RED); tb(s, 4.01, 5.56, 3.3, 0.3, [("미검증 2 — F3 · F4 (403)", {"size": 10.5, "color": INK_TX, "spc": 60})])
+dot(s, 7.6, 5.66, 0.09, AMBER); tb(s, 7.86, 5.56, 2.4, 0.3, [("제안 1 — F5", {"size": 10.5, "color": INK_TX, "spc": 60})])
+hairline(s, 0.9, 6.82, 11.53, INK_LINE)
+tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 8종 · 구조 · 렌더 · 재계산 검증 — 08-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})])
+tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
 
-# ===== S2 the decision =====
-s = new_slide(); header(s, "01 · 질문 (QUESTION)", "내려야 할 결정 — 분리, 아니면 공존?", 2)
-tb(s, 0.6, 1.75, 6.4, 0.9, [
-    ("레거시 VM과 새 컨테이너 서비스를", {"size": 17, "color": INK, "bold": True}),
-    ("플랫폼을 나눠서 돌릴 것인가, 하나로 합칠 것인가.", {"size": 17, "color": INK, "bold": True}),
+# ===== S2 question =====
+s = new_slide(); chrome(s, "01 — 질문 Question", "내려야 할 결정 — 분리, 아니면 공존?", 2)
+tb(s, 0.9, 1.95, 6.9, 1.5, [
+    ("레거시 VM과 컨테이너를", {"size": 24, "color": INK, "bold": True, "ls": 1.15}),
+    ("하나의 플랫폼으로 합칠 것인가.", {"size": 24, "color": BLUE, "bold": True, "ls": 1.15}),
 ])
-sc = rect(s, 0.6, 2.75, 6.4, 1.75, AMBER_L, rounded=True, radius=0.07)
-rect(s, 0.6, 2.75, 0.09, 1.75, AMBER)
-shape_text(sc, [
-    ("예시 (가설 — 사실 아님)", {"size": 11, "color": AMBER_D, "bold": True, "sa": 4}),
-    ("레거시 VM 40대 · 컨테이너 서비스 30개 · 운영 팀 1개. 분리하면 도구·정책·당직이 ×2. 공존하면 한 플랫폼이지만 — 경계를 근거로 결정해야 한다.", {"size": 12.5, "color": INK, "ls": 1.3}),
-], ml=0.22, mt=0.14)
-tb(s, 0.6, 4.55, 6.4, 0.4, [("이 덱이 답하는 것", {"size": 13.5, "color": INK, "bold": True})])
-ans = [
-    ("✓", GREEN, "근거 현황 — 무엇을 확인했고, 무엇이 미검증인가 (F1~F5)"),
-    ("?", AMBER, "결정 프레임 — 4개 축 + 가중치 채점 (제안)"),
-    ("✓", GREEN, "검증 계획 — 형식별 게이트와 남은 한계"),
-]
-for i, (g, col, txt) in enumerate(ans):
-    y = 5.0 + i * 0.5
-    icon_chip(s, 0.62, y + 0.04, 0.3, g, col, "FFFFFF", size=13)
-    tb(s, 1.05, y, 5.95, 0.48, [(txt, {"size": 12.5, "color": SUB})], anchor=MSO_ANCHOR.MIDDLE)
-tb(s, 7.4, 1.75, 5.3, 0.4, [("그 결정은 3개의 질문에 있다", {"size": 13.5, "color": INK, "bold": True})])
-for i, (n, t, d) in enumerate([("1", "경계", "무엇을 VM으로, 무엇을 컨테이너로"),
-                               ("2", "통합", "운영 체계를 어디까지 하나로"),
-                               ("3", "검증", "통과/실패를 어떻게 관측할 것인가")]):
-    y = 2.25 + i * 1.12
-    card = rect(s, 7.4, y, 5.33, 0.98, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.1)
-    icon_chip(s, 7.62, y + 0.27, 0.44, n, NAVY, "FFFFFF", size=16)
-    tb(s, 8.25, y + 0.12, 1.4, 0.7, [(t, {"size": 16, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-    tb(s, 9.65, y + 0.12, 2.95, 0.7, [(d, {"size": 11, "color": SUB, "ls": 1.15})], anchor=MSO_ANCHOR.MIDDLE)
-strip = rect(s, 0.6, 6.55, 12.13, 0.5, NAVY, rounded=True, radius=0.14)
-shape_text(strip, [("이 덱에는 수치가 없다 — 수치는 실측값 + 확인일 + 출처 + 재현 방법이 함께 있을 때만 등장한다.", {"size": 12.5, "color": WHITE, "bold": True, "align": PP_ALIGN.CENTER})], ml=0.2)
+rect(s, 0.9, 3.78, 0.028, 1.42, BLUE)
+tb(s, 1.22, 3.74, 6.4, 0.3, [("예시 — 가설, 사실 아님", {"size": 9, "color": MUT, "bold": True, "spc": 180})])
+tb(s, 1.22, 4.06, 6.3, 1.1, [("레거시 VM 40대 · 컨테이너 서비스 30개 · 운영 팀 1개. 분리하면 도구·정책·당직이 ×2, 공존하면 한 플랫폼이지만 — 경계를 근거로 결정해야 한다.", {"size": 12.5, "color": SUB, "ls": 1.3})])
+tb(s, 0.9, 5.5, 6.5, 0.3, [("이 덱이 답하는 것", {"size": 9.5, "color": MUT, "bold": True, "spc": 180})])
+for i, (c, t) in enumerate([(GREEN, "근거 현황 — 무엇을 확인했고, 무엇이 미검증인가 (F1~F5)"),
+                            (AMBER, "결정 프레임 — 4개 축 + 가중치 채점 (제안)"),
+                            (GREEN, "검증 계획 — 형식별 게이트와 남은 한계")]):
+    y = 5.88 + i * 0.4
+    dot(s, 0.92, y + 0.08, 0.08, c)
+    tb(s, 1.2, y - 0.02, 6.3, 0.35, [(t, {"size": 12, "color": SUB})])
+tb(s, 8.0, 1.95, 4.4, 0.3, [("그 결정은 3개의 질문에 있다", {"size": 9.5, "color": MUT, "bold": True, "spc": 180})])
+for i, (n, t, d) in enumerate([("01", "경계", "무엇을 VM으로, 무엇을 컨테이너로"),
+                               ("02", "통합", "운영 체계를 어디까지 하나로"),
+                               ("03", "검증", "통과/실패를 어떻게 관측할 것인가")]):
+    y = 2.42 + i * 1.32
+    tb(s, 8.0, y - 0.06, 1.3, 0.7, [(n, {"size": 30, "color": NUM_GHOST, "disp": True, "bold": True})])
+    tb(s, 9.35, y, 3.05, 0.4, [(t, {"size": 16, "color": INK, "bold": True})])
+    tb(s, 9.35, y + 0.42, 3.05, 0.7, [(d, {"size": 10.5, "color": SUB, "ls": 1.2})])
+    if i < 2: hairline(s, 8.0, y + 1.12, 4.43)
+tb(s, 8.0, 6.5, 4.43, 0.6, [("이 덱에는 수치가 없다 — 수치는 실측값 + 확인일 + 출처 + 재현 방법이 함께 있을 때만 등장한다.", {"size": 10, "color": MUT, "italic": True, "ls": 1.25})])
 
-# ===== S3 evidence =====
-s = new_slide(); header(s, "02 · 근거 (EVIDENCE)", "근거 실측 현황 (2026-11-11 취득)", 3)
-ev = [("F1", "확인", GREEN, GREEN_L, "컨테이너(모던) 워크로드와 함께 VM을 마이그레이션·실행·관리 — 제품 설명", "developers.redhat.com · HTTP 200"),
-      ("F2", "확인", GREEN, GREEN_L, "하이퍼바이저가 물리 하드웨어에 여러 VM 생성 · 자원 풀링·이동 — 가상화 일반 정의", "developers.redhat.com · HTTP 200"),
-      ("F3", "미검증", RED, RED_L, "설계 세부 (컴포넌트 구성 · 특정 API · 라이브 마이그레이션 동작)", "docs.redhat.com · HTTP 403 → 재실측 필요"),
-      ("F4", "미검증", RED, RED_L, "지원 범위 (버전 · 플랫폼)", "docs.redhat.com · HTTP 403 → 재실측 필요"),
-      ("F5", "제안", AMBER, AMBER_L, "의사결정 4축 · 파이프라인 8단계 — 본 저장소 헌법 기반 프레임 (측정값 아님)", "본 저장소 AGENTS.md")]
-for i, (fid, st, acc, bgc, desc, src) in enumerate(ev):
-    y = 1.8 + i * 1.02
-    rect(s, 0.6, y, 12.13, 0.9, CARD, rounded=True, radius=0.12)
-    rect(s, 0.6, y, 0.09, 0.9, acc)
-    tb(s, 0.85, y, 0.8, 0.9, [(fid, {"size": 22, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-    g = {"확인": "✓", "미검증": "!", "제안": "?"}[st]
-    pill(s, 1.75, y + 0.24, 1.35, 0.42, g + " " + st, acc if st != "제안" else AMBER_D, bgc, size=11)
-    tb(s, 3.4, y, 5.85, 0.9, [(desc, {"size": 13.5, "color": INK, "ls": 1.1})], anchor=MSO_ANCHOR.MIDDLE)
-    tb(s, 9.35, y, 3.25, 0.9, [(src, {"size": 10.5, "color": MUT})], anchor=MSO_ANCHOR.MIDDLE)
+# ===== S3 evidence (editorial table) =====
+s = new_slide(); chrome(s, "02 — 근거 Evidence", "근거 실측 현황 — 2026-11-11 취득", 3)
+dot(s, 0.92, 1.8, 0.08, GREEN); tb(s, 1.12, 1.7, 1.5, 0.3, [("확인", {"size": 10, "color": SUB, "spc": 80})])
+dot(s, 1.95, 1.8, 0.08, RED); tb(s, 2.15, 1.7, 1.7, 0.3, [("미검증", {"size": 10, "color": SUB, "spc": 80})])
+dot(s, 3.45, 1.8, 0.08, AMBER); tb(s, 3.65, 1.7, 1.5, 0.3, [("제안", {"size": 10, "color": SUB, "spc": 80})])
+ev = [("F1", "확인", GREEN, GREEN_TX, "컨테이너(모던) 워크로드와 함께 VM을 마이그레이션·실행·관리 — 제품 설명", "developers.redhat.com · HTTP 200"),
+      ("F2", "확인", GREEN, GREEN_TX, "하이퍼바이저가 물리 하드웨어에 여러 VM 생성 · 자원 풀링·이동 — 가상화 일반 정의", "developers.redhat.com · HTTP 200"),
+      ("F3", "미검증", RED, RED_TX, "설계 세부 (컴포넌트 구성 · 특정 API · 라이브 마이그레이션 동작)", "docs.redhat.com · HTTP 403"),
+      ("F4", "미검증", RED, RED_TX, "지원 범위 (버전 · 플랫폼)", "docs.redhat.com · HTTP 403"),
+      ("F5", "제안", AMBER, AMBER_TX, "의사결정 4축 · 파이프라인 8단계 — 본 저장소 헌법 기반 프레임 (측정값 아님)", "본 저장소 AGENTS.md")]
+tx, ty = 0.9, 2.2
+colw = [0.8, 6.15, 2.15, 2.43]
+for i, htxt in enumerate(["#", "내용", "상태", "근거"]):
+    al = PP_ALIGN.RIGHT if i == 3 else PP_ALIGN.LEFT
+    tb(s, tx, ty, colw[i], 0.3, [(htxt.upper(), {"size": 9, "color": MUT, "bold": True, "spc": 140, "align": al})])
+    tx += colw[i]
+rect(s, 0.9, ty + 0.36, 11.53, 0.022, INK)
+yy = ty + 0.36
+stx = 0.9 + colw[0] + colw[1]
+srx = stx + colw[2]
+for fid, st, dc, dtc, desc, src in ev:
+    rh = 0.82
+    tb(s, 0.92, yy + 0.05, colw[0] - 0.04, rh - 0.1, [(fid, {"size": 13, "color": INK, "mono": True, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
+    tb(s, 0.9 + colw[0] + 0.05, yy + 0.05, colw[1] - 0.1, rh - 0.1, [(desc, {"size": 12, "color": INK, "ls": 1.15})], anchor=MSO_ANCHOR.MIDDLE)
+    dot(s, stx + 0.05, yy + rh / 2 - 0.04, 0.08, dc)
+    tb(s, stx + 0.22, yy + 0.05, colw[2] - 0.26, rh - 0.1, [(st.upper(), {"size": 9.5, "color": dtc, "bold": True, "spc": 120})], anchor=MSO_ANCHOR.MIDDLE)
+    tb(s, srx + 0.02, yy + 0.05, colw[3] - 0.04, rh - 0.1, [(src, {"size": 9.5, "color": MUT, "mono": True, "align": PP_ALIGN.RIGHT})], anchor=MSO_ANCHOR.MIDDLE)
+    hairline(s, 0.9, yy + rh, 11.53)
+    yy += rh
 
-# ===== S4 concept diagram =====
-s = new_slide(); header(s, "03 · 개념 (CONCEPT)", "통합 운영 개념 — 한 플랫폼, 두 워크로드, 한 운영", 4)
-lane_y, lane_h = 1.72, 2.15
-rect(s, 0.6, lane_y, 5.9, lane_h, WHITE, line_color=PURPLE, line_w=1.75, rounded=True, radius=0.05)
-rect(s, 0.6, lane_y, 0.09, lane_h, PURPLE)
-vm_icon(s, 0.95, lane_y + 0.32, PURPLE)
-tb(s, 1.65, lane_y + 0.2, 4.5, 0.5, [("가상 머신 워크로드", {"size": 18, "color": INK, "bold": True})])
-for j, ch in enumerate(["기존 VM (레거시)", "컨테이너화 어려운 앱"]):
-    cb = rect(s, 1.65 + j * 2.35, lane_y + 0.78, 2.25, 0.5, PURPLE_L, rounded=True, radius=0.2)
-    shape_text(cb, [(ch, {"size": 11.5, "color": PURPLE_D, "bold": True, "align": PP_ALIGN.CENTER})])
-tb(s, 0.95, lane_y + 1.5, 5.2, 0.5, [("하이퍼바이저 기반 가상화 (정의 F2)", {"size": 11.5, "color": SUB})])
-oval(s, 6.02, lane_y + 0.14, 0.14, 0.14, RED)
-tb(s, 5.0, lane_y + 0.06, 1.35, 0.3, [("F3 미검증", {"size": 9, "color": RED_D, "align": PP_ALIGN.RIGHT})])
-rect(s, 6.83, lane_y, 5.9, lane_h, WHITE, line_color=BLUE, line_w=1.75, rounded=True, radius=0.05)
-rect(s, 6.83, lane_y, 0.09, lane_h, BLUE)
-ct_icon(s, 7.18, lane_y + 0.3, BLUE)
-tb(s, 7.88, lane_y + 0.2, 4.5, 0.5, [("컨테이너 워크로드", {"size": 18, "color": INK, "bold": True})])
-for j, ch in enumerate(["마이크로서비스", "클라우드 네이티브 앱"]):
-    cb = rect(s, 7.88 + j * 2.35, lane_y + 0.78, 2.25, 0.5, BLUE_L, rounded=True, radius=0.2)
-    shape_text(cb, [(ch, {"size": 11.5, "color": BLUE_D, "bold": True, "align": PP_ALIGN.CENTER})])
-tb(s, 7.18, lane_y + 1.5, 5.2, 0.5, [("→ 함께 마이그레이션·실행·관리 (확인 F1)", {"size": 11.5, "color": SUB})])
-oval(s, 12.25, lane_y + 0.14, 0.14, 0.14, GREEN)
-tb(s, 11.55, lane_y + 0.06, 0.7, 0.3, [("F1 확인", {"size": 9, "color": GREEN_D, "align": PP_ALIGN.RIGHT})])
-for ax in (3.29, 9.52):
-    ar = s.shapes.add_shape(MSO_SHAPE.DOWN_ARROW, Inches(ax), Inches(4.0), Inches(0.34), Inches(0.48))
-    ar.fill.solid(); ar.fill.fore_color.rgb = C("5B7FA6"); ar.line.fill.background(); ar.shadow.inherit = False
-pb = rect(s, 0.6, 4.62, 12.13, 0.8, NAVY, rounded=True, radius=0.1)
-icon_chip(s, 0.85, 4.79, 0.46, "✓", GREEN, "FFFFFF", size=18)
-shape_text(pb, [("한 플랫폼 — VM과 컨테이너의 공존 (확인 F1 방향)", {"size": 16, "color": WHITE, "bold": True, "align": PP_ALIGN.CENTER})], ml=0.5)
-band = rect(s, 0.6, 5.62, 12.13, 1.02, AMBER, rounded=True, radius=0.09)
-tb(s, 0.95, 5.74, 6.5, 0.4, [("공통 운영 체계 — 제안 축 (F5)", {"size": 14.5, "color": AMBER_D, "bold": True})])
-for j, ch in enumerate(["동일 정책", "검증 게이트", "근거표 공유", "미검증 라벨"]):
-    cb = rect(s, 0.95 + j * 2.95, 6.14, 2.75, 0.4, "FFFBEB", line_color=AMBER, line_w=0.75, rounded=True, radius=0.3)
-    shape_text(cb, [(ch, {"size": 10.5, "color": AMBER_D, "bold": True, "align": PP_ALIGN.CENTER})])
-tb(s, 0.6, 6.78, 12.13, 0.3, [("개념 개요 (제안 F5) — 상세 도해: 03-infographic.svg · 설계 세부(F3)는 미검증(403 → 재실측 필요)", {"size": 10.5, "color": MUT})])
+# ===== S4 concept (thin-line diagram) =====
+s = new_slide(); chrome(s, "03 — 개념 Concept", "한 플랫폼, 두 워크로드, 한 운영", 4)
+by, bh = 1.85, 2.0
+rect(s, 0.9, by, 5.6, bh, PAPER, line_color=INK, line_w=1.4)
+tb(s, 1.18, by + 0.2, 4.0, 0.4, [("가상 머신 워크로드", {"size": 15, "color": INK, "bold": True})])
+dot(s, 6.18, by + 0.3, 0.09, RED)
+tb(s, 4.9, by + 0.2, 1.25, 0.3, [("F3 미검증", {"size": 8.5, "color": MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
+tb(s, 1.18, by + 0.78, 5.1, 0.75, [
+    ("— 기존 VM (레거시)", {"size": 11, "color": SUB, "sa": 4}),
+    ("— 컨테이너화 어려운 앱", {"size": 11, "color": SUB}),
+])
+tb(s, 1.18, by + 1.55, 5.1, 0.3, [("하이퍼바이저 기반 가상화 (정의 F2)", {"size": 10, "color": MUT})])
+rect(s, 6.83, by, 5.6, bh, PAPER, line_color=INK, line_w=1.4)
+tb(s, 7.11, by + 0.2, 4.0, 0.4, [("컨테이너 워크로드", {"size": 15, "color": INK, "bold": True})])
+dot(s, 12.11, by + 0.3, 0.09, GREEN)
+tb(s, 10.85, by + 0.2, 1.25, 0.3, [("F1 확인", {"size": 8.5, "color": MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
+tb(s, 7.11, by + 0.78, 5.1, 0.75, [
+    ("— 마이크로서비스", {"size": 11, "color": SUB, "sa": 4}),
+    ("— 클라우드 네이티브 앱", {"size": 11, "color": SUB}),
+])
+tb(s, 7.11, by + 1.55, 5.1, 0.3, [("→ 함께 마이그레이션 · 실행 · 관리 (확인 F1)", {"size": 10, "color": MUT})])
+for ax in (3.66, 9.59):
+    rect(s, ax, 3.9, 0.016, 0.5, INK)
+    tri_down(s, ax - 0.065, 4.36, 0.15, 0.11, INK)
+rect(s, 0.9, 4.6, 11.53, 0.72, INK)
+tb(s, 0.9, 4.6, 11.53, 0.72, [("한 플랫폼 — VM과 컨테이너의 공존  (확인 F1)", {"size": 15, "color": PAPER, "bold": True, "align": PP_ALIGN.CENTER})], anchor=MSO_ANCHOR.MIDDLE)
+rect(s, 0.9, 5.56, 11.53, 0.95, PAPER, line_color=BLUE, line_w=1.25)
+tb(s, 1.18, 5.68, 6.0, 0.3, [("공통 운영 체계 — 제안 (F5)", {"size": 9.5, "color": BLUE, "bold": True, "spc": 160})])
+for j, ch in enumerate(["동일 정책", "검증 게이트", "근거표 공유", "미검증 라벨 유지"]):
+    tb(s, 1.18 + j * 2.88, 6.08, 2.7, 0.35, [(ch, {"size": 11, "color": SUB})])
+    if j < 3: hairline(s, 3.86 + j * 2.88, 5.98, 0.011, LINE, h=0.42)
+tb(s, 0.9, 6.72, 11.53, 0.3, [("개념 개요 (제안 F5) — 상세 도해 03-infographic.svg · 설계 세부 F3 미검증 (403 → 재실측 필요)", {"size": 9.5, "color": MUT})])
 
-# ===== S5 background + tradeoff =====
-s = new_slide(); header(s, "04 · 배경 (BACKGROUND)", "VM vs 컨테이너 — 일반 지식, 제품 사양 아님", 5)
-rect(s, 0.6, 1.72, 5.9, 1.6, WHITE, line_color=PURPLE, line_w=1.5, rounded=True, radius=0.06)
-vm_icon(s, 0.92, 1.98, PURPLE)
-tb(s, 1.65, 1.86, 4.7, 0.4, [("VM (가상 머신)", {"size": 15, "color": INK, "bold": True})])
-tb(s, 0.95, 2.78, 5.3, 0.5, [("하드웨어를 가상화해 각 VM이 독립된 운영체계를 가진다 — 격리는 강하고, 시작은 느리고, 밀도는 낮다.", {"size": 11.5, "color": SUB, "ls": 1.2})])
-rect(s, 6.83, 1.72, 5.9, 1.6, WHITE, line_color=BLUE, line_w=1.5, rounded=True, radius=0.06)
-ct_icon(s, 7.15, 1.96, BLUE)
-tb(s, 7.88, 1.86, 4.7, 0.4, [("컨테이너", {"size": 15, "color": INK, "bold": True})])
-tb(s, 7.18, 2.55, 5.3, 0.7, [("운영체계를 공유하고 애플리케이션만 격리한다 — 격리는 가볍고, 시작은 빠르고, 밀도는 높다.", {"size": 11.5, "color": SUB, "ls": 1.2})])
-trows = [("차원 (일반 지식)", "VM (가상 머신)", "컨테이너"),
-         ("격리 수준", "하드웨어 가상화 — 격리 강함", "OS 공유 — 격리 가볍고 빠름"),
+# ===== S5 background + tradeoff (editorial) =====
+s = new_slide(); chrome(s, "04 — 배경 Background", "VM vs 컨테이너 — 일반 지식, 제품 사양 아님", 5)
+tb(s, 0.9, 1.8, 5.5, 0.4, [("VM (가상 머신)", {"size": 15, "color": INK, "bold": True})])
+tb(s, 0.9, 2.28, 5.5, 0.95, [("하드웨어를 가상화해 각 VM이 독립된 운영체계를 가진다 — 격리는 강하고, 시작은 느리고, 밀도는 낮다.", {"size": 11.5, "color": SUB, "ls": 1.3})])
+tb(s, 6.93, 1.8, 5.5, 0.4, [("컨테이너", {"size": 15, "color": INK, "bold": True})])
+tb(s, 6.93, 2.28, 5.5, 0.95, [("운영체계를 공유하고 애플리케이션만 격리한다 — 격리는 가볍고, 시작은 빠르고, 밀도는 높다.", {"size": 11.5, "color": SUB, "ls": 1.3})])
+hairline(s, 0.9, 3.42, 11.53)
+trows = [("격리 수준", "하드웨어 가상화 — 격리 강함", "OS 공유 — 격리 가볍고 빠름"),
          ("시작 · 밀도", "부팅 느림 · 단위 서버당 밀도 낮음", "초기화 빠름 · 고밀도 실행"),
          ("상태 · 의존성", "OS 포함 — 레거시 의존성 그대로", "앱만 — 의존성 현대화 필요"),
          ("이동성", "VM 이미지 단위 (볼륨 크고 무거움)", "이미지 단위 — 레지스트리 배포")]
-ty = 3.55
-for ri, row in enumerate(trows):
-    rh = 0.5
-    widths = [2.3, 4.9, 4.93]
-    cx = 0.6
-    for ci in range(3):
-        if ri == 0: fc, tc_, bd = NAVY, WHITE, True
-        else: fc, tc_, bd = (CARD if ri % 2 else WHITE), INK, False
-        rect(s, cx, ty, widths[ci], rh, fc, line_color=LINE, line_w=0.75)
-        tb(s, cx + 0.15, ty, widths[ci] - 0.25, rh,
-           [(row[ci], {"size": 11, "color": tc_, "bold": bd or ci == 0, "align": PP_ALIGN.LEFT})], anchor=MSO_ANCHOR.MIDDLE)
-        cx += widths[ci]
-    ty += rh
-strip = rect(s, 0.6, 6.15, 12.13, 0.62, AMBER_L, rounded=True, radius=0.14)
-shape_text(strip, [("※ 일반 배경 지식(교육용) — OpenShift Virtualization의 특정 기능·숫자가 아님. 제품 주장은 F1·F2 확인 범위까지.", {"size": 11.5, "color": AMBER_D, "bold": True, "align": PP_ALIGN.CENTER})], ml=0.2)
+etable(s, 0.9, 3.66, [2.3, 4.6, 4.63], ["차원 (일반 지식)", "VM (가상 머신)", "컨테이너"], trows, row_h=0.62, body_size=11)
+dot(s, 0.92, 6.68, 0.08, AMBER)
+tb(s, 1.14, 6.58, 11.2, 0.35, [("일반 배경 지식(교육용) — OpenShift Virtualization의 특정 기능·숫자가 아님 · 제품 주장은 F1·F2 확인 범위까지", {"size": 9.5, "color": AMBER_TX, "spc": 60})])
 
-# ===== S6 decision axes =====
-s = new_slide(); header(s, "05 · 결정 (DECISION)", "의사결정 4개 축 (제안 F5 — 판단의 틀)", 6)
+# ===== S6 decision axes (typographic) =====
+s = new_slide(); chrome(s, "05 — 결정 Decision", "의사결정 4개 축 — 판단의 틀 (제안 F5)", 6)
 axes = [
-    ("1", "워크로드 경계", ["어느 VM을 남기고, 무엇을 컨테이너로?", "의존성·라이선스·레거시 미들웨어 제약은?", "컨테이너화할 팀 역량은 충분한가?"], PURPLE, "0.30", PURPLE_D, PURPLE_L),
-    ("2", "운영 통합 수준", ["인증·로그·백업·네트워크를 얼마나 하나로?", "통합 1점당 검증 범위가 커지는가?", "단계적 통합 로드맵은 있는가?"], BLUE, "0.30", BLUE_D, BLUE_L),
-    ("3", "검증 방법", ["통과/실패 기준을 관측 가능하게 쓸 수 있나?", "측정 전 점수를 보고하지 않는가?", "근거(날짜·출처)가 모든 주장에 붙는가?"], GREEN, "0.25", GREEN_D, GREEN_L),
-    ("4", "마이그레이션 우선순위", ["낮은 위험 + 높은 가치부터인가?", "가장 어려운 것은 검증 인프라 완성 후로?", "회귀(rollback) 경로가 있는가?"], AMBER, "0.15", AMBER_D, AMBER_L),
+    ("01", "워크로드 경계", ["어느 VM을 남기고, 무엇을 컨테이너로?", "의존성 · 라이선스 · 레거시 미들웨어 제약은?", "컨테이너화할 팀 역량은 충분한가?"], "0.30"),
+    ("02", "운영 통합 수준", ["인증 · 로그 · 백업 · 네트워크를 얼마나 하나로?", "통합 1점당 검증 범위가 커지는가?", "단계적 통합 로드맵은 있는가?"], "0.30"),
+    ("03", "검증 방법", ["통과/실패 기준을 관측 가능하게 쓸 수 있나?", "측정 전 점수를 보고하지 않는가?", "근거(날짜 · 출처)가 모든 주장에 붙는가?"], "0.25"),
+    ("04", "마이그레이션 우선순위", ["낮은 위험 + 높은 가치부터인가?", "가장 어려운 것은 검증 인프라 완성 후로?", "회귀(rollback) 경로가 있는가?"], "0.15"),
 ]
-for i, (num, t, qs, acc, wt, wtd, wtl) in enumerate(axes):
-    x = 0.6 + (i % 2) * 6.22
-    y = 1.78 + (i // 2) * 2.52
-    card = rect(s, x, y, 5.9, 2.34, WHITE, line_color=LINE, line_w=1.25, rounded=True, radius=0.05)
-    rect(s, x, y, 0.09, 2.34, acc)
-    icon_chip(s, x + 0.26, y + 0.22, 0.46, num, acc, "FFFFFF", size=17)
-    tb(s, x + 0.88, y + 0.2, 3.9, 0.5, [(t, {"size": 17, "color": INK, "bold": True})])
-    pill(s, x + 4.55, y + 0.27, 1.1, 0.36, "가중치 %s" % wt, wtd, wtl, size=10)
-    lines = [(q, {"size": 12, "color": SUB, "sa": 5, "ls": 1.1}) for q in qs]
-    tb(s, x + 0.3, y + 0.85, 5.35, 1.4, lines)
+for i, (num, t, qs, wt) in enumerate(axes):
+    x = 0.9 + (i % 2) * 6.03
+    y = 1.85 + (i // 2) * 2.5
+    hairline(s, x, y, 5.5)
+    tb(s, x - 0.05, y + 0.08, 1.5, 0.8, [(num, {"size": 40, "color": NUM_GHOST, "disp": True, "bold": True})])
+    tb(s, x + 1.15, y + 0.16, 2.9, 0.5, [(t, {"size": 17, "color": INK, "bold": True})])
+    tb(s, x + 3.4, y + 0.2, 2.1, 0.35, [("가중치 " + wt, {"size": 10, "color": MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
+    lines = [("—  " + q, {"size": 11.5, "color": SUB, "sa": 7, "ls": 1.15}) for q in qs]
+    tb(s, x + 0.05, y + 0.85, 5.4, 1.5, lines)
 
-# ===== S7 worked example =====
-s = new_slide(); header(s, "06 · 결정 (DECISION)", "XLSX 채점 구조 + 예시 (06-decision.xlsx)", 7)
-rows = [("기준 (의사결정 축)", "가중치", "점수 (1~5)", "가중합", "상태"),
-        ("워크로드 경계 (VM vs 컨테이너)", "0.30", "3 *", "0.90", "제안"),
-        ("운영 통합 수준 (인증·백업·정책)", "0.30", "4 *", "1.20", "제안"),
+# ===== S7 scoring (editorial table + thin bars) =====
+s = new_slide(); chrome(s, "06 — 결정 Decision", "채점 구조 + 예시 — 06-decision.xlsx", 7)
+rows = [("워크로드 경계 (VM vs 컨테이너)", "0.30", "3 *", "0.90", "제안"),
+        ("운영 통합 수준 (인증 · 백업 · 정책)", "0.30", "4 *", "1.20", "제안"),
         ("검증 방법 (판정 기준 관측 가능성)", "0.25", "4 *", "1.00", "제안"),
         ("마이그레이션 우선순위", "0.15", "3 *", "0.45", "제안"),
-        ("합계", "= 1.00", "—", "= 3.55 *", "제안")]
-ty = 1.85
-for ri, row in enumerate(rows):
-    rh = 0.52
-    colw = [4.9, 1.5, 1.7, 1.6, 1.5]
-    cx = 0.6
-    for ci, cell in enumerate(row):
-        if ri == 0: fc, tc_, bd = NAVY, WHITE, True
-        elif ri == 5: fc, tc_, bd = BLUE_L, BLUE_D, True
-        else: fc, tc_, bd = (CARD if ri % 2 else WHITE), INK, False
-        if ci == 4 and ri > 0: tc_ = AMBER_D
-        rect(s, cx, ty, colw[ci], rh, fc, line_color=LINE, line_w=0.75)
-        align = PP_ALIGN.LEFT if ci == 0 else PP_ALIGN.CENTER
-        tb(s, cx + (0.15 if ci == 0 else 0.02), ty, colw[ci] - 0.2, rh,
-           [(cell, {"size": 12.5 if ri else 12, "color": tc_, "bold": bd, "align": align})], anchor=MSO_ANCHOR.MIDDLE)
-        cx += colw[ci]
-    ty += rh
-tb(s, 0.6, ty + 0.08, 9.0, 0.3, [("* 점수 3·4·4·3 = 예시 — 실제 채점은 결정자가 입력 (수식은 자동 합산) · 가중치 합 1.0 검증됨", {"size": 10.5, "color": MUT, "italic": True})])
-tb(s, 0.6, 5.42, 8.9, 0.32, [("가중합 시각화 — 큰 축이 '먼저 답할 질문'", {"size": 12.5, "color": INK, "bold": True})])
-for i, (lbl, val, col) in enumerate([("경계", 0.90, PURPLE), ("통합", 1.20, BLUE), ("검증", 1.00, GREEN), ("우선순위", 0.45, AMBER)]):
-    y = 5.78 + i * 0.33
-    tb(s, 0.6, y - 0.04, 1.1, 0.3, [(lbl, {"size": 11, "color": SUB, "bold": True, "align": PP_ALIGN.RIGHT})])
-    rect(s, 1.9, y, 5.5, 0.2, "EEF2F7", rounded=True, radius=0.5)
-    rect(s, 1.9, y, 5.5 * val / 1.5, 0.2, col, rounded=True, radius=0.5)
-    tb(s, 7.5, y - 0.04, 0.8, 0.3, [("%.2f" % val, {"size": 11, "color": INK, "bold": True})])
-rect(s, 9.85, 5.42, 2.88, 1.45, CARD, rounded=True, radius=0.08)
-tb(s, 9.85, 5.52, 2.88, 0.3, [("예시 가중합 총점", {"size": 11, "color": MUT, "bold": True, "align": PP_ALIGN.CENTER})])
-tb(s, 9.85, 5.8, 2.88, 0.65, [("3.55 *", {"size": 32, "color": BLUE_D, "bold": True, "align": PP_ALIGN.CENTER})])
-tb(s, 9.85, 6.46, 2.88, 0.35, [("· 제안 프레임 — 측정값 아님", {"size": 10, "color": AMBER_D, "align": PP_ALIGN.CENTER})])
+        ("합계", "1.00", "—", "3.55 *", "제안")]
+endy = etable(s, 0.9, 1.8, [5.3, 1.5, 1.6, 1.6, 1.53],
+              ["기준 (의사결정 축)", "가중치", "점수 (1~5)", "가중합", "상태"], rows,
+              row_h=0.56, aligns=[PP_ALIGN.LEFT, PP_ALIGN.CENTER, PP_ALIGN.CENTER, PP_ALIGN.CENTER, PP_ALIGN.CENTER],
+              num_cols={1, 2, 3}, body_size=11.5)
+tb(s, 0.9, endy + 0.06, 9.0, 0.3, [("* 점수 3·4·4·3 = 예시 — 실제 채점은 결정자가 입력 (수식 자동 합산) · 가중치 합 1.0 검증됨", {"size": 9.5, "color": MUT, "italic": True})])
+tb(s, 0.9, 5.5, 8.9, 0.3, [("가중합 — 큰 축이 '먼저 답할 질문'", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})])
+for i, (lbl, val) in enumerate([("경계", 0.90), ("통합", 1.20), ("검증", 1.00), ("우선순위", 0.45)]):
+    y = 5.92 + i * 0.31
+    tb(s, 0.9, y - 0.03, 1.05, 0.3, [(lbl, {"size": 10, "color": SUB, "align": PP_ALIGN.RIGHT})])
+    hairline(s, 2.1, y + 0.13, 6.9, LINE)
+    rect(s, 2.1, y, 6.9 * val / 1.5, 0.11, BLUE)
+    tb(s, 9.1, y - 0.03, 0.7, 0.3, [("%.2f" % val, {"size": 10.5, "color": INK, "mono": True, "bold": True})])
+tb(s, 10.15, 5.5, 2.28, 0.3, [("예시 가중합 총점", {"size": 9.5, "color": MUT, "bold": True, "spc": 160, "align": PP_ALIGN.RIGHT})])
+tb(s, 10.15, 5.72, 2.28, 1.1, [("3.55 *", {"size": 52, "color": INK, "bold": True, "disp": True, "align": PP_ALIGN.RIGHT})])
+tb(s, 10.15, 6.78, 2.28, 0.3, [("제안 프레임 — 측정값 아님", {"size": 9, "color": AMBER_TX, "spc": 60, "align": PP_ALIGN.RIGHT})])
 
-# ===== S8 pipeline =====
-s = new_slide(); header(s, "07 · 프로세스 (PROCESS)", "8단계 파이프라인 → 산출물 8종", 8)
-for i, st in enumerate(["Intake", "Research", "Editorial", "Art", "Production", "Gates", "Improve", "Handoff"]):
-    x = 0.6 + i * 1.56
-    ch = rect(s, x, 1.95, 1.42, 0.62, NAVY if i < 6 else BLUE, rounded=True, radius=0.16)
-    shape_text(ch, [(st, {"size": 12.5, "color": WHITE, "bold": True, "align": PP_ALIGN.CENTER})])
-    if i < 7:
-        ar = s.shapes.add_shape(MSO_SHAPE.CHEVRON, Inches(x + 1.43), Inches(2.11), Inches(0.14), Inches(0.3))
-        ar.fill.solid(); ar.fill.fore_color.rgb = C("5B7FA6"); ar.line.fill.background(); ar.shadow.inherit = False
-tb(s, 0.6, 2.9, 12.0, 0.4, [("산출물 (이 실습의 8종)", {"size": 15, "color": INK, "bold": True})])
-for i, a in enumerate(["1 근거표", "2 심층 글", "3 인포그래픽", "4 PPTX", "5 DOCX", "6 XLSX", "7 PDF", "8 검증 로그"]):
-    x = 0.6 + i * 1.56
-    ch = rect(s, x, 3.4, 1.42, 0.62, CARD, line_color=LINE, line_w=1, rounded=True, radius=0.16)
-    shape_text(ch, [(a, {"size": 11.5, "color": SUB, "bold": True, "align": PP_ALIGN.CENTER})])
-pill(s, 0.6, 4.45, 3.6, 0.5, "HWPX → unavailable (도구 부재 · 명시)", RED, RED_L, size=11)
-tb(s, 0.6, 5.25, 12.1, 1.4, [
-    ("각 단계의 산출물은 같은 근거표(01-facts.md)를 읽는다.", {"size": 13, "color": INK, "bold": True, "sa": 5}),
-    ("따라서 어느 형식으로 변환해도 수치·주장의 의미가 변하지 않는다 (형식 게이트 '변환 의미 불변').", {"size": 12, "color": SUB, "ls": 1.25}),
+# ===== S8 pipeline (hairline timeline) =====
+s = new_slide(); chrome(s, "07 — 프로세스 Process", "8단계 파이프라인 → 산출물 8종", 8)
+rect(s, 0.9, 3.0, 11.53, 0.014, INK)
+steps = ["Intake", "Research", "Editorial", "Art", "Production", "Gates", "Improve", "Handoff"]
+arts = ["1 근거표", "2 심층 글", "3 인포그래픽", "4 PPTX", "5 DOCX", "6 XLSX", "7 PDF", "8 검증 로그"]
+for i in range(8):
+    x = 0.9 + i * (11.53 / 7)
+    rect(s, x - 0.045, 2.955, 0.09, 0.09, INK)
+    tb(s, x - 0.8, 2.42, 1.6, 0.3, [(steps[i].upper(), {"size": 9, "color": MUT, "bold": True, "spc": 140, "align": PP_ALIGN.CENTER})])
+    tb(s, x - 0.8, 3.32, 1.6, 0.35, [(arts[i], {"size": 10.5, "color": SUB, "align": PP_ALIGN.CENTER})])
+dot(s, 0.92, 4.42, 0.08, RED)
+tb(s, 1.14, 4.32, 8.0, 0.3, [("HWPX → UNAVAILABLE — 생성 도구 부재 · 명시 (생성 안 함)", {"size": 9.5, "color": RED_TX, "bold": True, "spc": 120})])
+tb(s, 0.9, 5.15, 11.5, 1.1, [
+    ("각 단계의 산출물은 같은 근거표(01-facts.md)를 읽는다.", {"size": 14, "color": INK, "bold": True, "sa": 6}),
+    ("따라서 어느 형식으로 변환해도 수치 · 주장의 의미가 변하지 않는다 (형식 게이트 '변환 의미 불변').", {"size": 12, "color": SUB, "ls": 1.3}),
 ])
 
-# ===== S9 gates =====
-s = new_slide(); header(s, "08 · 검증 (GATES)", "형식별 검증 게이트 + 이번 실행 결과", 9)
-grows = [("PPTX", "12슬라이드 (요구 10~12) · 구조 검사 · 전 슬라이드 렌더 · 시각 실독 9장", "PASS", "✓", GREEN, GREEN_L),
-         ("DOCX", "네이비 커버·상태색 표 · 구조 검사 · 3/3 페이지 렌더", "PASS", "✓", GREEN, GREEN_L),
-         ("XLSX", "3시트 · 수식 재계산 — 가중치 합 1.0 확인 (B8)", "PASS", "✓", GREEN, GREEN_L),
-         ("PDF", "변환 성공 · 헤더 %PDF 검증 (원본 DOCX 렌더 기준)", "PASS", "✓", GREEN, GREEN_L),
-         ("HWPX", "생성 도구 부재 → unavailable 명시 (생성 안 함 · 게이트 규칙)", "unavailable", "!", RED, RED_L)]
-for i, (fmt, gate, res, g, col, bgc) in enumerate(grows):
-    y = 1.85 + i * 1.0
-    rect(s, 0.6, y, 12.13, 0.86, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.1)
-    icon_chip(s, 0.85, y + 0.22, 0.42, g, col, "FFFFFF", size=16)
-    tb(s, 1.5, y, 1.1, 0.86, [(fmt, {"size": 15, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-    tb(s, 2.75, y, 7.4, 0.86, [(gate, {"size": 12.5, "color": SUB})], anchor=MSO_ANCHOR.MIDDLE)
-    pill(s, 10.35, y + 0.22, 2.1, 0.42, res, col, bgc, size=12)
+# ===== S9 gates (editorial rows) =====
+s = new_slide(); chrome(s, "08 — 검증 Gates", "형식별 검증 게이트 — 이번 실행 결과", 9)
+grows = [("PPTX", "12슬라이드 (요구 10~12) · 구조 검사 · 전 슬라이드 렌더 · 시각 실독", "PASS", GREEN, GREEN_TX),
+         ("DOCX", "구조 검사 · 표 무결성 · 전 페이지 렌더 (에디토리얼 스타일)", "PASS", GREEN, GREEN_TX),
+         ("XLSX", "3시트 · 수식 재계산 — 가중치 합 1.0 확인 (B8)", "PASS", GREEN, GREEN_TX),
+         ("PDF", "변환 성공 · 헤더 %PDF 검증 (원본 DOCX 렌더 기준)", "PASS", GREEN, GREEN_TX),
+         ("HWPX", "생성 도구 부재 → unavailable 명시 (생성 안 함 · 게이트 규칙)", "UNAVAILABLE", RED, RED_TX)]
+for i, (fmt, gate, res, dc, dtc) in enumerate(grows):
+    y = 1.9 + i * 0.98
+    hairline(s, 0.9, y, 11.53)
+    tb(s, 0.9, y + 0.12, 1.25, 0.6, [(fmt, {"size": 15, "color": INK, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
+    tb(s, 2.3, y + 0.12, 8.3, 0.6, [(gate, {"size": 12, "color": SUB})], anchor=MSO_ANCHOR.MIDDLE)
+    dot(s, 10.9, y + 0.32, 0.09, dc)
+    tb(s, 11.1, y + 0.12, 1.33, 0.6, [(res, {"size": 9.5, "color": dtc, "bold": True, "spc": 120})], anchor=MSO_ANCHOR.MIDDLE)
 
-# ===== S10 limits + next steps (merged) =====
-s = new_slide(); header(s, "09 · 한계 + 다음 단계 (LIMITS + NEXT)", "정직한 한계, 그리고 그 다음 4걸음", 10)
-rect(s, 0.6, 1.8, 5.95, 5.0, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.05)
-rect(s, 0.6, 1.8, 0.09, 5.0, RED)
-icon_chip(s, 0.9, 2.05, 0.4, "!", RED, "FFFFFF", size=15)
-tb(s, 1.45, 2.02, 4.9, 0.45, [("미수행 · 미검증 — 지금 못 하는 것", {"size": 15, "color": INK, "bold": True})])
-for i, t in enumerate(["설치·클러스터 구동·기능/성능 실측", "F3(설계 세부)·F4(지원 범위) — 403, 재실측 필요", "수치·기능 주장 0건 (근거 4요소 갖춰야 진입)", "HWPX 산출물 — 도구 부재, unavailable 명시", "타 앱(파워포인트·한컴) 픽셀 일치 보장"]):
-    y = 2.68 + i * 0.8
-    oval(s, 0.95, y + 0.09, 0.12, 0.12, RED)
-    tb(s, 1.2, y - 0.06, 5.15, 0.75, [(t, {"size": 11.5, "color": SUB, "ls": 1.1})])
-rect(s, 6.78, 1.8, 5.95, 5.0, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.05)
-rect(s, 6.78, 1.8, 0.09, 5.0, BLUE)
-icon_chip(s, 7.08, 2.05, 0.4, "→", BLUE, "FFFFFF", size=15)
-tb(s, 7.63, 2.02, 4.9, 0.45, [("재실측 체크리스트 — 그 다음 4걸음", {"size": 15, "color": INK, "bold": True})])
-for i, (n, t, d) in enumerate([("1", "공식 문서 재실측", "F3·F4를 확인/미검증으로 재분류"),
-                               ("2", "설치·클러스터 실습", "공존 실행 → 기능 검증 (성능 벤치는 조건 명시)"),
-                               ("3", "수치 주장 허용", "실측값+확인일+출처+재현 4요소 갖출 때"),
-                               ("4", "산출물 v2 갱신", "재구성된 근거표로 8종 재생성 → paired 비교")]):
-    y = 2.68 + i * 1.0
-    icon_chip(s, 7.08, y + 0.05, 0.4, n, BLUE, "FFFFFF", size=14)
-    tb(s, 7.63, y - 0.05, 4.9, 0.4, [(t, {"size": 13, "color": INK, "bold": True})])
-    tb(s, 7.63, y + 0.3, 4.9, 0.6, [(d, {"size": 10.5, "color": SUB, "ls": 1.1})])
+# ===== S10 limits + next (2-column, top rules only) =====
+s = new_slide(); chrome(s, "09 — 한계 + 다음 단계", "정직한 한계, 그리고 다음 4걸음", 10)
+rect(s, 0.9, 1.85, 5.5, 0.028, RED)
+tb(s, 0.9, 2.08, 5.5, 0.4, [("미수행 · 미검증 — 지금 못 하는 것", {"size": 14, "color": INK, "bold": True})])
+for i, t in enumerate(["설치 · 클러스터 구동 · 기능/성능 실측", "F3(설계 세부) · F4(지원 범위) — 403, 재실측 필요", "수치 · 기능 주장 0건 (근거 4요소 갖춰야 진입)", "HWPX 산출물 — 도구 부재, unavailable 명시", "타 앱(파워포인트 · 한컴) 픽셀 일치 보장"]):
+    y = 2.72 + i * 0.82
+    dot(s, 0.92, y + 0.09, 0.07, RED)
+    tb(s, 1.2, y - 0.04, 5.2, 0.7, [(t, {"size": 11.5, "color": SUB, "ls": 1.15})])
+rect(s, 6.93, 1.85, 5.5, 0.028, BLUE)
+tb(s, 6.93, 2.08, 5.5, 0.4, [("재실측 체크리스트 — 다음 4걸음", {"size": 14, "color": INK, "bold": True})])
+for i, (n, t, d) in enumerate([("01", "공식 문서 재실측", "F3 · F4를 확인/미검증으로 재분류"),
+                               ("02", "설치 · 클러스터 실습", "공존 실행 → 기능 검증 (성능 벤치는 조건 명시)"),
+                               ("03", "수치 주장 허용", "실측값 + 확인일 + 출처 + 재현 4요소 갖출 때"),
+                               ("04", "산출물 v2 갱신", "재구성된 근거표로 8종 재생성 → paired 비교")]):
+    y = 2.72 + i * 1.0
+    tb(s, 6.93, y - 0.02, 0.6, 0.4, [(n, {"size": 14, "color": NUM_GHOST, "disp": True, "bold": True})])
+    tb(s, 7.55, y - 0.04, 4.9, 0.35, [(t, {"size": 12.5, "color": INK, "bold": True})])
+    tb(s, 7.55, y + 0.3, 4.9, 0.55, [(d, {"size": 10.5, "color": SUB, "ls": 1.15})])
 
 # ===== S11 conclusion =====
-s = new_slide(); header(s, "10 · 결론 (CONCLUSION)", "지금 이 자리에서 — 아는 것, 모르는 것, 해야 할 것", 11)
-for x, acc, g, title, lines in [
-    (0.6, GREEN, "✓", "확인 — 방향은 확인됨", ["F1: VM+컨테이너 통합 운영은 제품 설명(200)", "F2: 가상화 정의 — 하이퍼바이저 기반(200)", "→ '공존'은 근거 있는 방향, 추측 아님"]),
-    (4.78, RED, "!", "미검증 — 아직 못 말하는 것", ["F3: 설계 세부 (API·컴포넌트) — 403", "F4: 지원 범위 (버전·플랫폼) — 403", "→ 재실측 전 어떤 수치도 주장하지 않음"]),
-    (8.96, AMBER, "?", "제안 — 판단의 틀", ["F5: 4축 + 가중치 프레임 (측정값 아님)", "XLSX(06): 채점 구조 자동화", "→ 실측 데이터가 들어야 비로소 결정"])]:
-    card = rect(s, x, 1.8, 3.77, 3.6, WHITE, line_color=LINE, line_w=1.2, rounded=True, radius=0.05)
-    rect(s, x, 1.8, 3.77, 0.12, acc)
-    icon_chip(s, x + 0.25, 2.18, 0.46, g, acc, "FFFFFF", size=17)
-    tb(s, x + 0.85, 2.16, 2.85, 0.55, [(title, {"size": 14, "color": INK, "bold": True})])
-    tl = [(t, {"size": 11, "color": (SUB if not t.startswith("→") else acc), "bold": t.startswith("→"), "sa": 7, "ls": 1.2}) for t in lines]
-    tb(s, x + 0.28, 2.95, 3.25, 2.35, tl)
-strip = rect(s, 0.6, 5.75, 12.13, 0.95, NAVY, rounded=True, radius=0.09)
-tb(s, 0.95, 5.88, 11.5, 0.4, [("지금 내려야 할 결정", {"size": 13, "color": NAVY_TX2, "bold": True})])
-tb(s, 0.95, 6.22, 11.5, 0.45, [("① F3·F4 재실측  →  ② 4축에 실측 데이터로 채점  →  ③ 그 순서로 경계 결정", {"size": 15.5, "color": WHITE, "bold": True})])
+s = new_slide(); chrome(s, "10 — 결론 Conclusion", "지금 이 자리에서 — 아는 것, 모르는 것, 해야 할 것", 11)
+for x, acc, atc, title, lines, takeaway in [
+    (0.9, GREEN, GREEN_TX, "확인 — 방향은 확인됨",
+     ["F1: VM+컨테이너 통합 운영은 제품 설명 (200)", "F2: 가상화 정의 — 하이퍼바이저 기반 (200)"],
+     "→ '공존'은 근거 있는 방향, 추측 아님"),
+    (4.86, RED, RED_TX, "미검증 — 아직 못 말하는 것",
+     ["F3: 설계 세부 (API · 컴포넌트) — 403", "F4: 지원 범위 (버전 · 플랫폼) — 403"],
+     "→ 재실측 전 어떤 수치도 주장하지 않음"),
+    (8.82, AMBER, AMBER_TX, "제안 — 판단의 틀",
+     ["F5: 4축 + 가중치 프레임 (측정값 아님)", "XLSX(06): 채점 구조 자동화"],
+     "→ 실측 데이터가 들어야 비로소 결정")]:
+    rect(s, x, 1.85, 3.66, 0.028, acc)
+    tb(s, x, 2.1, 3.66, 0.45, [(title, {"size": 14, "color": INK, "bold": True})])
+    tb(s, x, 2.68, 3.66, 1.2, [(t, {"size": 11, "color": SUB, "sa": 8, "ls": 1.2}) for t in lines])
+    tb(s, x, 4.05, 3.66, 0.4, [(takeaway, {"size": 11, "color": atc, "bold": True})])
+rect(s, 0.9, 5.75, 11.53, 1.05, INK)
+tb(s, 1.2, 5.9, 10.9, 0.3, [("지금 내려야 할 결정", {"size": 9.5, "color": INK_TX2, "bold": True, "spc": 200})])
+tb(s, 1.2, 6.22, 10.9, 0.5, [("① F3 · F4 재실측     →     ② 4축에 실측 데이터로 채점     →     ③ 그 순서로 경계 결정", {"size": 16, "color": PAPER, "bold": True})])
 
-# ===== S12 closing =====
-s = new_slide(NAVY)
-rect(s, 0, 0, SW, SH, NAVY)
-rect(s, 0, 0, SW, 0.1, BLUE)
-rect(s, 0, 7.4, SW, 0.1, BLUE)
-tb(s, 0.9, 0.85, 11.5, 0.4, [("11 · 출처 (SOURCES) · 마무리", {"size": 13, "color": NAVY_TX, "bold": True})])
-for i, (src, st, col, g, gc) in enumerate([
-    ("developers.redhat.com/products/openshift/virtualization", "확인 — F1·F2 (HTTP 200, 2026-11-11)", "86EFAC", "✓", GREEN),
-    ("docs.redhat.com · docs.openshift.com (설계 문서)", "미검증 — F3·F4 (HTTP 403 → 재실측 필요)", "FCA5A5", "!", RED),
-    ("본 저장소 AGENTS.md (evidence-first · 형식 게이트)", "제안 프레임 — F5", "FCD34D", "?", AMBER)]):
-    y = 1.65 + i * 0.88
-    rect(s, 0.9, y, 11.5, 0.72, "0E2A45", line_color="24466B", line_w=1, rounded=True, radius=0.12)
-    icon_chip(s, 1.12, y + 0.18, 0.36, g, gc, "FFFFFF", size=15)
-    tb(s, 1.65, y, 6.4, 0.72, [(src, {"size": 12.5, "color": NAVY_TX2})], anchor=MSO_ANCHOR.MIDDLE)
-    tb(s, 8.0, y, 4.2, 0.72, [(st, {"size": 11.5, "color": col, "bold": True})], anchor=MSO_ANCHOR.MIDDLE)
-rect(s, 0.92, 4.5, 0.7, 0.06, BLUE)
-tb(s, 0.9, 4.8, 11.5, 1.3, [("확인일 2026-11-11 · 근거 없는 수치 0 · 미검증은 미검증으로.", {"size": 25, "color": WHITE, "bold": True, "ls": 1.25})])
-tb(s, 0.9, 6.4, 11.5, 0.4, [("근거표: 01-facts.md · 검증 로그: 08-verification-log.md · 산출물 8종 (HWPX: unavailable)", {"size": 11.5, "color": NAVY_TX})])
+# ===== S12 closing (ink) =====
+s = new_slide(INK)
+rect(s, 0, 0, SW, 0.05, BLUE)
+tb(s, 0.9, 0.78, 6.0, 0.3, [("11 — 출처 SOURCES", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})])
+hairline(s, 0.9, 1.42, 11.53, INK_LINE)
+tb(s, 0.88, 2.1, 11.8, 1.9, [
+    ("확인일 2026-11-11 —", {"size": 34, "color": PAPER, "bold": True, "ls": 1.15}),
+    ("근거 없는 수치 0 · 미검증은 미검증으로.", {"size": 34, "color": PAPER, "bold": True, "ls": 1.15}),
+])
+for i, (src, st, c) in enumerate([
+    ("developers.redhat.com/products/openshift/virtualization", "확인 — F1 · F2 (HTTP 200)", GREEN),
+    ("docs.redhat.com · docs.openshift.com (설계 문서)", "미검증 — F3 · F4 (HTTP 403)", RED),
+    ("본 저장소 AGENTS.md (evidence-first · 형식 게이트)", "제안 프레임 — F5", AMBER)]):
+    y = 4.35 + i * 0.5
+    dot(s, 0.92, y + 0.08, 0.08, c)
+    tb(s, 1.18, y - 0.04, 7.3, 0.35, [(src, {"size": 10.5, "color": INK_TX2, "mono": True})])
+    tb(s, 8.6, y - 0.04, 3.83, 0.35, [(st, {"size": 10, "color": INK_TX, "align": PP_ALIGN.RIGHT, "spc": 60})])
+hairline(s, 0.9, 6.82, 11.53, INK_LINE)
+tb(s, 0.9, 7.02, 11.53, 0.3, [("근거표 01-facts.md · 검증 로그 08-verification-log.md · 산출물 8종 (HWPX: unavailable)", {"size": 9, "color": INK_TX2, "spc": 60})])
 
 prs.save(os.path.join(BASE, "04-deck.pptx"))
 print("PPTX OK slides=12")
 
-# ---------------- DOCX v3 ----------------
+# ---------------- DOCX (v4, unchanged) ----------------
 from docx import Document
 from docx.shared import Pt as DPt, RGBColor as DRGB
 from docx.oxml import OxmlElement
@@ -457,7 +405,7 @@ def dset(r, text, size=10.5, color=INK, bold=False, italic=False):
 
 def dhead(doc, text, level=1):
     p = doc.add_heading("", level=level)
-    dset(p.add_run(), text, size=15 if level == 1 else 12.5, color=NAVY if level == 1 else BLUE_D, bold=True)
+    dset(p.add_run(), text, size=15 if level == 1 else 12.5, color="0B1F3A" if level == 1 else "1B3E6B", bold=True)
     return p
 
 def ddiv(doc):
@@ -474,15 +422,15 @@ for sec in doc.sections:
 
 cov = doc.add_table(rows=1, cols=1)
 covcell = cov.rows[0].cells[0]
-dshade(covcell, NAVY)
+dshade(covcell, "0B1F3A")
 p = covcell.paragraphs[0]
-dset(p.add_run(), "TECH DECISION BRIEF · 2026-11-11", size=9, color=NAVY_TX, bold=True)
+dset(p.add_run(), "TECH DECISION BRIEF · 2026-11-11", size=9, color=INK_TX2, bold=True)
 p = covcell.add_paragraph()
-dset(p.add_run(), "OpenShift Virtualization", size=24, color=WHITE, bold=True)
+dset(p.add_run(), "OpenShift Virtualization", size=24, color=WHITE if False else "FFFFFF", bold=True)
 p = covcell.add_paragraph()
-dset(p.add_run(), "가상 머신과 컨테이너의 공존 — 설계 선택과 검증 실습 요약", size=13, color=NAVY_TX2)
+dset(p.add_run(), "가상 머신과 컨테이너의 공존 — 설계 선택과 검증 실습 요약", size=13, color="CFE3FF")
 p = covcell.add_paragraph()
-dset(p.add_run(), "확인 2 (F1·F2) · 미검증 2 (F3·F4, 403) · 제안 1 (F5)  |  산출물 8종 · HWPX: unavailable", size=9, color=NAVY_TX)
+dset(p.add_run(), "확인 2 (F1·F2) · 미검증 2 (F3·F4, 403) · 제안 1 (F5)  |  산출물 8종 · HWPX: unavailable", size=9, color=INK_TX2)
 doc.add_paragraph()
 ddiv(doc)
 
@@ -493,12 +441,12 @@ dset(p.add_run(), "레거시 VM과 컨테이너 서비스를 나눠서 돌릴 �
 dhead(doc, "2. 근거표")
 t = doc.add_table(rows=1, cols=4); t.style = "Table Grid"
 for c, htxt in zip(t.rows[0].cells, ["#", "내용", "상태", "근거"]):
-    dshade(c, NAVY); dset(c.paragraphs[0].add_run(), htxt, size=10, color=WHITE, bold=True)
-for fid, desc, st, stc, stbg, src in [("F1", "컨테이너와 함께 VM 마이그레이션·실행·관리 (제품 설명)", "확인", GREEN_D, GREEN_L, "developers.redhat.com (200)"),
-          ("F2", "하이퍼바이저·VM·자원 풀링 — 가상화 일반 정의", "확인", GREEN_D, GREEN_L, "developers.redhat.com (200)"),
-          ("F3", "설계 세부 (컴포넌트·API·라이브 마이그레이션)", "미검증 (403)", RED, RED_L, "docs.redhat.com (403)"),
-          ("F4", "버전·지원 범위", "미검증 (403)", RED, RED_L, "docs.redhat.com (403)"),
-          ("F5", "의사결정 4축·파이프라인 8단계 (가설)", "제안", AMBER_D, AMBER_L, "본 저장소 헌법")]:
+    dshade(c, "0B1F3A"); dset(c.paragraphs[0].add_run(), htxt, size=10, color="FFFFFF", bold=True)
+for fid, desc, st, stc, stbg, src in [("F1", "컨테이너와 함께 VM 마이그레이션·실행·관리 (제품 설명)", "확인", "14532D", "DCFCE7", "developers.redhat.com (200)"),
+          ("F2", "하이퍼바이저·VM·자원 풀링 — 가상화 일반 정의", "확인", "14532D", "DCFCE7", "developers.redhat.com (200)"),
+          ("F3", "설계 세부 (컴포넌트·API·라이브 마이그레이션)", "미검증 (403)", "DC2626", "FEE2E2", "docs.redhat.com (403)"),
+          ("F4", "버전·지원 범위", "미검증 (403)", "DC2626", "FEE2E2", "docs.redhat.com (403)"),
+          ("F5", "의사결정 4축·파이프라인 8단계 (가설)", "제안", "B45309", "FEF3C7", "본 저장소 헌법")]:
     row = t.add_row().cells
     dset(row[0].paragraphs[0].add_run(), fid, size=10, bold=True)
     dset(row[1].paragraphs[0].add_run(), desc, size=9.5)
@@ -507,10 +455,10 @@ for fid, desc, st, stc, stbg, src in [("F1", "컨테이너와 함께 VM 마이�
 
 dhead(doc, "3. 배경 — VM vs 컨테이너 (일반 지식, 제품 사양 아님)")
 p = doc.add_paragraph()
-dset(p.add_run(), "하이퍼바이저는 물리 서버 위에서 여러 VM을 격리하여 각 VM이 독립된 운영체계를 갖게 하는 소프트웨어이고, 컨테이너는 운영체계를 공유하고 애플리케이션만 격리하는 접근이다. 공통 질문은 '워크로드를 어디에, 얼마나 격리해서 돌릴 것인가'이며, VM/컨테이너 경계는 이 질문에 대한 결정이다. 본 절은 일반 배경 지식이며 OpenShift Virtualization의 특정 기능·숫자가 아니다.", size=10.5, color=INK)
+dset(p.add_run(), "하이퍼바이저는 물리 서버 위에서 여러 VM을 격리하여 각 VM이 독립된 운영체계를 갖게 하는 소프트웨어이고, 컨테이너는 운영체계를 공유하고 애플리케이션만 격리하는 접근이다. 공통 질문은 '워크로드를 어디에, 얼마나 격리해서 돌릴 것인가'이며, VM/컨테이너 경계는 이 질문에 대한 결정이다. 격리·시작밀도·상태의존성·이동성 4차원의 교환(trade-off)이며, 본 절은 일반 배경 지식이지 OpenShift Virtualization의 특정 기능·숫자가 아니다.", size=10.5, color=INK)
 tt = doc.add_table(rows=1, cols=3); tt.style = "Table Grid"
 for c, htxt in zip(tt.rows[0].cells, ["차원 (일반 지식)", "VM (가상 머신)", "컨테이너"]):
-    dshade(c, NAVY); dset(c.paragraphs[0].add_run(), htxt, size=9.5, color=WHITE, bold=True)
+    dshade(c, "0B1F3A"); dset(c.paragraphs[0].add_run(), htxt, size=9.5, color="FFFFFF", bold=True)
 for dim, vm, ct in [("격리 수준", "하드웨어 가상화 — 격리 강함", "OS 공유 — 격리 가볍고 빠름"),
                     ("시작 · 밀도", "부팅 느림 · 밀도 낮음", "초기화 빠름 · 고밀도"),
                     ("상태 · 의존성", "OS 포함 — 레거시 의존성 그대로", "앱만 — 의존성 현대화 필요"),
@@ -536,7 +484,7 @@ dset(p.add_run(), "1 근거표 · 2 심층 글(02) · 3 인포그래픽(03) · 4
 
 dhead(doc, "6. 검증 요약")
 p = doc.add_paragraph()
-dset(p.add_run(), "PPTX·DOCX·XLSX 구조 검사 통과, PPTX 12슬라이드 전 렌더(겹침·잘림·가림 0, 시각 실독 9장), XLSX 수식 재계산(가중치 합 1.0), PDF 변환·헤더 검증. 전 결과: 08-verification-log.md.", size=10.5, color=INK)
+dset(p.add_run(), "PPTX·DOCX·XLSX 구조 검사 통과, PPTX 12슬라이드 전 렌더(겹침·잘림·가림 0, 시각 실독), XLSX 수식 재계산(가중치 합 1.0), PDF 변환·헤더 검증. 전 결과: 08-verification-log.md.", size=10.5, color=INK)
 
 dhead(doc, "7. 한계")
 for x in ["설치 · 클러스터 구동 · 기능/성능 실측 미수행 (별도 세션 — 재실측 체크리스트는 발표자료 10번 슬라이드)",
@@ -558,7 +506,7 @@ try:
 except PermissionError as e:
     print("DOCX SAVE FAILED (file locked by another process) - XLSX still saved: %s" % e)
 
-# ---------------- XLSX (v2.1 logic) ----------------
+# ---------------- XLSX (v2.1 logic, unchanged) ----------------
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -646,11 +594,11 @@ for j, h in enumerate(["#", "내용", "상태", "근거"], 1):
     c = ws3.cell(row=2, column=j, value=h)
     xf(c, bold=True, size=10.5, color="FFFFFF", fill="2563EB", align="center")
 for i, (fid, desc, st, stbg, stc, src) in enumerate([
-    ("F1", "컨테이너와 함께 VM 마이그레이션·실행·관리 (제품 설명)", "확인", GREEN_L, GREEN_D, "developers.redhat.com (200)"),
-    ("F2", "하이퍼바이저·VM·자원 풀링 — 가상화 일반 정의", "확인", GREEN_L, GREEN_D, "developers.redhat.com (200)"),
-    ("F3", "설계 세부 (컴포넌트·API·라이브 마이그레이션)", "미검증 (403)", RED_L, RED, "docs.redhat.com (403)"),
-    ("F4", "버전·지원 범위", "미검증 (403)", RED_L, RED, "docs.redhat.com (403)"),
-    ("F5", "의사결정 4축·파이프라인 8단계 (가설)", "제안", AMBER_L, AMBER_D, "본 저장소 헌법")]):
+    ("F1", "컨테이너와 함께 VM 마이그레이션·실행·관리 (제품 설명)", "확인", "DCFCE7", "14532D", "developers.redhat.com (200)"),
+    ("F2", "하이퍼바이저·VM·자원 풀링 — 가상화 일반 정의", "확인", "DCFCE7", "14532D", "developers.redhat.com (200)"),
+    ("F3", "설계 세부 (컴포넌트·API·라이브 마이그레이션)", "미검증 (403)", "FEE2E2", "DC2626", "docs.redhat.com (403)"),
+    ("F4", "버전·지원 범위", "미검증 (403)", "FEE2E2", "DC2626", "docs.redhat.com (403)"),
+    ("F5", "의사결정 4축·파이프라인 8단계 (가설)", "제안", "FEF3C7", "B45309", "본 저장소 헌법")]):
     r = 3 + i
     ws3.cell(row=r, column=1, value=fid)
     ws3.cell(row=r, column=2, value=desc)
