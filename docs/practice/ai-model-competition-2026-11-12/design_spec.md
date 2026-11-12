@@ -172,3 +172,20 @@ v4(render7)까지 구조·정리·리듬·카피는 해결되었으나 **비주�
 ### 이력
 
 - 2026-11-12 21:00KST: v5 HTML 미러(`build_html.py`) 빌드 → 12/12 스크린샷 → 충실성 실독(S2·S6·S7·S8) → **결함 1건 발견** (S7 "fast $16/$80" — "HAIKU → FABLE" 충돌, 엔진 메트릭 차이로 PPTX에선 한계·HTML에선 충돌) → 양 생성기에 우측정렬 박스(10.0in 종결)로 수정 → **v5.1** (sha256 `562771ff`) 재빌드 + 전수 게이트 0결함 · 산출물 6종→7종(커버 카피 동기 갱신).
+
+## 9. v6 — ProposalSkills 도입: 접근성(대비) 게이트 + 발표자 노트 + 평이한 문체 (2026-11-12)
+
+**외부 참조 (라이선스 검증)**: `yjj3019/ProposalSkills` (사용자 소유 저장소, GitHub API spdx_id **MIT** 검증 2026-11-12) — `color_contrast.py`(WCAG 대비), `test_slide_quality.py`(발표자 노트 규약), `test_design_writing_checks.py`(ghost-deck claim-title, plain-language lint)에서 **아이디어 전용 채택** (코드·콘텐츠 카피 0, 수식=WCAG 2.x 공식 자체 재구현).
+
+### 적용 내역 (v6)
+
+| 항목 | 변경 |
+| --- | --- |
+| **WCAG AA 대비 게이트** | `audit_contrast.py` (산출물 8) — 덱의 모든 (문자색, 배경색, 크기, bold) 쌍을 4.5:1(정상)·3.0:1(대형: ≥18pt 또는 ≥14pt bold)로 실측. **베이스라인 25건 FAIL → 0건** |
+| 팔레트 | MUT `8A93A3`→**`6B7280`** (흰 배경 3.10→4.84:1) · +**BLUE_D `1D4ED8`** (S5 밴드 4.44→5.61:1) |
+| S4·S5 | 티어 번호 02~04 MUT→SUB (tint 배경 2.66~2.89→6.85+ :1) · S4 포칼 번호/역할 on-BLUE → PAPER (2.06→5.17:1) |
+| **발표자 노트 12/12** | 슬라이드마다 "목적: … 전환: …" (python-pptx notes_slide) — 기존 0장 |
+| 평이한 문체 | S3 F7 "PBC" → "**PBC(공익법인)**" (최초 사용 시 풀기) · IPO/API = 통용 약어 유지 (참조 저장소 lint의 RFP 허용 선례에 근거, 로그에 판단 기록) |
+| ghost-deck | 12개 타이틀 전수 = claim (명제) · 누락 0 · 중복 0 — **기존 준수 확인** (변경 없음) |
+
+검증: audit FAILS 0 (exit 0) · py_compile 0 · build 12 · check_office 0 · render11 12/12 (sourceSha256 = 파일 sha256 `1ccc0f0e`) · 노트 12/12 실측 · S1·S4·S5·S7 재실독 0결함 · 산출물 7종→8종(커버 카피 동기 갱신) · 스코어카드 95/100 유지 (변경 = 미세 채도 어둡게 + 노트, 디자인 구조 변동 0).

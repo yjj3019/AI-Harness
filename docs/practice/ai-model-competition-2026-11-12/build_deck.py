@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-"""GPT vs Claude AI competition sample (2026-11-12) — v5 design-system build.
-Layout-archetype system (slidev-inspired, ideas-only): cover/statement/table/
-ladder/duel/price-scale/bar-grid/two-col/matrix/close — no two adjacent slides
-share a skeleton. v5: modular type scale + dark act slide (S6) + Swiss gridlines
-(S7) + hero data column (S8) — from slidevjs/themes (MIT, seriph/bricks tokens),
-reveal.js black theme (MIT), Swiss typographic style (Wikipedia, CC BY-SA) —
-ideas-only, zero code/content copied.
+"""GPT vs Claude AI competition sample (2026-11-12) — v6 accessibility + notes build.
+v5 design system (dark act slide, modular type scale, Swiss gridlines) plus:
+WCAG AA contrast audit fixes (MUT 8A93A3->6B7280, tier numbers SUB, focal on-blue
+PAPER, band BLUE_D) and speaker notes (purpose/transition) on all 12 slides.
+Ideas adopted (MIT, zero code copy): slidevjs/themes, reveal.js, yjj3019/ProposalSkills.
 Evidence: 01-facts.md (F1~F9). Vendor benchmark = one-sided (F6, amber label).
 Generates 03-deck.pptx (12 slides). Deterministic: no images, shapes only.
 """
@@ -20,8 +18,8 @@ from pptx.oxml.ns import qn
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------- palette ----------------
-INK = "101418"; PAPER = "FFFFFF"; LINE = "D8DDE4"; MUT = "8A93A3"; SUB = "46505E"
-BLUE = "2563EB"; BLUE_TINT = "E8EEFB"; BLUE_L = "9DC1FF"
+INK = "101418"; PAPER = "FFFFFF"; LINE = "D8DDE4"; MUT = "6B7280"; SUB = "46505E"
+BLUE = "2563EB"; BLUE_TINT = "E8EEFB"; BLUE_L = "9DC1FF"; BLUE_D = "1D4ED8"
 INK_TX = "F4F7FB"; INK_TX2 = "93A5BE"; INK_LINE = "2A3648"; LTX = "C7D2E0"
 INK_TINT = "EEF0F3"; INK_TINT2 = "F6F7F9"
 GREEN = "16A34A"; RED = "DC2626"; RED_TX = "B91C1C"
@@ -142,8 +140,8 @@ tb(s, 6.83, 5.02, 5.6, 0.5, [("안전과 신뢰 × 공익 구조", {"size": 23, 
 tb(s, 6.83, 5.62, 5.6, 0.3, [("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})])
 tb(s, 6.28, 5.2, 0.75, 0.3, [("VS", {"size": 10, "color": INK_TX2, "mono": True, "align": PP_ALIGN.CENTER, "spc": 200})])
 hairline(s, 0.9, 6.82, 11.53, INK_LINE)
-tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 7종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})])
-tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 07", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
+tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 8종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})])
+tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
 
 # ===== S2 — archetype: statement =====
 s = new_slide(); chrome(s, "01 — 질문 Question", "비교의 단위를 바꾸자 — 모델이 아니라 티어", 2)
@@ -178,7 +176,7 @@ rows3 = [
     ("F4", "Claude API 가격 — Fable $8/$40 · Opus $4/$20 · Sonnet $2/$10 · Haiku $0.10/$0.50", GREEN, "확인", "platform.claude.com"),
     ("F5", "Fable/Mythos 5.2 — 동일 모델, Mythos는 검증 프로그램 · 30% 고속 · fast 2.5×", GREEN, "확인", "anthropic.com"),
     ("F6", "벤치마크 — FrontierCode: Fable 49.1 > Opus 45.5 > GPT-6 Astra 42.8 (Anthropic 공고)", AMBER, "확인 (한측)", "anthropic.com (단일 소스)"),
-    ("F7", "Anthropic 구조 신호 — PBC · S-1 (10-26) · Public Benefit Fund · 약물 개발 연구", GREEN, "확인", "anthropic.com/news"),
+    ("F7", "Anthropic 구조 신호 — PBC(공익법인) · S-1 IPO (10-26) · Public Benefit Fund · 약물 개발 연구", GREEN, "확인", "anthropic.com/news"),
     ("F8·F9", "OpenAI 공식 입장 진술 · 독립(비벤더) 벤치마크 — 미취득·미수행, 주장하지 않음", RED, "미검증", "—"),
 ]
 ty = 2.35
@@ -223,9 +221,9 @@ for no, name, role, fill, focal in lad4:
     i = int(no) - 1
     y = 1.95 + i * 0.78
     rect(s, 0.9, y, lw4[i], 0.62, BLUE if focal else fill, BLUE if focal else LINE, 1.0)
-    tb(s, 1.12, y + 0.16, 0.6, 0.34, [(no, {"size": 16, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.12, y + 0.16, 0.6, 0.34, [(no, {"size": 16, "color": PAPER if focal else SUB, "disp": True, "bold": True})])
     tb(s, 1.78, y + 0.13, 3.1, 0.4, [(name, {"size": 15, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
-    tb(s, 5.15, y + 0.18, lw4[i] - 5.5, 0.4, [(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})])
+    tb(s, 5.15, y + 0.18, lw4[i] - 5.5, 0.4, [(role, {"size": 10.5, "color": PAPER if focal else SUB})])
 tb(s, 0.9, 5.18, 6.0, 0.3, [("티어 아래 — 세로 (전문) 확장 (F1)", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})])
 c4 = [("GPT-6 Cyber — 허가된 취약점 작업", 2.7), ("gpt-oss-120b/20b — 오픈웨이트 (H100)", 2.9),
       ("음성 · 이미지 전문 라인 (Audio · GPT-Image)", 3.0), ("ChatGPT — 소비자 생태계", 2.7)]
@@ -249,13 +247,13 @@ for no, name, role, focal in lad5:
     i = int(no) - 1
     y = 1.95 + i * 0.6
     rect(s, 0.9, y, lw5[i], 0.46, INK if focal else INK_TINT, INK if focal else LINE, 1.0)
-    tb(s, 1.12, y + 0.08, 0.6, 0.32, [(no, {"size": 15, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.12, y + 0.08, 0.6, 0.32, [(no, {"size": 15, "color": INK_TX2 if focal else SUB, "disp": True, "bold": True})])
     tb(s, 1.78, y + 0.08, 3.3, 0.32, [(name, {"size": 14, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
     tb(s, 5.35, y + 0.11, lw5[i] - 5.7, 0.32, [(role, {"size": 10.5, "color": "C7D2E0" if focal else SUB})])
 # FABLE=MYTHOS band
 rect(s, 0.9, 4.5, 11.53, 0.82, BLUE_TINT)
 rect(s, 0.9, 4.5, 0.045, 0.82, BLUE)
-tb(s, 1.18, 4.62, 11.0, 0.3, [("FABLE = MYTHOS — 동일한 기반 모델, 접근만 분리 (F5)", {"size": 11, "color": BLUE, "bold": True, "spc": 80})])
+tb(s, 1.18, 4.62, 11.0, 0.3, [("FABLE = MYTHOS — 동일한 기반 모델, 접근만 분리 (F5)", {"size": 11, "color": BLUE_D, "bold": True, "spc": 80})])
 tb(s, 1.18, 4.94, 11.0, 0.32, [("Fable = 일반 공개(사이버·바이오 안전장치 포함) · Mythos = Life Sciences · Cyber 검증 프로그램 조직 — '이중용도'를 가격으로 분리한 구조", {"size": 10, "color": SUB})])
 tb(s, 0.9, 5.56, 5.0, 0.3, [("안전 체계 신호 (F5)", {"size": 9.5, "color": MUT, "bold": True, "spc": 180})])
 saf = ["System Card 공개 · 샌드박스 탈출 평가 (프리릴리스 안전 테스트)",
@@ -477,5 +475,22 @@ tb(s, 0.9, 7.02, 8.6, 0.3, [("근거표 01-facts.md · 심층 글 02-article.md 
 tb(s, 10.43, 7.02, 2.0, 0.3, [("END", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT, "spc": 200})])
 
 out = os.path.join(BASE, "03-deck.pptx")
+# speaker notes (목적/전환) — every slide (idea-adopted: yjj3019/ProposalSkills, MIT)
+NOTES = [
+    "목적: 프레이밍 — '모델의 전쟁이 아니라 4티어 라인업의 전쟁'. 전환: 2장의 중심 질문으로.",
+    "목적: 중심 주장 — '티어의 대결, 모델의 대결이 아님' + 덱 구조(라인업/비용·성능/결정). 전환: 주장의 근거 — 숫자의 출처.",
+    "목적: 근거 9건 투명 보고 (확인 7 · 한측 소스 1 · 미검증 2=주장 없음). F6 앰버 = 벤더 발표(한측). 전환: 각사가 실제로 내보낸 라인업.",
+    "목적: OpenAI의 카드 — 4티어 + 전문 세로의 폭 (F1). 사다리 해석은 추론임을 강조. 전환: Anthropic의 카드 비교.",
+    "목적: Anthropic의 카드 — 안전 구조 + 검증 프로그램 분리 (Fable=Mythos, F5). 전환: 무엇이 추구되는가 — 방향 질문.",
+    "목적: 덱의 클라이맥스 — 각사 추구 방향은 신호 기반 추론(추론 라벨 명시). F8 미취득은 확인 부재의 보고. 전환: 격차를 수치화하는 가격 구조.",
+    "목적: 로그 스케일 80배 가격 격차 (F4) — 단 한 회사(Anthropic) 기준, OpenAI 수치 0건. 전환: 성능 — 그리고 그 숫자의 한측 소스.",
+    "목적: 최상위 점수 Fable 5.2 — 단 Anthropic 자체 발표 (F6, 한측 소스·앰버). 독립 검증은 미수행. 전환: 각사 문서 기준 강점.",
+    "목적: 양사 강점 — 확인 신호의 재구성이지 상대적 우열의 주장이 아님. 전환: 증거에 없는 것 — 약점.",
+    "목적: 약점 — 추론과 확인 부재의 구분 (좌2는 '없다'가 아닌 '확인 못 함'). 전환: 결정의 방법 — 티어 선택.",
+    "목적: 1:1 티어 매핑 + 3단계 결정 절차 (이 실습의 제안 프레임). 전환: 출처 목록 — 어떤 수치가 확인됐고 어떤 것이 아닌지.",
+    "목적: 최종 투명성 보고 — 취득일, 벤더 취득, 독립 검증 미수행의 한계. 전환: (종료) 상세는 01-facts.md · 02-article.md.",
+]
+for sl, n in zip(prs.slides, NOTES):
+    sl.notes_slide.notes_text_frame.text = n
 prs.save(out)
 print("PPTX OK slides=%d" % len(prs.slides._sldIdLst))

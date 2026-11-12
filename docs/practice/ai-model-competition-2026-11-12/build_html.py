@@ -16,8 +16,8 @@ def F(pt): return round(pt * 96.0 / 72.0, 2)
 def L(v): return round(v / 100.0 * 96.0 / 72.0, 2)
 
 # ---------------- palette (identical to build_deck.py) ----------------
-INK = "101418"; PAPER = "FFFFFF"; LINE = "D8DDE4"; MUT = "8A93A3"; SUB = "46505E"
-BLUE = "2563EB"; BLUE_TINT = "E8EEFB"; BLUE_L = "9DC1FF"
+INK = "101418"; PAPER = "FFFFFF"; LINE = "D8DDE4"; MUT = "6B7280"; SUB = "46505E"
+BLUE = "2563EB"; BLUE_TINT = "E8EEFB"; BLUE_L = "9DC1FF"; BLUE_D = "1D4ED8"
 INK_TX = "F4F7FB"; INK_TX2 = "93A5BE"; INK_LINE = "2A3648"; LTX = "C7D2E0"
 INK_TINT = "EEF0F3"; INK_TINT2 = "F6F7F9"
 GREEN = "16A34A"; RED = "DC2626"; RED_TX = "B91C1C"
@@ -127,8 +127,8 @@ s.t(6.83, 5.02, 5.6, 0.5, [([("안전과 신뢰 × 공익 구조", {"size": 23, 
 s.t(6.83, 5.62, 5.6, 0.3, [([("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})], {})])
 s.t(6.28, 5.2, 0.75, 0.3, [([("VS", {"size": 10, "color": INK_TX2, "mono": True, "align": "center", "spc": 200})], {})])
 s.hl(0.9, 6.82, 11.53, INK_LINE)
-s.t(0.9, 7.02, 8.6, 0.3, [([("산출물 7종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})], {})])
-s.t(10.43, 7.02, 2.0, 0.3, [([("ARTIFACTS 07", {"size": 9, "color": INK_TX2, "mono": True, "align": "right"})], {})])
+s.t(0.9, 7.02, 8.6, 0.3, [([("산출물 8종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})], {})])
+s.t(10.43, 7.02, 2.0, 0.3, [([("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": "right"})], {})])
 slides.append(s)
 
 # ===== S2 statement =====
@@ -162,7 +162,7 @@ rows3 = [
     ("F4", "Claude API 가격 — Fable $8/$40 · Opus $4/$20 · Sonnet $2/$10 · Haiku $0.10/$0.50", GREEN, "확인", "platform.claude.com"),
     ("F5", "Fable/Mythos 5.2 — 동일 모델, Mythos는 검증 프로그램 · 30% 고속 · fast 2.5×", GREEN, "확인", "anthropic.com"),
     ("F6", "벤치마크 — FrontierCode: Fable 49.1 > Opus 45.5 > GPT-6 Astra 42.8 (Anthropic 공고)", AMBER, "확인 (한측)", "anthropic.com (단일 소스)"),
-    ("F7", "Anthropic 구조 신호 — PBC · S-1 (10-26) · Public Benefit Fund · 약물 개발 연구", GREEN, "확인", "anthropic.com/news"),
+    ("F7", "Anthropic 구조 신호 — PBC(공익법인) · S-1 IPO (10-26) · Public Benefit Fund · 약물 개발 연구", GREEN, "확인", "anthropic.com/news"),
     ("F8·F9", "OpenAI 공식 입장 진술 · 독립(비벤더) 벤치마크 — 미취득·미수행, 주장하지 않음", RED, "미검증", "—"),
 ]
 ty = 2.35
@@ -207,9 +207,9 @@ for no, name, role, fill, focal in lad4:
     i = int(no) - 1
     y = 1.95 + i * 0.78
     s.r(0.9, y, lw4[i], 0.62, BLUE if focal else fill, BLUE if focal else LINE)
-    s.t(1.12, y + 0.16, 0.6, 0.34, [([(no, {"size": 16, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})], {})])
+    s.t(1.12, y + 0.16, 0.6, 0.34, [([(no, {"size": 16, "color": PAPER if focal else SUB, "disp": True, "bold": True})], {})])
     s.t(1.78, y + 0.13, 3.1, 0.4, [([(name, {"size": 15, "color": INK_TX if focal else INK, "mono": True, "bold": True})], {})])
-    s.t(5.15, y + 0.18, lw4[i] - 5.5, 0.4, [([(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})], {})])
+    s.t(5.15, y + 0.18, lw4[i] - 5.5, 0.4, [([(role, {"size": 10.5, "color": PAPER if focal else SUB})], {})])
 s.t(0.9, 5.18, 6.0, 0.3, [([("티어 아래 — 세로 (전문) 확장 (F1)", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})], {})])
 c4 = [("GPT-6 Cyber — 허가된 취약점 작업", 2.7), ("gpt-oss-120b/20b — 오픈웨이트 (H100)", 2.9),
       ("음성 · 이미지 전문 라인 (Audio · GPT-Image)", 3.0), ("ChatGPT — 소비자 생태계", 2.7)]
@@ -234,12 +234,12 @@ for no, name, role, focal in lad5:
     i = int(no) - 1
     y = 1.95 + i * 0.6
     s.r(0.9, y, lw5[i], 0.46, INK if focal else INK_TINT, INK if focal else LINE)
-    s.t(1.12, y + 0.08, 0.6, 0.32, [([(no, {"size": 15, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})], {})])
+    s.t(1.12, y + 0.08, 0.6, 0.32, [([(no, {"size": 15, "color": INK_TX2 if focal else SUB, "disp": True, "bold": True})], {})])
     s.t(1.78, y + 0.08, 3.3, 0.32, [([(name, {"size": 14, "color": INK_TX if focal else INK, "mono": True, "bold": True})], {})])
     s.t(5.35, y + 0.11, lw5[i] - 5.7, 0.32, [([(role, {"size": 10.5, "color": LTX if focal else SUB})], {})])
 s.r(0.9, 4.5, 11.53, 0.82, BLUE_TINT)
 s.r(0.9, 4.5, 0.045, 0.82, BLUE)
-s.t(1.18, 4.62, 11.0, 0.3, [([("FABLE = MYTHOS — 동일한 기반 모델, 접근만 분리 (F5)", {"size": 11, "color": BLUE, "bold": True, "spc": 80})], {})])
+s.t(1.18, 4.62, 11.0, 0.3, [([("FABLE = MYTHOS — 동일한 기반 모델, 접근만 분리 (F5)", {"size": 11, "color": BLUE_D, "bold": True, "spc": 80})], {})])
 s.t(1.18, 4.94, 11.0, 0.32, [([("Fable = 일반 공개(사이버·바이오 안전장치 포함) · Mythos = Life Sciences · Cyber 검증 프로그램 조직 — '이중용도'를 가격으로 분리한 구조", {"size": 10, "color": SUB})], {})], wrap=True)
 s.t(0.9, 5.56, 5.0, 0.3, [([("안전 체계 신호 (F5)", {"size": 9.5, "color": MUT, "bold": True, "spc": 180})], {})])
 saf = ["System Card 공개 · 샌드박스 탈출 평가 (프리릴리스 안전 테스트)",
