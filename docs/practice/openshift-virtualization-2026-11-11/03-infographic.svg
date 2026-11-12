@@ -1,29 +1,99 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Malgun Gothic, sans-serif">
-  <rect x="0" y="0" width="1600" height="900" fill="#0f1b2d"/>
-  <text x="80" y="70" font-size="40" fill="#93c5fd" font-weight="bold">OpenShift Virtualization — 통합 운영 개념도 (실습용 개요)</text>
-  <text x="80" y="108" font-size="22" fill="#9fb3c8">확인(F1·F2): Red Hat 공식 페이지 2026-11-11 / 설계 세부(F3): 미검증(403 — 재실측 필요)</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1F3A"/>
+      <stop offset="1" stop-color="#152F4E"/>
+    </linearGradient>
+    <linearGradient id="opsBand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
 
-  <rect x="80" y="150" width="700" height="300" rx="16" fill="#12314e" stroke="#38bdf8" stroke-width="3"/>
-  <text x="110" y="200" font-size="28" fill="#e0f2fe" font-weight="bold">컨테이너 워크로드</text>
-  <rect x="120" y="230" width="300" height="80" rx="10" fill="#0ea5e9"/>
-  <text x="140" y="278" font-size="24" fill="#083344">마이크로서비스</text>
-  <rect x="450" y="230" width="300" height="80" rx="10" fill="#0ea5e9"/>
-  <text x="470" y="278" font-size="24" fill="#083344">클라우드 네이티브 앱</text>
-  <text x="110" y="410" font-size="20" fill="#7dd3fc">→ '함께 마이그레이션·실행·관리'(F1)</text>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1600" height="10" fill="#2563EB"/>
 
-  <rect x="820" y="150" width="700" height="300" rx="16" fill="#3b1d4d" stroke="#c084fc" stroke-width="3"/>
-  <text x="850" y="200" font-size="28" fill="#f3e8ff" font-weight="bold">가상 머신 워크로드</text>
-  <rect x="860" y="230" width="300" height="80" rx="10" fill="#a855f7"/>
-  <text x="880" y="278" font-size="24" fill="#2e1065">기존 VM</text>
-  <rect x="1190" y="230" width="300" height="80" rx="10" fill="#a855f7"/>
-  <text x="1210" y="278" font-size="24" fill="#2e1065">레거시 앱</text>
-  <text x="850" y="410" font-size="20" fill="#d8b4fe">하이퍼바이저 기반 가상화 정의(F2 · 일반 정의)</text>
+  <!-- header -->
+  <text x="90" y="86" font-size="22" letter-spacing="4" fill="#7DA7D9">TECH DECISION BRIEF · 2026-11-11</text>
+  <text x="90" y="148" font-size="46" font-weight="bold" fill="#FFFFFF">통합 운영 개념 — 한 플랫폼, 두 워크로드, 한 운영</text>
+  <text x="90" y="192" font-size="23" fill="#9FB6D4">VM과 컨테이너를 한 플랫폼에서 함께 다루는 방향(확인 F1) · 설계 세부 F3 = 미검증(403 → 재실측 필요)</text>
 
-  <rect x="80" y="500" width="1440" height="150" rx="16" fill="#0d1b2e" stroke="#f59e0b" stroke-width="3"/>
-  <text x="110" y="555" font-size="28" fill="#fde68a" font-weight="bold">공통 운영 체계(제안 축 — F5)</text>
-  <text x="110" y="610" font-size="22" fill="#fcd34d">동일 정책 · 검증 게이트 · 근거표 공유 · 미검증 라벨(설계 세부 F3: 403 → 재실측 필요)</text>
+  <!-- legend -->
+  <g>
+    <circle cx="1180" cy="92" r="9" fill="#22C55E"/><text x="1198" y="100" font-size="19" fill="#DCE9F7">확인 (F1·F2)</text>
+    <circle cx="1350" cy="92" r="9" fill="#EF4444"/><text x="1368" y="100" font-size="19" fill="#DCE9F7">미검증 (F3·F4)</text>
+    <circle cx="1510" cy="92" r="9" fill="#F59E0B"/><text x="1528" y="100" font-size="19" fill="#DCE9F7">제안 (F5)</text>
+  </g>
 
-  <text x="80" y="740" font-size="24" fill="#93c5fd" font-weight="bold">확인        : 컨테이너와 VM을 한 플랫폼에서 함께 다루는 방향(F1) · 가상화 일반 정의(F2)</text>
-  <text x="80" y="790" font-size="24" fill="#fda4af" font-weight="bold">미검증(403) : 컴포넌트·CRD·라이브 마이그레이션·지원 버전(F3·F4) → 설치·문서 재실측이 있는 별도 세션 전용</text>
-  <text x="80" y="850" font-size="20" fill="#9fb3c8">확인일 2026-11-11 · 01-facts.md (F1~F5)</text>
+  <!-- lane: VM -->
+  <g>
+    <rect x="90" y="240" width="700" height="300" rx="22" fill="#10294A" stroke="#7C3AED" stroke-width="3"/>
+    <rect x="90" y="240" width="10" height="300" rx="5" fill="#7C3AED"/>
+    <!-- VM stack icon -->
+    <rect x="135" y="292" width="64" height="16" rx="6" fill="#7C3AED"/>
+    <rect x="135" y="314" width="64" height="16" rx="6" fill="#7C3AED"/>
+    <rect x="135" y="336" width="64" height="16" rx="6" fill="#7C3AED"/>
+    <text x="228" y="318" font-size="31" font-weight="bold" fill="#FFFFFF">가상 머신 워크로드</text>
+    <circle cx="740" cy="272" r="8" fill="#EF4444"/>
+    <text x="726" y="262" font-size="16" fill="#FCA5A5" text-anchor="end">F3 미검증</text>
+    <rect x="135" y="372" width="290" height="60" rx="12" fill="#2A2350"/>
+    <text x="155" y="411" font-size="22" fill="#E2DAFF">기존 VM (레거시)</text>
+    <rect x="450" y="372" width="290" height="60" rx="12" fill="#2A2350"/>
+    <text x="470" y="411" font-size="22" fill="#E2DAFF">컨테이너화 어려운 앱</text>
+    <text x="135" y="502" font-size="20" fill="#9B8CD9">하이퍼바이저 기반 가상화 (정의 F2)</text>
+  </g>
+
+  <!-- lane: container -->
+  <g>
+    <rect x="810" y="240" width="700" height="300" rx="22" fill="#10294A" stroke="#2563EB" stroke-width="3"/>
+    <rect x="810" y="240" width="10" height="300" rx="5" fill="#2563EB"/>
+    <!-- container icon -->
+    <rect x="855" y="308" width="56" height="30" rx="8" fill="#2563EB"/>
+    <rect x="869" y="286" width="56" height="30" rx="8" fill="#2563EB"/>
+    <text x="948" y="318" font-size="31" font-weight="bold" fill="#FFFFFF">컨테이너 워크로드</text>
+    <circle cx="1460" cy="272" r="8" fill="#22C55E"/>
+    <text x="1446" y="262" font-size="16" fill="#86EFAC" text-anchor="end">F1 확인</text>
+    <rect x="855" y="372" width="290" height="60" rx="12" fill="#1B3E6B"/>
+    <text x="875" y="411" font-size="22" fill="#CFE3FF">마이크로서비스</text>
+    <rect x="1170" y="372" width="290" height="60" rx="12" fill="#1B3E6B"/>
+    <text x="1190" y="411" font-size="22" fill="#CFE3FF">클라우드 네이티브 앱</text>
+    <text x="855" y="502" font-size="20" fill="#7DA7D9">→ 함께 마이그레이션·실행·관리 (확인 F1)</text>
+  </g>
+
+  <!-- arrows -->
+  <g fill="#5B7FA6">
+    <rect x="425" y="552" width="14" height="52"/>
+    <polygon points="411,604 453,604 432,632"/>
+    <rect x="1145" y="552" width="14" height="52"/>
+    <polygon points="1131,604 1173,604 1152,632"/>
+  </g>
+
+  <!-- platform bar -->
+  <g>
+    <rect x="90" y="644" width="1420" height="92" rx="18" fill="#0E2A45" stroke="#2563EB" stroke-width="2.5"/>
+    <circle cx="150" cy="690" r="24" fill="#22C55E"/>
+    <text x="150" y="700" font-size="28" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
+    <text x="200" y="690" font-size="29" font-weight="bold" fill="#FFFFFF">한 플랫폼 — VM과 컨테이너의 공존 (확인 F1 방향)</text>
+    <text x="200" y="722" font-size="19" fill="#9FB6D4">제품 설명(확인 F1) · 플랫폼 내부 구성은 F3 미검증</text>
+  </g>
+
+  <!-- shared ops band -->
+  <g>
+    <rect x="90" y="766" width="1420" height="118" rx="18" fill="url(#opsBand)"/>
+    <text x="130" y="812" font-size="27" font-weight="bold" fill="#3B2503">공통 운영 체계 — 제안 축 (F5)</text>
+    <g>
+      <rect x="130" y="830" width="300" height="40" rx="20" fill="#FFFBEB" stroke="#F59E0B"/>
+      <text x="280" y="857" font-size="20" font-weight="bold" fill="#92400E" text-anchor="middle">동일 정책</text>
+      <rect x="455" y="830" width="300" height="40" rx="20" fill="#FFFBEB" stroke="#F59E0B"/>
+      <text x="605" y="857" font-size="20" font-weight="bold" fill="#92400E" text-anchor="middle">검증 게이트</text>
+      <rect x="780" y="830" width="300" height="40" rx="20" fill="#FFFBEB" stroke="#F59E0B"/>
+      <text x="930" y="857" font-size="20" font-weight="bold" fill="#92400E" text-anchor="middle">근거표 공유</text>
+      <rect x="1105" y="830" width="300" height="40" rx="20" fill="#FFFBEB" stroke="#F59E0B"/>
+      <text x="1255" y="857" font-size="20" font-weight="bold" fill="#92400E" text-anchor="middle">미검증 라벨 유지</text>
+    </g>
+  </g>
+
+  <!-- footer meta -->
+  <text x="90" y="940" font-size="20" fill="#7DA7D9">확인일 2026-11-11 · 근거표 01-facts.md (F1~F5) · 검증 로그 08-verification-log.md</text>
+  <text x="90" y="972" font-size="18" fill="#5B7FA6">개념 개요 (제안 F5) — 제품 기능·수치 주장 없음 · F3·F4 재실측 전까지 미검증 라벨 유지</text>
 </svg>
