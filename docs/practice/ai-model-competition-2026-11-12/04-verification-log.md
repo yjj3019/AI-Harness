@@ -31,6 +31,17 @@
 - **근거**: web_fetch HTTP 200 × 7 (developers.openai.com 3 · platform.claude.com 2 · anthropic.com 2 — 2026-11-12) · build_deck.py 결정론 빌드 · render2 12/12 · check_office exit 0 · skill-audit 28 clean.
 - **미검수**: OpenAI API 가격(미취득 — 수치 아님) · OpenAI 안전 체계 공식 문서(F8) · 독립(비벤더) 벤치마크(F9) · PowerPoint/타 앱 원앱 렌더(LibreOffice 기준) · 'AI 티'는 주관적 평가 — 스코어카드로 근사.
 
+## 파일 재생성 · 즉시 재검증
+
+- 2026-11-12 14:25 (머지 후): 작업 트리 정합성 점검에서 온디스크 `03-deck.pptx`가 커밋된 바이트와 다름을 확인 (파일이 외부에서 재생성됨). 같은 시점의 OpenShift 실습 바이너리 4종(04~07)도 동일한 현상.
+- 조치: 커밋된 바이트로 복원(`git checkout`) 후 즉시 재검증.
+- 재검증 결과 (실측):
+  - 커밋 blob sha256 `5304eb50f26ddfa8f073f17ba6ab4cf412cb80f88bcf5ac7c62a87060d7cc9a4` = render2 sourceSha256 (시각 검증 12/12 렌더 입력) — **바이트 동일**
+  - check_office(커밋 blob): exit 0
+  - render3 (커밋 blob 기준 렌더): 12/12 PNG · missingFonts 0 · 페이지별 바이트 수 render2와 일치
+  - 작업 트리 == 커밋 바이트 (sha256 일치, `git status` 클린)
+  - OpenShift 04-deck.pptx HEAD blob: 12슬라이드 유효 (동일 방식으로 복원·검증)
+
 ## 한계
 
 - 모든 수치는 벤더 취득값(2026-11-12) — 독립 검증 미수행(F9). 벤치마크 표는 한측 소스(F6)라 앰버 라벨.
