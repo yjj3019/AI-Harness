@@ -142,7 +142,7 @@ tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 8종 · 구조 · 렌더 · 재계산 �
 tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
 
 # ===== S2 question =====
-s = new_slide(); chrome(s, "01 — 질문 Question", "내려야 할 결정 — 분리, 아니면 공존?", 2)
+s = new_slide(); chrome(s, "01 — 질문 Question", "결정할 것은 기술이 아니라 경계 — 한 플랫폼으로 합칠 것인가", 2)
 tb(s, 0.9, 1.95, 6.9, 1.5, [
     ("레거시 VM과 컨테이너를", {"size": 24, "color": INK, "bold": True, "ls": 1.15}),
     ("하나의 플랫폼으로 합칠 것인가.", {"size": 24, "color": BLUE, "bold": True, "ls": 1.15}),
@@ -169,7 +169,7 @@ for i, (n, t, d) in enumerate([("01", "경계", "무엇을 VM으로, 무엇을 �
 tb(s, 8.0, 6.5, 4.43, 0.6, [("이 덱에는 수치가 없다 — 수치는 실측값 + 확인일 + 출처 + 재현 방법이 함께 있을 때만 등장한다.", {"size": 10, "color": MUT, "italic": True, "ls": 1.25})])
 
 # ===== S3 evidence (editorial table) =====
-s = new_slide(); chrome(s, "02 — 근거 Evidence", "근거 실측 현황 — 2026-11-11 취득", 3)
+s = new_slide(); chrome(s, "02 — 근거 Evidence", "확인은 두 건뿐 — F3·F4는 403으로 아직 말할 수 없다", 3)
 dot(s, 0.92, 1.8, 0.08, GREEN); tb(s, 1.12, 1.7, 1.5, 0.3, [("확인", {"size": 10, "color": SUB, "spc": 80})])
 dot(s, 1.95, 1.8, 0.08, RED); tb(s, 2.15, 1.7, 1.7, 0.3, [("미검증", {"size": 10, "color": SUB, "spc": 80})])
 dot(s, 3.45, 1.8, 0.08, AMBER); tb(s, 3.65, 1.7, 1.5, 0.3, [("제안", {"size": 10, "color": SUB, "spc": 80})])
@@ -199,7 +199,7 @@ for fid, st, dc, dtc, desc, src in ev:
     yy += rh
 
 # ===== S4 concept (thin-line diagram) =====
-s = new_slide(); chrome(s, "03 — 개념 Concept", "한 플랫폼, 두 워크로드, 한 운영", 4)
+s = new_slide(); chrome(s, "03 — 개념 Concept", "한 플랫폼, 두 워크로드, 한 운영 — 공존은 확인된 방향 (F1)", 4)
 by, bh = 1.85, 2.0
 rect(s, 0.9, by, 5.6, bh, PAPER, line_color=INK, line_w=1.4)
 tb(s, 1.18, by + 0.2, 4.0, 0.4, [("가상 머신 워크로드", {"size": 15, "color": INK, "bold": True})])
@@ -232,7 +232,7 @@ for j, ch in enumerate(["동일 정책", "검증 게이트", "근거표 공유",
 tb(s, 0.9, 6.72, 11.53, 0.3, [("개념 개요 (제안 F5) — 상세 도해 03-infographic.svg · 설계 세부 F3 미검증 (403 → 재실측 필요)", {"size": 9.5, "color": MUT})])
 
 # ===== S5 background + tradeoff (editorial) =====
-s = new_slide(); chrome(s, "04 — 배경 Background", "VM vs 컨테이너 — 일반 지식, 제품 사양 아님", 5)
+s = new_slide(); chrome(s, "04 — 배경 Background", "VM과 컨테이너는 네 차원의 교환 관계 — 격리·밀도·상태·이동성", 5)
 tb(s, 0.9, 1.8, 5.5, 0.4, [("VM (가상 머신)", {"size": 15, "color": INK, "bold": True})])
 tb(s, 0.9, 2.28, 5.5, 0.95, [("하드웨어를 가상화해 각 VM이 독립된 운영체계를 가진다 — 격리는 강하고, 시작은 느리고, 밀도는 낮다.", {"size": 11.5, "color": SUB, "ls": 1.3})])
 tb(s, 6.93, 1.8, 5.5, 0.4, [("컨테이너", {"size": 15, "color": INK, "bold": True})])
@@ -247,7 +247,7 @@ dot(s, 0.92, 6.68, 0.08, AMBER)
 tb(s, 1.14, 6.58, 11.2, 0.35, [("일반 배경 지식(교육용) — OpenShift Virtualization의 특정 기능·숫자가 아님 · 제품 주장은 F1·F2 확인 범위까지", {"size": 9.5, "color": AMBER_TX, "spc": 60})])
 
 # ===== S6 decision axes (typographic) =====
-s = new_slide(); chrome(s, "05 — 결정 Decision", "의사결정 4개 축 — 판단의 틀 (제안 F5)", 6)
+s = new_slide(); chrome(s, "05 — 결정 Decision", "4축으로 경계를 판단한다 — 가중치는 제안일 뿐 (F5)", 6)
 axes = [
     ("01", "워크로드 경계", ["어느 VM을 남기고, 무엇을 컨테이너로?", "의존성 · 라이선스 · 레거시 미들웨어 제약은?", "컨테이너화할 팀 역량은 충분한가?"], "0.30"),
     ("02", "운영 통합 수준", ["인증 · 로그 · 백업 · 네트워크를 얼마나 하나로?", "통합 1점당 검증 범위가 커지는가?", "단계적 통합 로드맵은 있는가?"], "0.30"),
@@ -265,7 +265,7 @@ for i, (num, t, qs, wt) in enumerate(axes):
     tb(s, x + 0.05, y + 0.85, 5.4, 1.5, lines)
 
 # ===== S7 scoring (editorial table + thin bars) =====
-s = new_slide(); chrome(s, "06 — 결정 Decision", "채점 구조 + 예시 — 06-decision.xlsx", 7)
+s = new_slide(); chrome(s, "06 — 결정 Decision", "예시 채점에서는 통합·검증이 상위 — 이 두 축부터 답해야 한다", 7)
 rows = [("워크로드 경계 (VM vs 컨테이너)", "0.30", "3 *", "0.90", "제안"),
         ("운영 통합 수준 (인증 · 백업 · 정책)", "0.30", "4 *", "1.20", "제안"),
         ("검증 방법 (판정 기준 관측 가능성)", "0.25", "4 *", "1.00", "제안"),
@@ -288,7 +288,7 @@ tb(s, 10.15, 5.72, 2.28, 1.1, [("3.55 *", {"size": 52, "color": INK, "bold": Tru
 tb(s, 10.15, 6.78, 2.28, 0.3, [("제안 프레임 — 측정값 아님", {"size": 9, "color": AMBER_TX, "spc": 60, "align": PP_ALIGN.RIGHT})])
 
 # ===== S8 pipeline (hairline timeline) =====
-s = new_slide(); chrome(s, "07 — 프로세스 Process", "8단계 파이프라인 → 산출물 8종", 8)
+s = new_slide(); chrome(s, "07 — 프로세스 Process", "8개 산출물은 같은 근거표를 읽는다 — 변환해도 의미가 변하지 않는다", 8)
 rect(s, 0.9, 3.0, 11.53, 0.014, INK)
 steps = ["Intake", "Research", "Editorial", "Art", "Production", "Gates", "Improve", "Handoff"]
 arts = ["1 근거표", "2 심층 글", "3 인포그래픽", "4 PPTX", "5 DOCX", "6 XLSX", "7 PDF", "8 검증 로그"]
@@ -305,7 +305,7 @@ tb(s, 0.9, 5.15, 11.5, 1.1, [
 ])
 
 # ===== S9 gates (editorial rows) =====
-s = new_slide(); chrome(s, "08 — 검증 Gates", "형식별 검증 게이트 — 이번 실행 결과", 9)
+s = new_slide(); chrome(s, "08 — 검증 Gates", "검증을 통과한 것은 4개 — HWPX는 unavailable", 9)
 grows = [("PPTX", "12슬라이드 (요구 10~12) · 구조 검사 · 전 슬라이드 렌더 · 시각 실독", "PASS", GREEN, GREEN_TX),
          ("DOCX", "구조 검사 · 표 무결성 · 전 페이지 렌더 (에디토리얼 스타일)", "PASS", GREEN, GREEN_TX),
          ("XLSX", "3시트 · 수식 재계산 — 가중치 합 1.0 확인 (B8)", "PASS", GREEN, GREEN_TX),
@@ -320,7 +320,7 @@ for i, (fmt, gate, res, dc, dtc) in enumerate(grows):
     tb(s, 11.1, y + 0.12, 1.33, 0.6, [(res, {"size": 9.5, "color": dtc, "bold": True, "spc": 120})], anchor=MSO_ANCHOR.MIDDLE)
 
 # ===== S10 limits + next (2-column, top rules only) =====
-s = new_slide(); chrome(s, "09 — 한계 + 다음 단계", "정직한 한계, 그리고 다음 4걸음", 10)
+s = new_slide(); chrome(s, "09 — 한계 + 다음 단계", "지금 못 하는 것은 명확하다 — 실측과 F3·F4, 그리고 다음 4걸음", 10)
 rect(s, 0.9, 1.85, 5.5, 0.028, RED)
 tb(s, 0.9, 2.08, 5.5, 0.4, [("미수행 · 미검증 — 지금 못 하는 것", {"size": 14, "color": INK, "bold": True})])
 for i, t in enumerate(["설치 · 클러스터 구동 · 기능/성능 실측", "F3(설계 세부) · F4(지원 범위) — 403, 재실측 필요", "수치 · 기능 주장 0건 (근거 4요소 갖춰야 진입)", "HWPX 산출물 — 도구 부재, unavailable 명시", "타 앱(파워포인트 · 한컴) 픽셀 일치 보장"]):
@@ -339,7 +339,7 @@ for i, (n, t, d) in enumerate([("01", "공식 문서 재실측", "F3 · F4를 �
     tb(s, 7.55, y + 0.3, 4.9, 0.55, [(d, {"size": 10.5, "color": SUB, "ls": 1.15})])
 
 # ===== S11 conclusion =====
-s = new_slide(); chrome(s, "10 — 결론 Conclusion", "지금 이 자리에서 — 아는 것, 모르는 것, 해야 할 것", 11)
+s = new_slide(); chrome(s, "10 — 결론 Conclusion", "결정은 순서가 있다 — ① 재실측 ② 실측 채점 ③ 경계 결정", 11)
 for x, acc, atc, title, lines, takeaway in [
     (0.9, GREEN, GREEN_TX, "확인 — 방향은 확인됨",
      ["F1: VM+컨테이너 통합 운영은 제품 설명 (200)", "F2: 가상화 정의 — 하이퍼바이저 기반 (200)"],
