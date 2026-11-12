@@ -89,11 +89,13 @@ p{margin:0}
 """ % (PAPER, INK)
 
 META5 = "GPT vs CLAUDE · 2026-11-12 · 근거 01-facts.md"
-def chrome(sl, kicker, title, page, dark=False):
+def chrome(sl, kicker, title, page, dark=False, act=""):
     kc = INK_TX2 if dark else MUT
     tc = PAPER if dark else INK
     sl.r(0.9, 0.665, 0.09, 0.09, BLUE)
     sl.t(1.12, 0.56, 10.5, 0.3, [([(kicker.upper(), {"size": 9.5, "color": kc, "bold": True, "spc": 200})], {})])
+    if act:
+        sl.t(7.43, 0.56, 5.0, 0.3, [([(act, {"size": 8.5, "color": kc, "bold": True, "spc": 200, "align": "right"})], {})])
     sl.t(0.88, 0.9, 11.6, 0.7, [([(title, {"size": 27, "color": tc, "bold": True})], {})])
     sl.t(0.9, 7.16, 8.0, 0.28, [([(META5, {"size": 8.5, "color": kc, "spc": 60})], {})])
     sl.t(11.03, 7.16, 1.4, 0.28, [([("%02d / 12" % page, {"size": 8.5, "color": kc, "mono": True, "align": "right"})], {})])
@@ -111,28 +113,42 @@ def T(x, y, w, h, paras, wrap=False):  # shorthand for calls below
 
 slides = []
 
-# ===== S1 cover (ink) =====
+# ===== S1 cover (ink) — v7 matchup lockup =====
 s = Sl(True)
 s.t(0.9, 0.78, 6.0, 0.3, [([("AI MODEL COMPETITION — SAMPLE", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})], {})])
 s.t(6.43, 0.78, 5.1, 0.3, [([("2026-11-12", {"size": 10, "color": INK_TX2, "mono": True, "align": "right"})], {})])
 s.hl(0.9, 1.42, 11.53, INK_LINE)
-s.t(0.86, 1.95, 11.8, 1.2, [([("GPT vs Claude", {"size": 64, "color": PAPER, "bold": True, "disp": True})], {})])
-s.t(0.9, 3.3, 11.0, 0.5, [([("두 회사의 4티어 라인업 전쟁 — 추구와 장단점 (공식 문서 기준)", {"size": 16, "color": LTX})], {})])
-s.t(0.9, 4.72, 5.6, 0.3, [([("OPENAI", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})], {})])
-s.t(0.9, 5.02, 5.6, 0.5, [([("능력의 폭 × 규모", {"size": 23, "color": PAPER, "bold": True})], {})])
-s.t(0.9, 5.62, 5.6, 0.3, [([("멀티모달 풀스택 · 4티어 + 전문 세로 · 소비자 규모 (F1·F2)", {"size": 10, "color": INK_TX2})], {})])
-s.r(6.66, 4.72, 0.011, 1.3, INK_LINE)
-s.t(6.83, 4.72, 5.6, 0.3, [([("ANTHROPIC", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})], {})])
-s.t(6.83, 5.02, 5.6, 0.5, [([("안전과 신뢰 × 공익 구조", {"size": 23, "color": PAPER, "bold": True})], {})])
-s.t(6.83, 5.62, 5.6, 0.3, [([("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})], {})])
-s.t(6.28, 5.2, 0.75, 0.3, [([("VS", {"size": 10, "color": INK_TX2, "mono": True, "align": "center", "spc": 200})], {})])
+s.t(0.82, 1.62, 12.0, 1.5, [([
+    ("GPT ", {"size": 96, "color": PAPER, "bold": True, "disp": True}),
+    ("vs", {"size": 30, "color": AMBER_L, "italic": True, "mono": True, "bold": True}),
+    (" CLAUDE", {"size": 96, "color": PAPER, "bold": True, "disp": True})], {})])
+s.t(0.9, 3.42, 11.0, 0.4, [([("두 회사의 4티어 라인업 전쟁 — 추구와 장단점 (공식 문서 기준)", {"size": 16, "color": LTX})], {})])
+s.t(0.9, 3.92, 11.0, 0.3, [([
+    ("가격 격차 ", {"size": 11.5, "color": INK_TX2}),
+    ("80×", {"size": 11.5, "color": AMBER_L, "mono": True, "bold": True}),
+    ("  ·  근거 9건 — 확인 7 · 한측 1 · 미검증 2  ·  취득 2026-11-12", {"size": 11.5, "color": INK_TX2})], {})])
+s.hl(0.9, 4.52, 11.53, INK_LINE)
+s.t(0.9, 4.78, 5.6, 0.3, [([("OPENAI", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})], {})])
+s.t(0.9, 5.08, 5.6, 0.5, [([("능력의 폭 × 규모", {"size": 22, "color": PAPER, "bold": True})], {})])
+s.t(0.9, 5.66, 5.6, 0.3, [([("멀티모달 풀스택 · 4티어 + 전문 세로 · 소비자 규모 (F1·F2)", {"size": 10, "color": INK_TX2})], {})])
+for i in range(4):
+    s.r(0.9 + i * 0.26, 6.08, 0.14, 0.14, BLUE if i == 0 else INK_LINE)
+s.t(2.05, 6.05, 3.0, 0.24, [([("4 TIERS (F1)", {"size": 8, "color": INK_TX2, "spc": 200})], {})])
+s.r(6.66, 4.7, 0.011, 1.5, INK_LINE)
+s.t(6.28, 5.12, 0.75, 0.5, [([("VS", {"size": 28, "color": AMBER_L, "mono": True, "bold": True, "align": "center", "spc": 300})], {})])
+s.t(6.83, 4.78, 5.6, 0.3, [([("ANTHROPIC", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})], {})])
+s.t(6.83, 5.08, 5.6, 0.5, [([("안전과 신뢰 × 공익 구조", {"size": 22, "color": PAPER, "bold": True})], {})])
+s.t(6.83, 5.66, 5.6, 0.3, [([("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})], {})])
+for i in range(4):
+    s.r(6.83 + i * 0.26, 6.08, 0.14, 0.14, PAPER if i == 0 else INK_LINE)
+s.t(7.98, 6.05, 3.0, 0.24, [([("4 TIERS (F3)", {"size": 8, "color": INK_TX2, "spc": 200})], {})])
 s.hl(0.9, 6.82, 11.53, INK_LINE)
 s.t(0.9, 7.02, 8.6, 0.3, [([("산출물 8종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})], {})])
 s.t(10.43, 7.02, 2.0, 0.3, [([("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": "right"})], {})])
 slides.append(s)
 
 # ===== S2 statement =====
-s = Sl(); chrome(s, "01 — 질문 Question", "비교의 단위를 바꾸자 — 모델이 아니라 티어", 2)
+s = Sl(); chrome(s, "01 — 질문 Question", "비교의 단위를 바꾸자 — 모델이 아니라 티어", 2, act="ACT I — BASIS")
 s.t(0.88, 1.95, 11.6, 1.5, [([
     ("GPT와 Claude의 대결은 두 모델의 대결이 아닙니다. ", {"size": 32, "color": INK, "bold": True}),
     ("티어(4단계 라인업)의 대결입니다.", {"size": 32, "color": BLUE, "bold": True})], {"ls": 1.2})], wrap=True)
@@ -151,7 +167,7 @@ footnote(s, "이 덱의 범위 — 공식 문서 기준 · 독립 벤치마크 �
 slides.append(s)
 
 # ===== S3 data-table =====
-s = Sl(); chrome(s, "02 — 근거 Evidence", "숫자는 전부 오늘 취득 — 단 F6는 벤더 발표", 3)
+s = Sl(); chrome(s, "02 — 근거 Evidence", "숫자는 전부 오늘 취득 — 단 F6는 벤더 발표", 3, act="ACT I — BASIS")
 s.chip(8.3, 1.72, 1.3, 0.4, "확인 7", tcolor="157A3C", size=9)
 s.chip(9.75, 1.72, 1.3, 0.4, "한측 1", tcolor=AMBER_TX, size=9)
 s.chip(11.2, 1.72, 1.23, 0.4, "미검증 2", tcolor=RED_TX, size=9)
@@ -194,7 +210,7 @@ for i, (fid, txt, dc, stt, src) in enumerate(rows3):
 slides.append(s)
 
 # ===== S4 ladder (OpenAI) =====
-s = Sl(); chrome(s, "03 — 라인업 OpenAI", "OpenAI의 카드는 폭 — 4티어 + 전문 세로 확장", 4)
+s = Sl(); chrome(s, "03 — 라인업 OpenAI", "OpenAI의 카드는 폭 — 4티어 + 전문 세로 확장", 4, act="ACT I — BASIS")
 s.t(0.9, 1.72, 11.53, 0.26, [([("카탈로그 출처 — developers.openai.com (F1)", {"size": 8.5, "color": MUT, "spc": 60, "align": "right"})], {})])
 lad4 = [
     ("01", "GPT-6 Astra", "플래그십 — 가장 어려운 추론 · 코딩", BLUE, True),
@@ -221,7 +237,7 @@ footnote(s, "추론 — '능력 × 비용' 사다리: 같은 작업을 Luna Low 
 slides.append(s)
 
 # ===== S5 ladder + band (Anthropic) =====
-s = Sl(); chrome(s, "03 — 라인업 Anthropic", "Anthropic의 카드는 안전 — 4티어 + 검증 프로그램 분리 모델", 5)
+s = Sl(); chrome(s, "03 — 라인업 Anthropic", "Anthropic의 카드는 안전 — 4티어 + 검증 프로그램 분리 모델", 5, act="ACT I — BASIS")
 s.t(0.9, 1.72, 11.53, 0.26, [([("카탈로그 출처 — platform.claude.com (F3)", {"size": 8.5, "color": MUT, "spc": 60, "align": "right"})], {})])
 lad5 = [
     ("01", "Claude Fable 5.2", "강인한 추론 · 장기 에이전트 작업", True),
@@ -252,7 +268,7 @@ for i, t in enumerate(saf):
 slides.append(s)
 
 # ===== S6 duel (dark act) =====
-s = Sl(True); chrome(s, "04 — 추구 Pursuit", "각사가 추구하는 것은 다르다 — 능력의 폭 vs 안전과 신뢰", 6, dark=True)
+s = Sl(True); chrome(s, "04 — 추구 Pursuit", "각사가 추구하는 것은 다르다 — 능력의 폭 vs 안전과 신뢰", 6, dark=True, act="ACT II — CLASH")
 s.r(6.66, 1.85, 0.011, 4.0, INK_LINE)
 s.t(0.9, 1.85, 5.5, 0.4, [([("OpenAI", {"size": 15, "color": PAPER, "bold": True})], {})])
 s.t(0.9, 2.24, 5.5, 0.26, [([("신호 (확인 — F1·F2)", {"size": 8.5, "color": INK_TX2, "bold": True, "spc": 160})], {})])
@@ -284,7 +300,7 @@ s.t(0.9, 6.1, 11.5, 0.55, [
 slides.append(s)
 
 # ===== S7 price-scale =====
-s = Sl(); chrome(s, "05 — 비용 Cost", "가격 격차는 80배 — Haiku $0.10에서 Fable $40까지", 7)
+s = Sl(); chrome(s, "05 — 비용 Cost", "가격 격차는 80배 — Haiku $0.10에서 Fable $40까지", 7, act="ACT II — CLASH")
 X0, XW = 3.2, 6.4
 def logx(v):
     return X0 + (math.log10(v) + 1.0) / 2.65 * XW
@@ -322,7 +338,7 @@ footnote(s, "범위 한계 — OpenAI API 가격 미취득 → OpenAI 가격 수
 slides.append(s)
 
 # ===== S8 bar-grid =====
-s = Sl(); chrome(s, "05 — 성능 Performance", "최상위 점수는 Fable 5.2 — 단 그 숫자는 Anthropic의 보고", 8)
+s = Sl(); chrome(s, "05 — 성능 Performance", "최상위 점수는 Fable 5.2 — 단 그 숫자는 Anthropic의 보고", 8, act="ACT II — CLASH")
 s.chip(7.0, 1.72, 5.43, 0.42, "벤더 발표 — Anthropic 공고 (2026-11-09) · 한측 소스 (F6)", tcolor=AMBER_TX, border=AMBER, size=9)
 cols8 = [("FABLE 5.2", 3.75, BLUE), ("OPUS 5.5", 5.95, BAR_GRY), ("GPT-6 ASTRA", 8.15, BAR_GRY), ("GEMINI 4 CARBON", 10.35, BAR_GRY)]
 s.t(0.9, 2.32, 2.7, 0.3, [([("EVAL", {"size": 9, "color": MUT, "spc": 160})], {})])
@@ -353,7 +369,7 @@ footnote(s, "독립 검증 미수행 (F9) — 이 표는 'Anthropic이 주장하
 slides.append(s)
 
 # ===== S9 two-col (strengths) =====
-s = Sl(); chrome(s, "06 — 강점 Strengths", "각사의 강점 — 폭과 생태계 vs 장기 에이전트와 신뢰", 9)
+s = Sl(); chrome(s, "06 — 강점 Strengths", "각사의 강점 — 폭과 생태계 vs 장기 에이전트와 신뢰", 9, act="ACT III — DECISION")
 for px_, head, sub in [(0.9, "OpenAI (신호 기반)", "F1·F2"), (6.83, "Anthropic (신호 기반)", "F3·F5·F7")]:
     s.t(px_, 1.95, 5.5, 0.4, [([(head, {"size": 13.5, "color": INK, "bold": True})], {})])
     s.t(px_, 2.34, 5.5, 0.26, [([("확인 신호 " + sub, {"size": 8.5, "color": MUT, "spc": 160, "bold": True})], {})])
@@ -379,7 +395,7 @@ footnote(s, "'강점'도 '각사 자기 문서의 문장'이다 — 위 목록�
 slides.append(s)
 
 # ===== S10 two-col (weaknesses) =====
-s = Sl(); chrome(s, "06 — 약점 Weaknesses", "각사의 약점 — 증거에 있는 것과 없는 것", 10)
+s = Sl(); chrome(s, "06 — 약점 Weaknesses", "각사의 약점 — 증거에 있는 것과 없는 것", 10, act="ACT III — DECISION")
 for px_, head in [(0.9, "OpenAI (증거 기반 리스크)"), (6.83, "Anthropic (증거 기반 리스크)")]:
     s.t(px_, 1.95, 5.5, 0.4, [([(head, {"size": 13.5, "color": INK, "bold": True})], {})])
     s.r(px_, 2.68, 5.5, 0.022, INK)
@@ -403,7 +419,7 @@ footnote(s, "약점 = F1~F7로부터의 추론이지, 각 회사의 공식 인�
 slides.append(s)
 
 # ===== S11 matrix =====
-s = Sl(); chrome(s, "07 — 결정 Decision", "모델 결정은 티어 선택이지 브랜드 선택이 아니다", 11)
+s = Sl(); chrome(s, "07 — 결정 Decision", "모델 결정은 티어 선택이지 브랜드 선택이 아니다", 11, act="ACT III — DECISION")
 s.t(10.55, 1.62, 1.88, 0.3, [([("1:1", {"size": 30, "color": INK, "bold": True, "disp": True, "align": "right"})], {})])
 s.t(8.9, 1.98, 3.53, 0.26, [([("4티어가 대응한다", {"size": 9, "color": MUT, "spc": 120, "align": "right"})], {})])
 s.t(0.9, 2.3, 2.0, 0.3, [([("티어", {"size": 9, "color": MUT, "spc": 100})], {})])
@@ -442,14 +458,24 @@ s.t(0.9, 2.25, 11.6, 1.3, [
     ([("취득일 2026-11-12.", {"size": 28, "color": PAPER, "bold": True})], {"ls": 1.2}),
     ([("모든 수치는 벤더 취득 — 독립 검증은 미수행.", {"size": 28, "color": PAPER, "bold": True})], {"ls": 1.2}),
 ], wrap=True)
+rec12 = [
+    ("80×", "가격 격차 — Haiku $0.50 → Fable $40 (F4)", 0.9),
+    ("1:1", "티어 매핑 — 4 × 4 대응, 브랜드 무관", 4.9),
+    ("9", "근거 — 확인 7 · 한측 1 · 미검증 2", 8.9),
+]
+for num, lab, rx in rec12:
+    s.r(rx, 3.98, 0.022, 0.82, INK_LINE)
+    s.t(rx + 0.18, 3.88, 3.4, 0.75, [([(num, {"size": 40, "color": PAPER, "bold": True, "disp": True})], {})])
+    s.t(rx + 0.2, 4.68, 3.5, 0.3, [([(lab, {"size": 9, "color": INK_TX2, "spc": 60})], {})])
+s.hl(0.9, 5.22, 11.53, INK_LINE)
 src12 = [
     (GREEN, "developers.openai.com · platform.claude.com · anthropic.com", "HTTP 200 — F1~F5 · F7 확인"),
     (AMBER, "anthropic.com (벤치마크 표)", "F6 — 한측 소스 · OpenAI 독립 보고 없음"),
     (RED, "독립 벤치마크 · OpenAI 공식 입장", "F8 · F9 — 미수행 · 미취득 (주장 없음)"),
 ]
 for i, (dc, u, stt) in enumerate(src12):
-    y = 4.25 + i * 0.52
-    s.d(0.94, y + 0.09, 0.09, dc)
+    y = 5.48 + i * 0.46
+    s.d(0.94, y + 0.08, 0.09, dc)
     s.t(1.22, y, 7.5, 0.3, [([(u, {"size": 11, "color": INK_TX, "mono": True})], {})])
     s.t(8.6, y + 0.02, 3.83, 0.3, [([(stt, {"size": 9.5, "color": INK_TX2, "align": "right"})], {})])
 s.hl(0.9, 6.82, 11.53, INK_LINE)
