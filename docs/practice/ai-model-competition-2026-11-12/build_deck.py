@@ -121,16 +121,16 @@ tb(s, 0.9, 0.78, 6.0, 0.3, [("AI MODEL COMPETITION — SAMPLE", {"size": 10, "co
 tb(s, 6.43, 0.78, 5.1, 0.3, [("2026-11-12", {"size": 10, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
 hairline(s, 0.9, 1.42, 11.53, INK_LINE)
 tb(s, 0.86, 1.95, 11.8, 1.2, [("GPT vs Claude", {"size": 64, "color": PAPER, "bold": True, "disp": True})])
-tb(s, 0.9, 3.3, 11.0, 0.5, [("AI 경합 — OpenAI GPT 시리즈 vs Anthropic Claude 라인업의 추구와 장단점", {"size": 16, "color": "C7D2E0"})])
+tb(s, 0.9, 3.3, 11.0, 0.5, [("두 회사의 4티어 라인업 전쟁 — 추구와 장단점 (공식 문서 기준)", {"size": 16, "color": "C7D2E0"})])
 # two-side direction strip (argument preview)
-tb(s, 0.9, 4.42, 5.6, 0.3, [("OPENAI", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})])
-tb(s, 0.9, 4.72, 5.6, 0.5, [("능력의 폭 × 규모", {"size": 21, "color": PAPER, "bold": True})])
-tb(s, 0.9, 5.32, 5.6, 0.3, [("멀티모달 풀스택 · 4티어 + 전문 세로 · 소비자 규모 (F1·F2)", {"size": 10, "color": INK_TX2})])
-rect(s, 6.66, 4.42, 0.011, 1.35, INK_LINE)
-tb(s, 6.83, 4.42, 5.6, 0.3, [("ANTHROPIC", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})])
-tb(s, 6.83, 4.72, 5.6, 0.5, [("안전과 신뢰 × 공익 구조", {"size": 21, "color": PAPER, "bold": True})])
-tb(s, 6.83, 5.32, 5.6, 0.3, [("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})])
-tb(s, 6.28, 4.9, 0.75, 0.3, [("VS", {"size": 10, "color": INK_TX2, "mono": True, "align": PP_ALIGN.CENTER, "spc": 200})])
+tb(s, 0.9, 4.72, 5.6, 0.3, [("OPENAI", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})])
+tb(s, 0.9, 5.02, 5.6, 0.5, [("능력의 폭 × 규모", {"size": 23, "color": PAPER, "bold": True})])
+tb(s, 0.9, 5.62, 5.6, 0.3, [("멀티모달 풀스택 · 4티어 + 전문 세로 · 소비자 규모 (F1·F2)", {"size": 10, "color": INK_TX2})])
+rect(s, 6.66, 4.72, 0.011, 1.3, INK_LINE)
+tb(s, 6.83, 4.72, 5.6, 0.3, [("ANTHROPIC", {"size": 10, "color": INK_TX2, "bold": True, "spc": 240})])
+tb(s, 6.83, 5.02, 5.6, 0.5, [("안전과 신뢰 × 공익 구조", {"size": 23, "color": PAPER, "bold": True})])
+tb(s, 6.83, 5.62, 5.6, 0.3, [("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})])
+tb(s, 6.28, 5.2, 0.75, 0.3, [("VS", {"size": 10, "color": INK_TX2, "mono": True, "align": PP_ALIGN.CENTER, "spc": 200})])
 hairline(s, 0.9, 6.82, 11.53, INK_LINE)
 tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 6종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})])
 tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 06", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
@@ -143,8 +143,11 @@ tb(s, 0.88, 1.95, 11.6, 1.6, [
       ("티어(4단계 라인업)의 대결입니다.", {"size": 26, "color": BLUE, "bold": True})], {"ls": 1.15}),
 ])
 tb(s, 0.9, 3.7, 11.4, 0.85, [
-    ([("OpenAI — GPT-6 Astra→Luna 4티어 + 전문 세로 (F1)", {"size": 11.5, "color": SUB}),
-      ("      Anthropic — Fable 5.2→Haiku 5.5 4티어 (F3)", {"size": 11.5, "color": SUB})], {"sa": 6}),
+    ([("OpenAI", {"size": 11.5, "color": INK, "bold": True}),
+      (" — GPT-6 Astra→Luna 4티어 + 전문 세로 (F1)", {"size": 11.5, "color": SUB}),
+      ("      ", {"size": 11.5, "color": SUB}),
+      ("Anthropic", {"size": 11.5, "color": INK, "bold": True}),
+      (" — Fable 5.2→Haiku 5.5 4티어 (F3)", {"size": 11.5, "color": SUB})], {"sa": 6}),
     ("두 카탈로그를 나란히 놓으면 티어가 1:1로 정렬된다 — 그래서 '티어 × 작업' 축으로 비교한다.", {"size": 11.5, "color": INK, "bold": True, "ls": 1.15}),
 ])
 # agenda chips (inline, replaces vertical 01/02/03 stack)
@@ -209,17 +212,17 @@ lad4 = [
 lw4 = [11.53, 10.5, 9.5, 8.5]
 for no, name, role, fill, focal in lad4:
     i = int(no) - 1
-    y = 1.95 + i * 0.72
-    rect(s, 0.9, y, lw4[i], 0.56, BLUE if focal else fill, BLUE if focal else LINE, 1.0)
-    tb(s, 1.12, y + 0.12, 0.6, 0.34, [(no, {"size": 13, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
-    tb(s, 1.78, y + 0.09, 3.1, 0.4, [(name, {"size": 13, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
-    tb(s, 5.15, y + 0.14, lw4[i] - 5.5, 0.4, [(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})])
-tb(s, 0.9, 4.95, 6.0, 0.3, [("티어 아래 — 세로 (전문) 확장 (F1)", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})])
+    y = 1.95 + i * 0.78
+    rect(s, 0.9, y, lw4[i], 0.62, BLUE if focal else fill, BLUE if focal else LINE, 1.0)
+    tb(s, 1.12, y + 0.16, 0.6, 0.34, [(no, {"size": 13, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.78, y + 0.13, 3.1, 0.4, [(name, {"size": 13, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
+    tb(s, 5.15, y + 0.18, lw4[i] - 5.5, 0.4, [(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})])
+tb(s, 0.9, 5.18, 6.0, 0.3, [("티어 아래 — 세로 (전문) 확장 (F1)", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})])
 c4 = [("GPT-6 Cyber — 허가된 취약점 작업", 2.7), ("gpt-oss-120b/20b — 오픈웨이트 (H100)", 2.9),
       ("음성 · 이미지 전문 라인 (Audio · GPT-Image)", 3.0), ("ChatGPT — 소비자 생태계", 2.7)]
 cx = 0.9
 for txt, w in c4:
-    chip(s, cx, 5.3, w, 0.46, txt, size=8.5)
+    chip(s, cx, 5.54, w, 0.46, txt, size=8.5)
     cx += w + 0.14
 footnote(s, "추론 — '능력 × 비용' 사다리: 같은 작업을 Luna Low → Astra XHigh 7단계로 모델·노력 조합 (F2) — 공식 주장이 아니라 카탈로그 구조의 해석", color=AMBER_TX, italic=True)
 
@@ -342,16 +345,16 @@ rows8 = [
     ("OSWorld 2.1 (컴퓨터 사용)", [("89.3", 89.3, ""), ("87.2", 87.2, ""), ("79.5", 79.5, ""), ("81.5", 81.5, "")]),
 ]
 for ri, (ev, vals) in enumerate(rows8):
-    y = 2.86 + ri * 0.86
+    y = 2.86 + ri * 0.95
     if ri < 2:
-        hairline(s, 0.9, y + 0.78, 11.53)
+        hairline(s, 0.9, y + 0.88, 11.53)
     tb(s, 0.9, y + 0.12, 2.7, 0.4, [(ev, {"size": 10.5, "color": SUB})])
     for (lab, cx_, bc), (vtxt, vnum, sub) in zip(cols8, vals):
         tb(s, cx_, y, 2.0, 0.34, [([(vtxt, {"size": 13, "color": INK if bc == BLUE else SUB, "mono": True, "bold": bc == BLUE}),
                                     ((" " + sub) if sub else "", {"size": 8, "color": MUT, "mono": True})], {})] )
         if vnum is not None:
             rect(s, cx_, y + 0.4, vnum / 100.0 * 1.85, 0.16, BLUE if bc == BLUE else BAR_GRY)
-tb(s, 0.9, 5.62, 11.5, 0.3, [("Fable 5.2 High effort ≈ Opus 5.5 Max effort, 약 절반 비용 — '노력(effort)' 변수가 성능 비교의 핵심 축 (F6)", {"size": 10.5, "color": SUB})])
+tb(s, 0.9, 5.92, 11.5, 0.3, [("Fable 5.2 High effort ≈ Opus 5.5 Max effort, 약 절반 비용 — '노력(effort)' 변수가 성능 비교의 핵심 축 (F6)", {"size": 10.5, "color": SUB})])
 footnote(s, "독립 검증 미수행 (F9) — 이 표는 'Anthropic이 주장하는 순위'로만 읽어야 한다. OpenAI·Gemini 공식 수치가 같은 벤치마크에 있다면, 비교는 한측 소스 안에서만 성립한다.", color=RED_TX, italic=True)
 
 # ===== S9 — archetype: two-col (strengths) =====
@@ -369,7 +372,7 @@ two_col_items(0.9, [
     ("멀티모달 풀스택", "음성 (Realtime·Live) · 이미지 · 텍스트를 한 카탈로그 (F1)"),
     ("비용 사다리", "Luna~Astra + 추론 노력 7단계로 작업별 정밀 선택 (F2)"),
     ("오픈웨이트 옵션", "gpt-oss-120b/20b — 자가 호스팅 시나리오 가능 (F1)"),
-    ("소비자 생태계", "ChatGPT 상업·광고·플러그인이라는 유독 채널 (F1)"),
+    ("소비자 생태계", "ChatGPT 상업·광고·플러그인이라는 독보적 채널 (F1)"),
 ])
 two_col_items(6.83, [
     ("장기 에이전트 특화", "Fable(장기 호라이즌) · Opus(장기 코딩)의 역할 분화 (F3·F5)"),
@@ -386,12 +389,12 @@ for px_, head in [(0.9, "OpenAI (증거 기반 리스크)"), (6.83, "Anthropic (
     rect(s, px_, 2.68, 5.5, 0.022, INK)
 def risk_items(px_, items):
     for i, (dc, term, desc) in enumerate(items):
-        y = 3.05 + i * 0.95
+        y = 3.15 + i * 1.0
         dot(s, px_ + 0.03, y + 0.09, 0.08, dc)
         tb(s, px_ + 0.25, y, 5.25, 0.3, [(term, {"size": 11.5, "color": INK, "bold": True})])
         tb(s, px_ + 0.25, y + 0.32, 5.25, 0.5, [(desc, {"size": 10, "color": SUB, "ls": 1.15})])
 risk_items(0.9, [
-    (AMBER, "버전 전환 빈도", "5.2 → 5.4 → 5.5 → 5.6 → 6 → 6.1 세대 연속 전환, 비활성화 계열 다수 (F1) · 마이그레이션 부하 (추론)"),
+    (AMBER, "버전 전환 빈도", "5.2 → 5.4 → 5.5 → 5.6 → 6 → 6.1 연속 전환, 비활성화 계열 다수 (F1) · 마이그레이션 부하 (추론)"),
     (RED, "안전 구조 신호 미취득", "이번 세션에 안전 체계 공식 문서 확인 없음 (F8 미검증) — '없다'가 아니라 '확인 못 함'"),
     (AMBER, "플래그십 의존", "가장 어려운 작업은 Astra로 수렴하는 구조 (F2) · 비용 상한이 명확 (추론)"),
 ])
@@ -404,8 +407,8 @@ footnote(s, "약점 = F1~F7로부터의 추론이지, 각 회사의 공식 인�
 
 # ===== S11 — archetype: matrix =====
 s = new_slide(); chrome(s, "07 — 결정 Decision", "모델 결정은 티어 선택이지 브랜드 선택이 아니다", 11)
-tb(s, 10.55, 1.7, 1.88, 0.3, [("1:1", {"size": 30, "color": INK, "bold": True, "disp": True, "align": PP_ALIGN.RIGHT})])
-tb(s, 8.9, 2.06, 3.53, 0.26, [("4티어가 대응한다", {"size": 9, "color": MUT, "spc": 120, "align": PP_ALIGN.RIGHT})])
+tb(s, 10.55, 1.62, 1.88, 0.3, [("1:1", {"size": 30, "color": INK, "bold": True, "disp": True, "align": PP_ALIGN.RIGHT})])
+tb(s, 8.9, 1.98, 3.53, 0.26, [("4티어가 대응한다", {"size": 9, "color": MUT, "spc": 120, "align": PP_ALIGN.RIGHT})])
 tb(s, 0.9, 2.3, 2.0, 0.3, [("티어", {"size": 9, "color": MUT, "spc": 100})])
 tb(s, 3.3, 2.3, 3.4, 0.3, [("OPENAI (F1)", {"size": 9, "color": MUT, "spc": 160})])
 tb(s, 6.7, 2.3, 0.6, 0.3, [("", {"size": 9})])
