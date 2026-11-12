@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""GPT vs Claude AI competition sample (2026-11-12) — v2 craft-gate build.
+"""GPT vs Claude AI competition sample (2026-11-12) — v5 design-system build.
 Layout-archetype system (slidev-inspired, ideas-only): cover/statement/table/
 ladder/duel/price-scale/bar-grid/two-col/matrix/close — no two adjacent slides
-share a skeleton. Display-first type scale (reveal.js white-theme informed).
+share a skeleton. v5: modular type scale + dark act slide (S6) + Swiss gridlines
+(S7) + hero data column (S8) — from slidevjs/themes (MIT, seriph/bricks tokens),
+reveal.js black theme (MIT), Swiss typographic style (Wikipedia, CC BY-SA) —
+ideas-only, zero code/content copied.
 Evidence: 01-facts.md (F1~F9). Vendor benchmark = one-sided (F6, amber label).
 Generates 03-deck.pptx (12 slides). Deterministic: no images, shapes only.
 """
@@ -18,11 +21,11 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------- palette ----------------
 INK = "101418"; PAPER = "FFFFFF"; LINE = "D8DDE4"; MUT = "8A93A3"; SUB = "46505E"
-BLUE = "2563EB"; BLUE_TINT = "E8EEFB"
-INK_TX = "F4F7FB"; INK_TX2 = "93A5BE"; INK_LINE = "2A3648"
+BLUE = "2563EB"; BLUE_TINT = "E8EEFB"; BLUE_L = "9DC1FF"
+INK_TX = "F4F7FB"; INK_TX2 = "93A5BE"; INK_LINE = "2A3648"; LTX = "C7D2E0"
 INK_TINT = "EEF0F3"; INK_TINT2 = "F6F7F9"
 GREEN = "16A34A"; RED = "DC2626"; RED_TX = "B91C1C"
-AMBER = "D97706"; AMBER_TX = "B45309"
+AMBER = "D97706"; AMBER_TX = "B45309"; AMBER_L = "E8B45A"
 BAR_GRY = "C9D0D9"
 DISP = "Bahnschrift"; BODY = "Segoe UI"; MONO = "Consolas"; EA = "Malgun Gothic"
 
@@ -106,6 +109,13 @@ def footnote(slide, text, color=MUT, italic=False, bold=False):
     hairline(slide, 0.9, 6.86, 11.53, LINE)
     tb(slide, 0.9, 6.94, 11.53, 0.24, [(text, {"size": 9, "color": color, "italic": italic, "bold": bold})])
 
+def chrome_dark(slide, kicker, title, page):
+    rect(slide, 0.9, 0.665, 0.09, 0.09, BLUE)
+    tb(slide, 1.12, 0.56, 10.5, 0.3, [(kicker.upper(), {"size": 9.5, "color": INK_TX2, "bold": True, "spc": 200})])
+    tb(slide, 0.88, 0.9, 11.6, 0.7, [(title, {"size": 27, "color": PAPER, "bold": True})])
+    tb(slide, 0.9, 7.16, 8.0, 0.28, [(META5, {"size": 8.5, "color": INK_TX2, "spc": 60})])
+    tb(slide, 11.03, 7.16, 1.4, 0.28, [("%02d / 12" % page, {"size": 8.5, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
+
 SW, SH = 13.333, 7.5
 prs = Presentation()
 prs.slide_width = Inches(SW); prs.slide_height = Inches(SH)
@@ -137,10 +147,9 @@ tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 06", {"size": 9, "color": INK_TX2, "mo
 
 # ===== S2 — archetype: statement =====
 s = new_slide(); chrome(s, "01 — 질문 Question", "비교의 단위를 바꾸자 — 모델이 아니라 티어", 2)
-tb(s, 0.88, 1.95, 11.6, 1.6, [
-    ("GPT와 Claude의 대결은", {"size": 26, "color": INK, "bold": True, "ls": 1.15}),
-    ([("두 모델의 대결이 아닙니다. ", {"size": 26, "color": INK, "bold": True}),
-      ("티어(4단계 라인업)의 대결입니다.", {"size": 26, "color": BLUE, "bold": True})], {"ls": 1.15}),
+tb(s, 0.88, 1.95, 11.6, 1.5, [
+    ([("GPT와 Claude의 대결은 두 모델의 대결이 아닙니다. ", {"size": 32, "color": INK, "bold": True}),
+      ("티어(4단계 라인업)의 대결입니다.", {"size": 32, "color": BLUE, "bold": True})], {"ls": 1.2}),
 ])
 tb(s, 0.9, 3.7, 11.4, 0.85, [
     ([("OpenAI", {"size": 11.5, "color": INK, "bold": True}),
@@ -187,13 +196,13 @@ for i, (fid, txt, dc, st, src) in enumerate(rows3):
         rect(s, 0.9, y + 0.06, 0.035, 0.34, AMBER)
     if fid == "F8·F9":
         tb(s, 0.9, y, 0.8, 0.3, [(fid, {"size": 10, "color": MUT, "mono": True, "bold": True})])
-        tb(s, 1.7, y, 6.5, 0.4, [(txt, {"size": 10, "color": MUT})])
+        tb(s, 1.7, y, 6.5, 0.4, [(txt, {"size": 10.5, "color": MUT})])
         dot(s, 8.42, y + 0.09, 0.08, RED)
         tb(s, 8.62, y, 1.5, 0.3, [(st, {"size": 9.5, "color": MUT})])
         tb(s, 10.05, y, 2.4, 0.3, [(src, {"size": 9, "color": MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
     else:
         tb(s, 0.9, y, 0.8, 0.3, [(fid, {"size": 10, "color": INK, "mono": True, "bold": True})])
-        tb(s, 1.7, y, 6.5, 0.4, [(txt, {"size": 10, "color": SUB})])
+        tb(s, 1.7, y, 6.5, 0.4, [(txt, {"size": 10.5, "color": SUB})])
         dot(s, 8.42, y + 0.09, 0.08, dc)
         stc = AMBER_TX if dc == AMBER else ("157A3C" if dc == GREEN else RED_TX)
         tb(s, 8.62, y, 1.5, 0.3, [(st, {"size": 9.5, "color": stc, "bold": dc != GREEN})])
@@ -214,8 +223,8 @@ for no, name, role, fill, focal in lad4:
     i = int(no) - 1
     y = 1.95 + i * 0.78
     rect(s, 0.9, y, lw4[i], 0.62, BLUE if focal else fill, BLUE if focal else LINE, 1.0)
-    tb(s, 1.12, y + 0.16, 0.6, 0.34, [(no, {"size": 13, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
-    tb(s, 1.78, y + 0.13, 3.1, 0.4, [(name, {"size": 13, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
+    tb(s, 1.12, y + 0.16, 0.6, 0.34, [(no, {"size": 16, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.78, y + 0.13, 3.1, 0.4, [(name, {"size": 15, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
     tb(s, 5.15, y + 0.18, lw4[i] - 5.5, 0.4, [(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})])
 tb(s, 0.9, 5.18, 6.0, 0.3, [("티어 아래 — 세로 (전문) 확장 (F1)", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})])
 c4 = [("GPT-6 Cyber — 허가된 취약점 작업", 2.7), ("gpt-oss-120b/20b — 오픈웨이트 (H100)", 2.9),
@@ -240,8 +249,8 @@ for no, name, role, focal in lad5:
     i = int(no) - 1
     y = 1.95 + i * 0.6
     rect(s, 0.9, y, lw5[i], 0.46, INK if focal else INK_TINT, INK if focal else LINE, 1.0)
-    tb(s, 1.12, y + 0.08, 0.6, 0.32, [(no, {"size": 12.5, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
-    tb(s, 1.78, y + 0.08, 3.3, 0.32, [(name, {"size": 12.5, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
+    tb(s, 1.12, y + 0.08, 0.6, 0.32, [(no, {"size": 15, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.78, y + 0.08, 3.3, 0.32, [(name, {"size": 14, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
     tb(s, 5.35, y + 0.11, lw5[i] - 5.7, 0.32, [(role, {"size": 10.5, "color": "C7D2E0" if focal else SUB})])
 # FABLE=MYTHOS band
 rect(s, 0.9, 4.5, 11.53, 0.82, BLUE_TINT)
@@ -257,39 +266,39 @@ for i, t in enumerate(saf):
     dot(s, 0.94, y + 0.07, 0.07, GREEN)
     tb(s, 1.18, y, 11.2, 0.3, [(t, {"size": 10, "color": SUB})])
 
-# ===== S6 — archetype: duel =====
-s = new_slide(); chrome(s, "04 — 추구 Pursuit", "각사가 추구하는 것은 다르다 — 능력의 폭 vs 안전과 신뢰", 6)
-rect(s, 6.66, 1.85, 0.011, 4.0, LINE)
+# ===== S6 — archetype: duel (dark act) =====
+s = new_slide(INK); chrome_dark(s, "04 — 추구 Pursuit", "각사가 추구하는 것은 다르다 — 능력의 폭 vs 안전과 신뢰", 6)
+rect(s, 6.66, 1.85, 0.011, 4.0, INK_LINE)
 # left panel
-tb(s, 0.9, 1.85, 5.5, 0.4, [("OpenAI", {"size": 15, "color": INK, "bold": True})])
-tb(s, 0.9, 2.24, 5.5, 0.26, [("신호 (확인 — F1·F2)", {"size": 8.5, "color": MUT, "bold": True, "spc": 160})])
-tb(s, 0.9, 2.68, 5.5, 0.55, [("능력의 폭 × 규모", {"size": 24, "color": INK, "bold": True})])
+tb(s, 0.9, 1.85, 5.5, 0.4, [("OpenAI", {"size": 15, "color": PAPER, "bold": True})])
+tb(s, 0.9, 2.24, 5.5, 0.26, [("신호 (확인 — F1·F2)", {"size": 8.5, "color": INK_TX2, "bold": True, "spc": 160})])
+tb(s, 0.9, 2.68, 5.5, 0.55, [("능력의 폭 × 규모", {"size": 26, "color": BLUE_L, "bold": True})])
 sig6l = ["멀티모달 풀스택 — 텍스트 · 오디오 · 이미지 · 리얼타임",
          "4티어 + 전문 세로 (사이버 · 라이프사이언스 · 오픈웨이트)",
          "소비자 규모 — ChatGPT(상업 · 광고 · 플러그인)",
          "모델 × 추론 노력 7단계 선택 체계"]
 for i, t in enumerate(sig6l):
     y = 3.5 + i * 0.37
-    tb(s, 0.9, y, 5.5, 0.34, [([("—  ", {"size": 10, "color": BLUE, "bold": True}), (t, {"size": 10, "color": SUB})], {"ls": 1.05})])
-tb(s, 0.9, 5.1, 5.5, 0.6, [("추론 — '능력 확장 × 소비자 규모' 방향. (F8: 공식 입장 진술은 미취득 — 해석임)", {"size": 9.5, "color": AMBER_TX, "italic": True, "ls": 1.15})])
+    tb(s, 0.9, y, 5.5, 0.34, [([("—  ", {"size": 10.5, "color": BLUE_L, "bold": True}), (t, {"size": 10.5, "color": LTX})], {"ls": 1.05})])
+tb(s, 0.9, 5.1, 5.5, 0.6, [("추론 — '능력 확장 × 소비자 규모' 방향. (F8: 공식 입장 진술은 미취득 — 해석임)", {"size": 9.5, "color": AMBER_L, "italic": True, "ls": 1.15})])
 # right panel
-tb(s, 6.83, 1.85, 5.5, 0.4, [("Anthropic", {"size": 15, "color": INK, "bold": True})])
-tb(s, 6.83, 2.24, 5.5, 0.26, [("신호 (확인 — F5·F7)", {"size": 8.5, "color": MUT, "bold": True, "spc": 160})])
-tb(s, 6.83, 2.68, 5.5, 0.55, [("안전과 신뢰 × 공익 구조", {"size": 24, "color": INK, "bold": True})])
+tb(s, 6.83, 1.85, 5.5, 0.4, [("Anthropic", {"size": 15, "color": PAPER, "bold": True})])
+tb(s, 6.83, 2.24, 5.5, 0.26, [("신호 (확인 — F5·F7)", {"size": 8.5, "color": INK_TX2, "bold": True, "spc": 160})])
+tb(s, 6.83, 2.68, 5.5, 0.55, [("안전과 신뢰 × 공익 구조", {"size": 26, "color": PAPER, "bold": True})])
 sig6r = ["PBC(공익법인) · S-1 IPO (2026-10-26) · Public Benefit Fund",
          "안전·정렬 체계 — System Card · 샌드박스 탈출 평가 · 증류 방어",
          "이중용도 분리 — Mythos 검증 프로그램 (사이버 · 라이프사이언스)",
          "과학 적용 — 6개 조직과 약물 개발 파트너십 (2026-10-27)"]
 for i, t in enumerate(sig6r):
     y = 3.5 + i * 0.37
-    tb(s, 6.83, y, 5.5, 0.34, [([("—  ", {"size": 10, "color": INK, "bold": True}), (t, {"size": 10, "color": SUB})], {"ls": 1.05})])
-tb(s, 6.83, 5.1, 5.5, 0.6, [("추론 — '안전과 기업 신뢰' 방향. (자본 구조와 법인 형태에서 읽은 해석)", {"size": 9.5, "color": AMBER_TX, "italic": True, "ls": 1.15})])
+    tb(s, 6.83, y, 5.5, 0.34, [([("—  ", {"size": 10.5, "color": PAPER, "bold": True}), (t, {"size": 10.5, "color": LTX})], {"ls": 1.05})])
+tb(s, 6.83, 5.1, 5.5, 0.6, [("추론 — '안전과 기업 신뢰' 방향. (자본 구조와 법인 형태에서 읽은 해석)", {"size": 9.5, "color": AMBER_L, "italic": True, "ls": 1.15})])
 # anchored conclusion
-hairline(s, 0.9, 5.95, 11.53)
+hairline(s, 0.9, 5.95, 11.53, INK_LINE)
 tb(s, 0.9, 6.1, 11.5, 0.55, [
     ("같은 '최강 모델'이라도 방향이 다르다 — OpenAI는 폭(모달리티·세로·규모)으로, Anthropic은 안전 구조(검증·분리·PBC)로 경쟁한다.",
-     {"size": 12, "color": INK, "bold": True, "ls": 1.15}),
-    ("이 덱의 모든 '추구' 표현은 위 신호에 기반한 추론이다.", {"size": 9.5, "color": MUT}),
+     {"size": 12, "color": PAPER, "bold": True, "ls": 1.15}),
+    ("이 덱의 모든 '추구' 표현은 위 신호에 기반한 추론이다.", {"size": 9.5, "color": INK_TX2}),
 ])
 
 # ===== S7 — archetype: price-scale =====
@@ -305,14 +314,17 @@ bars7 = [
     ("Claude Sonnet 5.5", "입력 $2", 10.0, INK),
     ("Claude Haiku 5.5", "입력 $0.10", 0.5, INK),
 ]
+# Swiss grid: vertical hairlines at axis ticks (structure under bars)
+for gx_ in (X0, logx(1.0), logx(10.0)):
+    rect(s, gx_, 2.0, 0.008, 3.42, LINE)
 for i, (name, inn, val, col) in enumerate(bars7):
     y = 2.05 + i * 0.78
-    tb(s, 0.9, y + 0.03, 2.2, 0.3, [(name, {"size": 10.5, "color": INK, "mono": True, "bold": True})])
+    tb(s, 0.9, y + 0.03, 2.2, 0.3, [(name, {"size": 11.5, "color": INK, "mono": True, "bold": True})])
     tb(s, 0.9, y + 0.3, 2.2, 0.24, [(inn, {"size": 8.5, "color": MUT})])
     w = max(logx(val) - X0, 0.14)
     rect(s, X0, y + 0.06, w, 0.4, col)
     tb(s, X0 + w + 0.12, y + 0.12, 1.6, 0.3, [("$%.2f" % val if val < 1 else "$%d" % val,
-                                               {"size": 13, "color": INK, "mono": True, "bold": True})])
+                                               {"size": 14, "color": INK, "mono": True, "bold": True})])
     if name.startswith("Claude Fable"):
         tb(s, X0 + w + 0.12, y + 0.34, 1.9, 0.24, [("fast $16/$80", {"size": 8, "color": MUT})])
 # axis
@@ -350,10 +362,12 @@ for ri, (ev, vals) in enumerate(rows8):
         hairline(s, 0.9, y + 0.88, 11.53)
     tb(s, 0.9, y + 0.12, 2.7, 0.4, [(ev, {"size": 10.5, "color": SUB})])
     for (lab, cx_, bc), (vtxt, vnum, sub) in zip(cols8, vals):
-        tb(s, cx_, y, 2.0, 0.34, [([(vtxt, {"size": 13, "color": INK if bc == BLUE else SUB, "mono": True, "bold": bc == BLUE}),
+        fsz = 15 if bc == BLUE else 13
+        tb(s, cx_, y, 2.0, 0.34, [([(vtxt, {"size": fsz, "color": INK if bc == BLUE else SUB, "mono": True, "bold": bc == BLUE}),
                                     ((" " + sub) if sub else "", {"size": 8, "color": MUT, "mono": True})], {})] )
         if vnum is not None:
-            rect(s, cx_, y + 0.4, vnum / 100.0 * 1.85, 0.16, BLUE if bc == BLUE else BAR_GRY)
+            bh = 0.2 if bc == BLUE else 0.16
+            rect(s, cx_, y + 0.4, vnum / 100.0 * 1.85, bh, BLUE if bc == BLUE else BAR_GRY)
 tb(s, 0.9, 5.92, 11.5, 0.3, [("Fable 5.2 High effort ≈ Opus 5.5 Max effort, 약 절반 비용 — '노력(effort)' 변수가 성능 비교의 핵심 축 (F6)", {"size": 10.5, "color": SUB})])
 footnote(s, "독립 검증 미수행 (F9) — 이 표는 'Anthropic이 주장하는 순위'로만 읽어야 한다. OpenAI·Gemini 공식 수치가 같은 벤치마크에 있다면, 비교는 한측 소스 안에서만 성립한다.", color=RED_TX, italic=True)
 
@@ -366,7 +380,7 @@ for px_, head, sub in [(0.9, "OpenAI (신호 기반)", "F1·F2"), (6.83, "Anthro
 def two_col_items(px_, items):
     for i, (term, desc) in enumerate(items):
         y = 2.95 + i * 0.8
-        tb(s, px_, y, 5.5, 0.3, [(term, {"size": 11.5, "color": INK, "bold": True})])
+        tb(s, px_, y, 5.5, 0.3, [(term, {"size": 13, "color": INK, "bold": True})])
         tb(s, px_, y + 0.3, 5.5, 0.4, [(desc, {"size": 10, "color": SUB, "ls": 1.1})])
 two_col_items(0.9, [
     ("멀티모달 풀스택", "음성 (Realtime·Live) · 이미지 · 텍스트를 한 카탈로그 (F1)"),
@@ -391,7 +405,7 @@ def risk_items(px_, items):
     for i, (dc, term, desc) in enumerate(items):
         y = 3.15 + i * 1.0
         dot(s, px_ + 0.03, y + 0.09, 0.08, dc)
-        tb(s, px_ + 0.25, y, 5.25, 0.3, [(term, {"size": 11.5, "color": INK, "bold": True})])
+        tb(s, px_ + 0.25, y, 5.25, 0.3, [(term, {"size": 13, "color": INK, "bold": True})])
         tb(s, px_ + 0.25, y + 0.32, 5.25, 0.5, [(desc, {"size": 10, "color": SUB, "ls": 1.15})])
 risk_items(0.9, [
     (AMBER, "버전 전환 빈도", "5.2 → 5.4 → 5.5 → 5.6 → 6 → 6.1 연속 전환, 비활성화 계열 다수 (F1) · 마이그레이션 부하 (추론)"),
@@ -425,10 +439,10 @@ for i, (no, tier, oai, ant) in enumerate(rows11):
     if i < 3:
         hairline(s, 0.9, y + 0.5, 11.53)
     tb(s, 0.9, y + 0.06, 0.5, 0.35, [(no, {"size": 13, "color": MUT, "disp": True})])
-    tb(s, 1.5, y + 0.09, 1.7, 0.3, [(tier, {"size": 10.5, "color": INK, "bold": True})])
-    tb(s, 3.3, y + 0.09, 3.4, 0.3, [(oai, {"size": 10.5, "color": SUB, "mono": True})])
+    tb(s, 1.5, y + 0.09, 1.7, 0.3, [(tier, {"size": 11.5, "color": INK, "bold": True})])
+    tb(s, 3.3, y + 0.09, 3.4, 0.3, [(oai, {"size": 11.5, "color": SUB, "mono": True})])
     tb(s, 6.75, y + 0.06, 0.5, 0.35, [("↔", {"size": 11, "color": MUT, "mono": True, "align": PP_ALIGN.CENTER})])
-    tb(s, 7.4, y + 0.09, 4.6, 0.3, [(ant, {"size": 10.5, "color": SUB, "mono": True})])
+    tb(s, 7.4, y + 0.09, 4.6, 0.3, [(ant, {"size": 11.5, "color": SUB, "mono": True})])
 tb(s, 0.9, 5.22, 11.5, 0.35, [
     ([("4티어가 1:1로 대응한다. ", {"size": 12, "color": INK, "bold": True}),
       ("'GPT인가 Claude인가'는 질문이 안 되고, '내 작업은 어느 티어인가'가 질문이 된다.", {"size": 12, "color": SUB})], {}),
