@@ -136,15 +136,16 @@ tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 6종 · 구조 · 렌더 · 스코어카
 tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 06", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
 
 # ===== S2 — archetype: statement =====
-s = new_slide(); chrome(s, "01 — 질문 Question", "이 덱은 2개 모델이 아니라 4개 티어의 대결을 비교한다", 2)
+s = new_slide(); chrome(s, "01 — 질문 Question", "비교의 단위를 바꾸자 — 모델이 아니라 티어", 2)
 tb(s, 0.88, 1.95, 11.6, 1.6, [
     ("GPT와 Claude의 대결은", {"size": 26, "color": INK, "bold": True, "ls": 1.15}),
     ([("두 모델의 대결이 아닙니다. ", {"size": 26, "color": INK, "bold": True}),
       ("티어(4단계 라인업)의 대결입니다.", {"size": 26, "color": BLUE, "bold": True})], {"ls": 1.15}),
 ])
-tb(s, 0.9, 3.55, 11.4, 0.6, [
-    ("양사 모두 4티어 라인업(플래그십·중간·효율·대량) + 전문 모델(사이버 · 라이프사이언스)로 전환했다 — 그래서 비교의 단위는 모델이 아니라 티어.",
-     {"size": 11.5, "color": SUB, "ls": 1.2}),
+tb(s, 0.9, 3.7, 11.4, 0.85, [
+    ([("OpenAI — GPT-6 Astra→Luna 4티어 + 전문 세로 (F1)", {"size": 11.5, "color": SUB}),
+      ("      Anthropic — Fable 5.2→Haiku 5.5 4티어 (F3)", {"size": 11.5, "color": SUB})], {"sa": 6}),
+    ("두 카탈로그를 나란히 놓으면 티어가 1:1로 정렬된다 — 그래서 '티어 × 작업' 축으로 비교한다.", {"size": 11.5, "color": INK, "bold": True, "ls": 1.15}),
 ])
 # agenda chips (inline, replaces vertical 01/02/03 stack)
 chip(s, 0.9, 5.1, 3.7, 0.62, "01  라인업 — 각 티어에 어떤 모델이 대응하나", size=9.5)
@@ -198,19 +199,21 @@ for i, (fid, txt, dc, st, src) in enumerate(rows3):
 
 # ===== S4 — archetype: ladder (OpenAI) =====
 s = new_slide(); chrome(s, "03 — 라인업 OpenAI", "OpenAI의 카드는 폭 — 4티어 + 전문 세로 확장", 4)
+tb(s, 0.9, 1.72, 11.53, 0.26, [("카탈로그 출처 — developers.openai.com (F1)", {"size": 8.5, "color": MUT, "spc": 60, "align": PP_ALIGN.RIGHT})])
 lad4 = [
-    ("GPT-6 Astra", "플래그십 — 가장 어려운 추론 · 코딩", "E8EEFB", BLUE, True),
-    ("GPT-6.1 Sol", "복잡한 작업 — Astra에 근접한 성능, 낮은 비용", "E8EEFB", SUB, False),
-    ("GPT-6.1 Terra", "비주얼 추론 · 정밀 컴퓨터 사용 · 자연스러운 글쓰기", INK_TINT, SUB, False),
-    ("GPT-6 Luna", "집중형 대량 작업에 가장 효율적", INK_TINT2, SUB, False),
+    ("01", "GPT-6 Astra", "플래그십 — 가장 어려운 추론 · 코딩", BLUE, True),
+    ("02", "GPT-6.1 Sol", "복잡한 작업 — Astra에 근접한 성능, 낮은 비용", "E8EEFB", False),
+    ("03", "GPT-6.1 Terra", "비주얼 추론 · 정밀 컴퓨터 사용 · 자연스러운 글쓰기", INK_TINT, False),
+    ("04", "GPT-6 Luna", "집중형 대량 작업에 가장 효율적", INK_TINT2, False),
 ]
 lw4 = [11.53, 10.5, 9.5, 8.5]
-for i, (name, role, fill, tc, focal) in enumerate(lad4):
+for no, name, role, fill, focal in lad4:
+    i = int(no) - 1
     y = 1.95 + i * 0.72
     rect(s, 0.9, y, lw4[i], 0.56, BLUE if focal else fill, BLUE if focal else LINE, 1.0)
-    tb(s, 1.15, y + 0.09, 2.9, 0.4, [(name, {"size": 13, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
-    tb(s, 4.2, y + 0.14, lw4[i] - 4.4, 0.4, [(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})])
-    tb(s, 0.9 + lw4[i] - 0.85, y + 0.16, 0.6, 0.3, [("F1", {"size": 9, "color": INK_TX2 if focal else MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
+    tb(s, 1.12, y + 0.12, 0.6, 0.34, [(no, {"size": 13, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.78, y + 0.09, 3.1, 0.4, [(name, {"size": 13, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
+    tb(s, 5.15, y + 0.14, lw4[i] - 5.5, 0.4, [(role, {"size": 10.5, "color": "D7E3F8" if focal else SUB})])
 tb(s, 0.9, 4.95, 6.0, 0.3, [("티어 아래 — 세로 (전문) 확장 (F1)", {"size": 9.5, "color": MUT, "bold": True, "spc": 160})])
 c4 = [("GPT-6 Cyber — 허가된 취약점 작업", 2.7), ("gpt-oss-120b/20b — 오픈웨이트 (H100)", 2.9),
       ("음성 · 이미지 전문 라인 (Audio · GPT-Image)", 3.0), ("ChatGPT — 소비자 생태계", 2.7)]
@@ -222,27 +225,30 @@ footnote(s, "추론 — '능력 × 비용' 사다리: 같은 작업을 Luna Low 
 
 # ===== S5 — archetype: ladder + band (Anthropic) =====
 s = new_slide(); chrome(s, "03 — 라인업 Anthropic", "Anthropic의 카드는 안전 — 4티어 + 검증 프로그램 분리 모델", 5)
+tb(s, 0.9, 1.72, 11.53, 0.26, [("카탈로그 출처 — platform.claude.com (F3)", {"size": 8.5, "color": MUT, "spc": 60, "align": PP_ALIGN.RIGHT})])
 lad5 = [
-    ("Claude Fable 5.2", "강인한 추론 · 장기 에이전트 작업 (최상위 티어)", True),
-    ("Claude Opus 5.5", "장기 에이전틱 코딩 · 지식 업무 — 기본 권장", False),
-    ("Claude Sonnet 5.5", "속도와 지능의 최적 조합", False),
-    ("Claude Haiku 5.5", "대량 · 지연 민감 (분류·추출·라우팅)", False),
+    ("01", "Claude Fable 5.2", "강인한 추론 · 장기 에이전트 작업", True),
+    ("02", "Claude Opus 5.5", "장기 에이전틱 코딩 · 지식 업무 — 기본 권장", False),
+    ("03", "Claude Sonnet 5.5", "속도와 지능의 최적 조합", False),
+    ("04", "Claude Haiku 5.5", "대량 · 지연 민감 (분류·추출·라우팅)", False),
 ]
-for i, (name, role, focal) in enumerate(lad5):
+lw5 = [11.53, 10.7, 9.9, 9.1]
+for no, name, role, focal in lad5:
+    i = int(no) - 1
     y = 1.95 + i * 0.6
-    rect(s, 0.9, y, 11.53, 0.46, INK if focal else INK_TINT, INK if focal else LINE, 1.0)
-    tb(s, 1.15, y + 0.08, 3.1, 0.32, [(name, {"size": 12.5, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
-    tb(s, 4.4, y + 0.11, 6.2, 0.32, [(role, {"size": 10.5, "color": "C7D2E0" if focal else SUB})])
-    tb(s, 11.38, y + 0.11, 0.75, 0.3, [("F3", {"size": 9, "color": INK_TX2 if focal else MUT, "mono": True, "align": PP_ALIGN.RIGHT})])
+    rect(s, 0.9, y, lw5[i], 0.46, INK if focal else INK_TINT, INK if focal else LINE, 1.0)
+    tb(s, 1.12, y + 0.08, 0.6, 0.32, [(no, {"size": 12.5, "color": INK_TX2 if focal else MUT, "disp": True, "bold": True})])
+    tb(s, 1.78, y + 0.08, 3.3, 0.32, [(name, {"size": 12.5, "color": INK_TX if focal else INK, "mono": True, "bold": True})])
+    tb(s, 5.35, y + 0.11, lw5[i] - 5.7, 0.32, [(role, {"size": 10.5, "color": "C7D2E0" if focal else SUB})])
 # FABLE=MYTHOS band
 rect(s, 0.9, 4.5, 11.53, 0.82, BLUE_TINT)
 rect(s, 0.9, 4.5, 0.045, 0.82, BLUE)
 tb(s, 1.18, 4.62, 11.0, 0.3, [("FABLE = MYTHOS — 동일한 기반 모델, 접근만 분리 (F5)", {"size": 11, "color": BLUE, "bold": True, "spc": 80})])
 tb(s, 1.18, 4.94, 11.0, 0.32, [("Fable = 일반 공개(사이버·바이오 안전장치 포함) · Mythos = Life Sciences · Cyber 검증 프로그램 조직 — '이중용도'를 가격으로 분리한 구조", {"size": 10, "color": SUB})])
 tb(s, 0.9, 5.56, 5.0, 0.3, [("안전 체계 신호 (F5)", {"size": 9.5, "color": MUT, "bold": True, "spc": 180})])
-saf = ["System Card 공개 · 샌드박스 탈출 평가 등 프리릴리스 안전 테스트",
-       "사이버·바이오 안전장치 (불필요 차단 감소) · 최강 증류 방어",
-       "Opus 5.5 — Opus 5 대비 실행 비용 40% 감소 (2026-09-22) · PBC·S-1 구조 신호는 S6 (F7)"]
+saf = ["System Card 공개 · 샌드박스 탈출 평가 (프리릴리스 안전 테스트)",
+       "사이버·바이오 안전장치 · 최강 증류 방어",
+       "Opus 5.5 — 전세대 대비 실행 비용 40% 절감 (2026-09-22)"]
 for i, t in enumerate(saf):
     y = 5.9 + i * 0.32
     dot(s, 0.94, y + 0.07, 0.07, GREEN)
@@ -316,14 +322,17 @@ tb(s, 10.1, 2.35, 2.3, 0.3, [("HAIKU → FABLE", {"size": 9, "color": MUT, "bold
 tb(s, 9.9, 2.62, 2.6, 1.3, [("80×", {"size": 80, "color": INK, "bold": True, "disp": True, "align": PP_ALIGN.CENTER})])
 tb(s, 10.1, 4.15, 2.3, 0.3, [("출력 $0.50 → $40", {"size": 10, "color": SUB, "align": PP_ALIGN.CENTER})])
 tb(s, 10.1, 4.42, 2.3, 0.3, [("입력 $0.10 → $8", {"size": 10, "color": MUT, "align": PP_ALIGN.CENTER})])
-tb(s, 0.9, 5.85, 11.5, 0.3, [("Fable = Opus의 2배(입력 $8 vs $4, 출력 $40 vs $20) — 최상위 티어의 프리미엄 구조 (F4)", {"size": 10, "color": SUB})])
+tb(s, 10.1, 4.85, 2.3, 0.5, [
+    ("Fable = Opus의 2배", {"size": 9.5, "color": SUB, "align": PP_ALIGN.CENTER, "sa": 2}),
+    ("최상위 프리미엄 구조 (F4)", {"size": 9.5, "color": MUT, "align": PP_ALIGN.CENTER}),
+])
 footnote(s, "범위 한계 — OpenAI API 가격 미취득 → OpenAI 가격 수치 0건 · 모든 가격은 Anthropic 문서(F4) — 한 회사 기준")
 
 # ===== S8 — archetype: bar-grid =====
 s = new_slide(); chrome(s, "05 — 성능 Performance", "최상위 점수는 Fable 5.2 — 단 그 숫자는 Anthropic의 보고", 8)
 chip(s, 7.0, 1.72, 5.43, 0.42, "벤더 발표 — Anthropic 공고 (2026-11-09) · 한측 소스 (F6)", tcolor=AMBER_TX, border=AMBER, size=9)
-cols8 = [("FABLE 5.2", 4.75, BLUE), ("OPUS 5.5", 6.85, BAR_GRY), ("GPT-6 ASTRA", 8.95, BAR_GRY), ("GEMINI 4 CARBON", 11.05, BAR_GRY)]
-tb(s, 0.9, 2.32, 3.4, 0.3, [("EVAL", {"size": 9, "color": MUT, "spc": 160})])
+cols8 = [("FABLE 5.2", 3.75, BLUE), ("OPUS 5.5", 5.95, BAR_GRY), ("GPT-6 ASTRA", 8.15, BAR_GRY), ("GEMINI 4 CARBON", 10.35, BAR_GRY)]
+tb(s, 0.9, 2.32, 2.7, 0.3, [("EVAL", {"size": 9, "color": MUT, "spc": 160})])
 for lab, cx_, bc in cols8:
     tb(s, cx_, 2.32, 2.0, 0.3, [(lab, {"size": 9, "color": MUT if bc == BAR_GRY else BLUE, "spc": 120, "bold": bc != BAR_GRY})])
 rect(s, 0.9, 2.66, 11.53, 0.022, INK)
@@ -336,12 +345,12 @@ for ri, (ev, vals) in enumerate(rows8):
     y = 2.86 + ri * 0.86
     if ri < 2:
         hairline(s, 0.9, y + 0.78, 11.53)
-    tb(s, 0.9, y + 0.12, 3.7, 0.4, [(ev, {"size": 11, "color": SUB})])
+    tb(s, 0.9, y + 0.12, 2.7, 0.4, [(ev, {"size": 10.5, "color": SUB})])
     for (lab, cx_, bc), (vtxt, vnum, sub) in zip(cols8, vals):
-        tb(s, cx_, y, 2.0, 0.32, [([(vtxt, {"size": 12.5, "color": INK if bc == BLUE else SUB, "mono": True, "bold": bc == BLUE}),
+        tb(s, cx_, y, 2.0, 0.34, [([(vtxt, {"size": 13, "color": INK if bc == BLUE else SUB, "mono": True, "bold": bc == BLUE}),
                                     ((" " + sub) if sub else "", {"size": 8, "color": MUT, "mono": True})], {})] )
         if vnum is not None:
-            rect(s, cx_, y + 0.38, vnum / 100.0 * 1.9, 0.13, BLUE if bc == BLUE else BAR_GRY)
+            rect(s, cx_, y + 0.4, vnum / 100.0 * 1.85, 0.16, BLUE if bc == BLUE else BAR_GRY)
 tb(s, 0.9, 5.62, 11.5, 0.3, [("Fable 5.2 High effort ≈ Opus 5.5 Max effort, 약 절반 비용 — '노력(effort)' 변수가 성능 비교의 핵심 축 (F6)", {"size": 10.5, "color": SUB})])
 footnote(s, "독립 검증 미수행 (F9) — 이 표는 'Anthropic이 주장하는 순위'로만 읽어야 한다. OpenAI·Gemini 공식 수치가 같은 벤치마크에 있다면, 비교는 한측 소스 안에서만 성립한다.", color=RED_TX, italic=True)
 
@@ -353,19 +362,20 @@ for px_, head, sub in [(0.9, "OpenAI (신호 기반)", "F1·F2"), (6.83, "Anthro
     rect(s, px_, 2.68, 5.5, 0.022, INK)
 def two_col_items(px_, items):
     for i, (term, desc) in enumerate(items):
-        y = 2.95 + i * 0.72
-        tb(s, px_, y, 5.5, 0.62, [([(term + "  ", {"size": 10.5, "color": INK, "bold": True}), (desc, {"size": 10.5, "color": SUB})], {"ls": 1.15})])
+        y = 2.95 + i * 0.8
+        tb(s, px_, y, 5.5, 0.3, [(term, {"size": 11.5, "color": INK, "bold": True})])
+        tb(s, px_, y + 0.3, 5.5, 0.4, [(desc, {"size": 10, "color": SUB, "ls": 1.1})])
 two_col_items(0.9, [
-    ("멀티모달 풀스택", "— 음성 (Realtime·Live) · 이미지 · 텍스트를 한 카탈로그 (F1)"),
-    ("비용 사다리", "— Luna~Astra + 추론 노력 7단계로 작업별 정밀 선택 (F2)"),
-    ("오픈웨이트 옵션", "— gpt-oss-120b/20b, 자가 호스팅 가능성 (F1)"),
-    ("소비자 생태계", "— ChatGPT 상업·광고·플러그인이라는 유독 채널 (F1)"),
+    ("멀티모달 풀스택", "음성 (Realtime·Live) · 이미지 · 텍스트를 한 카탈로그 (F1)"),
+    ("비용 사다리", "Luna~Astra + 추론 노력 7단계로 작업별 정밀 선택 (F2)"),
+    ("오픈웨이트 옵션", "gpt-oss-120b/20b — 자가 호스팅 시나리오 가능 (F1)"),
+    ("소비자 생태계", "ChatGPT 상업·광고·플러그인이라는 유독 채널 (F1)"),
 ])
 two_col_items(6.83, [
-    ("장기 에이전트 특화", "— Fable(장기 호라이즌) · Opus(장기 코딩)의 역할 분화 (F3·F5)"),
-    ("비용 개선 속도", "— Opus 5.5가 전세대 대비 40% 절감 (F5)"),
-    ("기업 인프라", "— 1M 컨텍스트 · 프롬프트 캐싱 · 데이터 거주지 · Managed Agents (F4)"),
-    ("신뢰 구조", "— System Card · 검증 프로그램 · PBC (F5·F7)"),
+    ("장기 에이전트 특화", "Fable(장기 호라이즌) · Opus(장기 코딩)의 역할 분화 (F3·F5)"),
+    ("비용 개선 속도", "Opus 5.5 — 전세대 대비 실행 비용 40% 절감 (F5)"),
+    ("기업 인프라", "1M 컨텍스트 · 프롬프트 캐싱 · 데이터 거주지 · Managed Agents (F4)"),
+    ("신뢰 구조", "System Card · 검증 프로그램 · PBC (F5·F7)"),
 ])
 footnote(s, "'강점'도 '각사 자기 문서의 문장'이다 — 위 목록은 F1~F7 확인 신호의 재구성이지, 두 회사의 상대적 우열이 아닙니다. 우열 판단은 독립 벤치마크(F9)가 전제된다.")
 
@@ -377,17 +387,18 @@ for px_, head in [(0.9, "OpenAI (증거 기반 리스크)"), (6.83, "Anthropic (
 def risk_items(px_, items):
     for i, (dc, term, desc) in enumerate(items):
         y = 3.05 + i * 0.95
-        dot(s, px_ + 0.03, y + 0.08, 0.08, dc)
-        tb(s, px_ + 0.25, y, 5.25, 0.8, [([(term + "  ", {"size": 10.5, "color": INK, "bold": True}), (desc, {"size": 10.5, "color": SUB})], {"ls": 1.2})])
+        dot(s, px_ + 0.03, y + 0.09, 0.08, dc)
+        tb(s, px_ + 0.25, y, 5.25, 0.3, [(term, {"size": 11.5, "color": INK, "bold": True})])
+        tb(s, px_ + 0.25, y + 0.32, 5.25, 0.5, [(desc, {"size": 10, "color": SUB, "ls": 1.15})])
 risk_items(0.9, [
-    (AMBER, "버전 전환 빈도", "— 5.2 → 5.4 → 5.5 → 5.6 → 6 → 6.1, 카탈로그에 비활성화 계열 다수 (F1) · 마이그레이션 부하 (추론)"),
-    (RED, "안전 구조 신호 미취득", "— 이번 세션에 안전 체계 공식 문서 확인 없음 (F8 미검증) — '없다'가 아니라 '확인 못 함'"),
-    (AMBER, "플래그십 의존", "— 가장 어려운 작업은 Astra로 수렴하는 구조 (F2) · 비용 상한이 명확 (추론)"),
+    (AMBER, "버전 전환 빈도", "5.2 → 5.4 → 5.5 → 5.6 → 6 → 6.1 세대 연속 전환, 비활성화 계열 다수 (F1) · 마이그레이션 부하 (추론)"),
+    (RED, "안전 구조 신호 미취득", "이번 세션에 안전 체계 공식 문서 확인 없음 (F8 미검증) — '없다'가 아니라 '확인 못 함'"),
+    (AMBER, "플래그십 의존", "가장 어려운 작업은 Astra로 수렴하는 구조 (F2) · 비용 상한이 명확 (추론)"),
 ])
 risk_items(6.83, [
-    (AMBER, "최상위 티어 프리미엄", "— Fable = Opus 2배 가격, fast mode 2배 (F4) · 장기 에이전트 작업의 비용 상한 (추론)"),
-    (AMBER, "접근 분리", "— Mythos(무방비 버전)는 검증 프로그램 조직만 · 일률적 접근 아님 (F5)"),
-    (AMBER, "오픈웨이트 부재", "— 카탈로그에 공개 검증치 모델 없음 (F1 vs F3 비교) · 자가 호스팅 경로는 제한 (추론)"),
+    (AMBER, "최상위 티어 프리미엄", "Fable = Opus 2배 가격, fast mode 2배 (F4) · 장기 에이전트 작업의 비용 상한 (추론)"),
+    (AMBER, "접근 분리", "Mythos(무방비 버전)는 검증 프로그램 조직만 · 일률적 접근 아님 (F5)"),
+    (AMBER, "오픈웨이트 부재", "카탈로그에 공개 검증치 모델 없음 (F1 vs F3 비교) · 자가 호스팅 경로는 제한 (추론)"),
 ])
 footnote(s, "약점 = F1~F7로부터의 추론이지, 각 회사의 공식 인정 진술이 아니다. (F8 OpenAI 입장 미취득 — 좌측 두 번째 항목은 확인 부재의 보고)", color=RED_TX, italic=True)
 
