@@ -2,6 +2,13 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.4.0] - 2026-11-15
+
+### 추가 (새 검사: 코드 내 미등록 외부 참조 자동 스캔 — 근거: 로컬 실측)
+- **애매/미검증 지점 폐쇄**: `copied_files=[]` 선언 외 코드 내 github.com 참조는 기계 검증 수단이 없었다 → `scripts/source-adoption-check.js`에 `scanCodeReferences(manifest, root)` 추가 — 코드 디렉터리(`scripts`·`tests`·`.claude`·`.codex`·`.agents`)를 재귀 스캔해 github.com 참조를 전수 추출, 허용 대상(① 자기 저장소 `github.com/yjj3019/*` ② 장부 등록 source/license/credit ③ 테스트 픽스처 `a/b`·`unrelated/thing`) 외 미등록 외부 참조 발견 시 파일+URL 보고 + exit 1. docs/는 출처 기록 담당 — 스캔 제외.
+- CLI 출력에 실측 문구 추가: `unregistered code references: 0` — 실제 저장소 전수 스캔 결과 **미등록 외부 참조 0건 실측** (기존 실측: 코드 참조 = 자기 저장소 + 픽스처 2건뿐).
+- `tests/source-adoption-check.test.js`: 스캔 양성 대조 2건 추가 (허용 참조 통과 · 미등록 `evil/thing` 거부 — 픽스처 문자열은 리터럴 회피 동적 조합) — 로컬 tests **8/8 pass** / fail 0 실측.
+
 ## [1.3.1] - 2026-11-15
 
 ### 수정 (라이선스 감사 보완 — GitHub API 전수 대조 실측, 문제 0건)
