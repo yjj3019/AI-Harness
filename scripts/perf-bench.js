@@ -3,7 +3,8 @@
  * perf-bench.js — AI-Harness 정적 게이트·CI 수트 성능 실측 하네스 (표준 라이브러리만 사용)
  *
  * 용도:
- *   node scripts/perf-bench.js [--out <json 경로>] [--samples N] [--phase-samples N] [--no-parallel]
+ *   node scripts/perf-bench.js [--out <json 경로>] [--samples N] [--phase-samples N] [--no-parallel] [--gates-only]
+ *   --gates-only: suite(node --test, 로컬 8~9분)를 제외한 게이트 블록만 (기준선 재실측 경로, 1.2.0).
  *
  * 측정 원칙:
  *   - 각 타깃을 별도 프로세스로 스폰(wall time, spawnSync). CI(tests/run-all.sh)와 동일한 호출 형태.
@@ -27,6 +28,7 @@ const outPath =
 const SAMPLES = Number(argv[argv.indexOf("--samples") + 1]) || 7;
 const PHASE_SAMPLES = Number(argv[argv.indexOf("--phase-samples") + 1]) || 3;
 const NO_PARALLEL = argv.includes("--no-parallel");
+const GATES_ONLY = argv.includes("--gates-only");
 
 // --- 도구 해석 ---
 const NODE = process.execPath;
@@ -88,7 +90,7 @@ const phases = [
   { name: "gate:package-lint", exec: [{ cmd: NODE, args: ["scripts/package-lint.js"] }] },
   { name: "gate:design-channel", exec: [{ cmd: NODE, args: ["scripts/design-channel-check.js", "code", "scripts"] }] },
   { name: "gate:hooks-test(bash)", exec: [{ cmd: BASH, args: ["tests/hooks.test.sh"] }] },
-  { name: "suite:phase-gate(node --test)", exec: [{ cmd: NODE, args: ["--test", ...testFiles] }] },
+  ...(!GATES_ONLY ? [{ name: "suite:phase-gate(node --test)", exec: [{ cmd: NODE, args: ["--test", ...testFiles] }] }] : []),
 ];
 
 function statOf(v) {

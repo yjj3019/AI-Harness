@@ -10,6 +10,23 @@ const path = require('path');
 const skillsDir = path.join(__dirname, '..', '..', 'skills');
 const outFile = path.join(__dirname, '..', '..', 'docs', 'skill-catalog.md');
 
+// 1.2.0 증분 갱신: 소스(SKILL.md)가 출력보다 오래되지 않았으면 재생성 스킵 (실측 근거:
+// 생성 1.5s/회 — 스폰 2.3s 계수 지배. --force로 강제 재생성).
+if (!process.argv.includes('--force')) {
+  let newest = 0;
+  let found = 0;
+  for (const dir of fs.readdirSync(skillsDir)) {
+    const p = path.join(skillsDir, dir, 'SKILL.md');
+    try { const s = fs.statSync(p); found++; if (s.mtimeMs > newest) newest = s.mtimeMs; } catch { /* not a skill */ }
+  }
+  let outMtime = -1;
+  try { outMtime = fs.statSync(outFile).mtimeMs; } catch { /* first run */ }
+  if (outMtime >= newest) {
+    console.log(`skill-catalog: up-to-date (소스 미변경, skills ${found}개). --force로 강제 재생성`);
+    process.exit(0);
+  }
+}
+
 function extractFrontmatter(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
