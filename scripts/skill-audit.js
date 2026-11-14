@@ -3,6 +3,12 @@
  * Minimal skill audit for CI.
  * Scans skills/**\/SKILL.md for automatic-reject patterns.
  * Exit 0 if clean, 1 if findings.
+ *
+ * Pattern concepts: prompt-injection imperatives, piped installers, hidden/bidi
+ * control characters, obfuscated code, credential references, over-broad claims.
+ * Implemented with fresh logic (ideas-only; no third-party code). Patterns are
+ * heuristics that flag exact token shapes — a finding is a signal for review,
+ * not a verdict (mirrors the signal/claim distinction of external detectors).
  */
 const fs = require("fs");
 const path = require("path");
@@ -11,12 +17,19 @@ const ROOT = path.resolve(process.argv[2] || path.join(__dirname, ".."));
 const SKILLS = path.join(ROOT, "skills");
 
 const REJECT = [
-  { re: /ignore\s+(all\s+)?previous\s+instructions/i, why: "prompt injection" },
-  { re: /curl[^|]*\|\s*(ba|z)?sh/i, why: "download piped to shell" },
-  { re: /base64\s+-d/i, why: "obfuscated decode" },
-  { re: /send\s+(api[_ ]?key|token|secret|\.env)/i, why: "secret exfiltration" },
-  { re: /unrestricted\s+(shell|network|file)\s+access/i, why: "over-broad permission claim" },
-  { re: /exfiltrate|steal\s+credentials/i, why: "exfiltration intent" },
+  // severity levels: a finding is a merge-blocking signal; severity grades the report.
+  { re: /ignore\s+(all\s+)?previous\s+instructions/i, why: "prompt injection", sev: "CRITICAL" },
+  { re: /(curl|wget)[^|\n]*\|\s*(ba|z|k)?sh\b/i, why: "download piped to shell", sev: "CRITICAL" },
+  { re: /(iwr|irm)\s+[^|\n]*\|\s*(iex|invoke\s*-?\s*expression)/i, why: "powershell piped installer", sev: "CRITICAL" },
+  { re: /[\u200B\u200C\u200D\u2060\uFEFF\u202A-\u202E\u2066-\u2069]/, why: "hidden or bidi control character", sev: "HIGH" },
+  { re: /\beval\s*\(|\bnew\s+Function\s*\(/, why: "obfuscated/dynamic code shape", sev: "HIGH" },
+  { re: /do\s+not\s+tell\s+(the\s+)?(user|human)/i, why: "secrecy directive", sev: "HIGH" },
+  { re: /you\s+must\s+(always\s+)?comply\s*[,.\n]/i, why: "coercion wording", sev: "HIGH" },
+  { re: /send\s+(api[_ ]?key|token|secret|\.env)/i, why: "secret exfiltration", sev: "HIGH" },
+  { re: /base64\s+-d/i, why: "obfuscated decode", sev: "HIGH" },
+  { re: /unrestricted\s+(shell|network|file)\s+access/i, why: "over-broad permission claim", sev: "HIGH" },
+  { re: /exfiltrate|steal\s+credentials/i, why: "exfiltration intent", sev: "HIGH" },
+  { re: /api[_ ]?key\s*[:=]\s*["']?sk-|bearer\s+token\s*[:=]/i, why: "inline credential literal", sev: "HIGH" },
 ];
 
 function walk(dir, out = []) {
@@ -68,9 +81,15 @@ for (const file of files) {
   }
 }
 
+const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0 };
+for (const f of findings) counts[f.sev || "MEDIUM"] += 1;
+
 if (findings.length) {
   console.error("skill-audit: findings");
-  for (const f of findings) console.error(`  ${f.file}: ${f.why}`);
+  for (const f of findings) console.error(`  [${f.sev || "MEDIUM"}] ${f.file}: ${f.why}`);
+  console.error(
+    `skill-audit: ${counts.CRITICAL} critical, ${counts.HIGH} high, ${counts.MEDIUM} medium — heuristics are signals for review, not verdicts`
+  );
   process.exit(1);
 }
 console.log(`skill-audit: ${files.length} skills clean`);
