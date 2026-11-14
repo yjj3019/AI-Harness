@@ -2,6 +2,12 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.2.2] - 2026-11-14
+
+### 문서 (검토서의 source-adoption "반영" 표기 오류 교정 — 실측 근거)
+- `docs/external-guide-review-2026-11-14.md` 14절이 `scripts/source-adoption-check.js`·`docs/source-adoption-2026-11-14.json`·test를 "반영 (PR #50/#51, v1.0.0)"으로 기록했으나, **실측상 세 파일은 Draft PR #49(OPEN, 미병합, 브랜치 `audit/source-adoption-ledger-20261114`)에만 존재**하고 main에는 없다 (`git ls-files` 0건, main skill-audit.js adoption 문자열 0건, PR #50/#51은 AI 모델 경쟁 주제 — 2026-11-14 실측).
+- 장부 기록 문서(`docs/external-patterns-14repo-2026-11-14.md`·`docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`)는 main 반영 — 표·미반영 목록·요약을 실측 사실로 교정하고, validator는 제안(미병합) 상태로 재분류.
+
 ## [1.2.1] - 2026-11-14
 
 ### 문서 (외부 개선 제안 가이드 정밀 분석 반영 — 근거: `docs/external-guide-review-2026-11-14.md`)
