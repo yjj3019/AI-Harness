@@ -41,3 +41,20 @@ test("eval-set check: altered input fails with a sha256 mismatch, missing input 
     assert.match(r.stderr, /gone\.txt \(missing\)/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("eval-set check: CRLF/CR inputs hash identically to pinned LF digest (platform-independent)", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "evalset-"));
+  try {
+    const f = path.join(dir, "eval-set.json");
+    fs.writeFileSync(path.join(dir, "crlf.txt"), "gold input\r\nsecond line\r\n");
+    fs.writeFileSync(path.join(dir, "cr.txt"), "gold input\rsecond line\r");
+    const canonical = crypto.createHash("sha256").update("gold input\nsecond line\n").digest("hex");
+    fs.writeFileSync(f, JSON.stringify({ schema: 1, entries: [
+      { path: "crlf.txt", sha256: canonical, purpose: "gold" },
+      { path: "cr.txt", sha256: canonical, purpose: "gold" },
+    ] }));
+    const r = spawnSync(process.execPath, [SCRIPT, f], { encoding: "utf8" });
+    assert.equal(r.status, 0, r.err);
+    assert.match(r.stdout, /2 pinned eval inputs match/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

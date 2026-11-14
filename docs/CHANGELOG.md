@@ -10,6 +10,9 @@
 - `docs/design-cases/` 케이스 6건 (A3: aspect-ratio·overflow·contrast·font-fallback·document-preservation·source-adoption — 고정 입력·before·after·재실측 4종 구조, 실측 기록은 최초 사용 후) — 케이스 6건 존재 (파일 6개 실측).
 - `docs/harness-reinforcement-plan-2026-11-15.md` (보강 방안 문서 최초 추가 — P0(A1~A3) 완료 반영, P1~P2 대기).
 
+### 수정 (eval-set 게이트 해시 플랫폼 독립화 — CRLF/LF 정규화)
+- `scripts/eval-set-check.js`: 평가 입력 해시를 줄바꿈(LF/CRLF/CR) 정규화 후 계산으로 변경, `docs/eval-set/eval-set.json` 핀을 LF 다이제스트로 재고정 — CI 우분투/맥(LF 체크아웃) `sha256 mismatch 1a784d0f511c…` 실측 → 원인: 기존 핀이 Windows CRLF 체크아웃 기준으로 잘못 고정 (blob(LF) sha256 `1a784d0f511c1403ea2b77561c8d6091fee0a62e509664eae338984f7bf4ee5a` = CI 실측값과 일치) → eval-set tests 3/3 pass · LF/CRLF/CR 10회 반복 variants=1 실측.
+
 ## [1.4.0] - 2026-11-15
 
 ### 추가 (새 검사: 코드 내 미등록 외부 참조 자동 스캔 — 근거: 로컬 실측)

@@ -4,7 +4,7 @@
   "entries": [
     {
       "path": "../report-editing-cases.json",
-      "sha256": "6a5af058c1abd2ecb7e047ddfd889e99a865d33ecf6fcc881a39aefe2481e16b",
+      "sha256": "1a784d0f511c1403ea2b77561c8d6091fee0a62e509664eae338984f7bf4ee5a",
       "purpose": "문서 편집 평가 케이스 9건 (required_claims·protected_spans) — 평가 기준 입력"
     }
   ]
