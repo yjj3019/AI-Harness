@@ -37,8 +37,9 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Full Architecture: `docs/architecture-spec.md`
 - External Pattern Synthesis: `docs/external-patterns.md`
 - 4-repo adoption record and licenses (2026-11-05): `docs/external-patterns-4repo-2026-11-05.md`
+- 14-repo adoption record and licenses (2026-11-14): `docs/external-patterns-14repo-2026-11-14.md`
 - Skill survey & active-skill adoption records (4 themes, 2026-11-11): `docs/anti-ai-skills-2026-11-11.md`, active skills `skills/anti-ai-harness/SKILL.md`, `skills/visual-artist/SKILL.md`, `skills/writer-master/SKILL.md`, `skills/office-master/SKILL.md`
-- Static gates: skill license/metadata audit `scripts/skill-audit.js`, distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js`
+- Static gates: skill security/metadata audit `scripts/skill-audit.js`, distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js`, design channel checks `scripts/design-channel-check.js`
 - Cursor plugins comparison and package checks: `docs/cursor-plugins-review-2026-10-28.md`, `scripts/package-lint.js`
 - Evidence-first research adoption and optional skill: `docs/agent-harness-integration-2026-10-26.md`, `skills/evidence-first-harness/SKILL.md`
 - Optional document conversion contract (manifest-only, no engine/permission enforcement): `docs/document-jobs.md`, `scripts/document-job.js`
@@ -56,6 +57,7 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 - Skill composition: `skills/skill-composition/SKILL.md`
 - Browser / E2E evidence: `skills/browser-evidence/SKILL.md`
 - Skill security audit: `skills/skill-audit/SKILL.md`
+- Unified design entry (HTML/image/PDF/PPTX/DOCX/code channels): `skills/design-omniskill/SKILL.md`, plan `docs/design-skill-engine-2026-11-14.md`
 - Compound feedback: `skills/compound-feedback/SKILL.md`
 - API / interface design: `skills/api-design/SKILL.md`
 - Deterministic kernel: `skills/deterministic-kernel/SKILL.md`

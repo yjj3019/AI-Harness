@@ -39,8 +39,9 @@ Refer to these detailed documents in `docs/` rather than bloating this file:
 - Codex / multi-host adaptation notes: `docs/codex-adaptation-notes.md`
 - Multi-host balancing guide: `docs/multi-host-balancing.md`
 - 4-repo adoption record and licenses (2026-11-05): `docs/external-patterns-4repo-2026-11-05.md`
+- 14-repo adoption record and licenses (2026-11-14): `docs/external-patterns-14repo-2026-11-14.md`
 - Skill survey & active-skill adoption records (4 themes, 2026-11-11): `docs/anti-ai-skills-2026-11-11.md`, active skills `skills/anti-ai-harness/SKILL.md`, `skills/visual-artist/SKILL.md`, `skills/writer-master/SKILL.md`, `skills/office-master/SKILL.md`
-- Static gates: skill license/metadata audit `scripts/skill-audit.js`, distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js`
+- Static gates: skill security/metadata audit `scripts/skill-audit.js`, distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js`, design channel checks `scripts/design-channel-check.js`
 
 - Usage Scenarios: `docs/usage-scenarios.md`
 - Design Decisions: `docs/DECISIONS.md`
