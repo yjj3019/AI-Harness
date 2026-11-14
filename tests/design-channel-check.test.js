@@ -72,3 +72,27 @@ test("design channel evidence: rejects a contract missing required fields or an 
   const r3 = run(["evidence", "pptx", good]);
   assert.equal(r3.status, 0, r3.out);
 });
+
+test("design channel scorecard: measured metric + evidence passes", (t) => {
+  const f = tmp(t, "good.json", JSON.stringify({ items: [
+    { item: "contrast", metric: "4.6:1", evidence: "docs/design-cases/case-contrast.md" },
+    { item: "overflow", metric: "0 clipped", evidence: "render/r1.png" },
+    { item: "tokens", unknown: true, evidence: "docs/design-cases/case-font-fallback.md" },
+  ] }));
+  const r = run(["scorecard", f]);
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /3 items/);
+  const rArr = run(["scorecard", tmp(t, "arr.json", JSON.stringify([{ item: "x", metric: "1", evidence: "e" }]))]);
+  assert.equal(rArr.status, 0, rArr.out);
+});
+
+test("design channel scorecard: item without metric/UNKNOWN or without evidence is rejected", (t) => {
+  const noMetric = run(["scorecard", tmp(t, "nometric.json", JSON.stringify({ items: [{ item: "looks", evidence: "x" }] }))]);
+  assert.equal(noMetric.status, 1);
+  assert.match(noMetric.out, /without measured metric/);
+  const noEvidence = run(["scorecard", tmp(t, "noev.json", JSON.stringify({ items: [{ item: "contrast", metric: "4.6:1" }] }))]);
+  assert.equal(noEvidence.status, 1);
+  assert.match(noEvidence.out, /without evidence/);
+  const badJson = run(["scorecard", tmp(t, "bad.json", "{ nope")]);
+  assert.equal(badJson.status, 1);
+});
