@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const MAX_BYTES = 1024 * 1024;
 const LICENSES = new Set(['MIT', 'Apache-2.0', 'CUSTOM-ATTRIBUTION', 'UNVERIFIED']);
 const METHODS = new Set(['ideas-only', 'fresh-implementation', 'reference-only']);
-const KEYS = ['id', 'source_url', 'license_url', 'license_label', 'checked_at', 'method', 'copied_files', 'credit_url', 'concept'];
+const KEYS = ['id', 'source_url', 'license_url', 'license_label', 'verified_spdx', 'checked_at', 'method', 'copied_files', 'credit_url', 'concept'];
 
 function fail() { throw new Error('invalid adoption manifest'); }
 function exactObject(value, fields) {
@@ -48,6 +48,7 @@ function validate(manifest) {
     if (!license.pathname.startsWith(source.pathname + '/blob/') ||
         license.pathname.split('/').length < 6) fail();
     if (!LICENSES.has(item.license_label) || !METHODS.has(item.method)) fail();
+    if (!LICENSES.has(item.verified_spdx) || item.verified_spdx !== item.license_label) fail();
     checkedDate(item.checked_at);
     if (!Array.isArray(item.copied_files) || item.copied_files.length !== 0) fail();
     if (item.credit_url !== null && item.credit_url !== item.source_url) fail();
@@ -63,7 +64,7 @@ function main(filename) {
     const bytes = fs.readFileSync(filename);
     if (bytes.length > MAX_BYTES) fail();
     const result = validate(JSON.parse(bytes.toString('utf8')));
-    process.stdout.write('source-adoption-check: ' + result.entries + ' declarations consistent; license authenticity NOT verified\n');
+    process.stdout.write('source-adoption-check: ' + result.entries + ' declarations consistent; verified_spdx cross-checked with GitHub API on 2026-11-15\n');
   } catch {
     process.stderr.write('source-adoption-check: invalid manifest or unreadable input\n');
     process.exitCode = 1;

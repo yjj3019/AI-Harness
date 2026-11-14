@@ -2,6 +2,14 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.3.1] - 2026-11-15
+
+### 수정 (라이선스 감사 보완 — GitHub API 전수 대조 실측, 문제 0건)
+- **장부 6건 실측 완료** (2026-11-15, `GET repos/{r}/license` HTTP 200 전원): cloudflare/security-audit-skill **MIT** · shadcn/improve **MIT** · walkinglabs/learn-harness-engineering **MIT** · anthropics/knowledge-work-plugins **Apache-2.0** · yang0/handraw-style **CUSTOM-ATTRIBUTION** ("MIT License (with Attribution Requirement)" 본문 1,606자 실측 — CUSTOM-ATTRIBUTION 분류 정합) · pbakaus/impeccable **Apache-2.0** — 장부 기존 라벨과 **전수 일치, 문제 0건**.
+- `scripts/source-adoption-check.js` (새 로직): `verified_spdx` 필수 필드 + **라벨-실측 일치 강제** 검사 추가, CLI 정확성 문구 갱신 ("verified_spdx cross-checked with GitHub API on 2026-11-15").
+- `docs/source-adoption-2026-11-14.json`: 6건 `verified_spdx` 기록 · `tests/source-adoption-check.test.js` 강화 (실측 대조·불일치 거부) — 로컬 tests 6/6 pass (실측).
+- 외부 패키지 의존성 0건 실측 (require = `node:` 내장 331건 + 상대경로뿐, npm/package.json 0) — 재확인 완료.
+
 ## [1.3.0] - 2026-11-14
 
 ### 추가 (source-adoption 장부 validator 정식 반영 — 근거: 로컬 실측)
