@@ -26,6 +26,7 @@ Refer to these detailed documents in `docs/` rather than bloating this file:
 - Requirements & Specification: `docs/DETAIL_SPEC.md`
 - Phase Breakdown: `docs/PHASES.md`
 - Compound Learning Log: `docs/compound-log.md`
+- Versioning: `docs/VERSIONING.md`, history `docs/CHANGELOG.md`, current version `VERSION`
 - Session Hand-off State: `docs/HANDOFF.md`
 - Full Architecture: `docs/architecture-spec.md`
 - Super-agent architecture notes: `docs/super-agent-architecture-notes.md`
