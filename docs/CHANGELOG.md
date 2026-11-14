@@ -2,6 +2,13 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.2.1] - 2026-11-14
+
+### 문서 (외부 개선 제안 가이드 정밀 분석 반영 — 근거: `docs/external-guide-review-2026-11-14.md`)
+- 외부 가이드(2026-11-08 작성 15절 + 추가 조사)의 P0 후보를 현재 main `4afa4e4`(v1.2.0)와 전수 대조 — **P0 3건(HANDOFF 정합성·usage-accounting 명확화·CI 9/9) 이미 반영 확인**, P1+은 미반영 상태로 제안 유지.
+- `docs/HANDOFF.md`에 2026-11-14 상태(PR #55 merge·v1.2.0·CI 9/9·검토 반영) 1줄 추가.
+- docs/usage-accounting.md 16행 "Allowed string values ... are not scrubbed" (2026-11-11) 실측 — 가이드 P0 후보 B의 명확화가 본문에 이미 존재함을 검토서에 기록.
+
 ## [1.2.0] - 2026-11-14
 
 ### 변경 (성능 실측 5건 적용 — 근거: `docs/perf-bench-2026-11-14.md` 실측)
