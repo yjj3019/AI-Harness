@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "purpose": "평가 입력물 고정 목록 — 평가 기준(gold 입력)의 무단 변경을 게이트로 차단. 변경이 필요하면 의도적 갱신 + CHANGELOG 기록 후 sha256 재계산.",
+  "entries": [
+    {
+      "path": "../report-editing-cases.json",
+      "sha256": "6a5af058c1abd2ecb7e047ddfd889e99a865d33ecf6fcc881a39aefe2481e16b",
+      "purpose": "문서 편집 평가 케이스 9건 (required_claims·protected_spans) — 평가 기준 입력"
+    }
+  ]
+}

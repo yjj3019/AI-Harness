@@ -2,6 +2,14 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.5.0] - 2026-11-15
+
+### 추가 (하네스 보강 P0 묶음 — 평가셋 고정 · 점수카드 실측 강제 · 말뭉치 6케이스 — 근거: 로컬 실측)
+- `scripts/eval-set-check.js` + `docs/eval-set/eval-set.json` (A1 평가셋 고정 게이트 — `../report-editing-cases.json` sha256 핀 고정 1건) — `tests/run-all.sh` 게이트 블록에 `eval-set` 편입 (게이트 9종). 실측: eval-set tests 2/2 pass · 게이트 블록 통과 (hooks 306/306).
+- `scripts/design-channel-check.js` `scorecard` 서브커맨드 (A2 점수카드 실측 강제 — metric 비면 `unknown: true`+evidence 필수, 위반 시 exit 1) — 양성 대조 4종 (수치 있음·unknown·증거 없음·깨진 JSON) — design-channel tests 6/6 pass · 10회 반복 variants=1 실측.
+- `docs/design-cases/` 케이스 6건 (A3: aspect-ratio·overflow·contrast·font-fallback·document-preservation·source-adoption — 고정 입력·before·after·재실측 4종 구조, 실측 기록은 최초 사용 후) — 케이스 6건 존재 (파일 6개 실측).
+- `docs/harness-reinforcement-plan-2026-11-15.md` (보강 방안 문서 최초 추가 — P0(A1~A3) 완료 반영, P1~P2 대기).
+
 ## [1.4.0] - 2026-11-15
 
 ### 추가 (새 검사: 코드 내 미등록 외부 참조 자동 스캔 — 근거: 로컬 실측)
