@@ -13,6 +13,7 @@ Auto-generated from SKILL.md frontmatter. Do not edit by hand.
 | debugging-master |  | `skills/debugging-master/SKILL.md` |
 | design-evidence-harness |  | `skills/design-evidence-harness/SKILL.md` |
 | design-master |  | `skills/design-master/SKILL.md` |
+| design-omniskill | Entry-point design skill for HTML, image, PDF, PPTX, DOCX, and code artifacts — pick the artifact format, then use the channel document for its rubric, render evidence contract, and scorecard. Use bef | `skills/design-omniskill/SKILL.md` |
 | deterministic-kernel |  | `skills/deterministic-kernel/SKILL.md` |
 | document-master |  | `skills/document-master/SKILL.md` |
 | event-boundary |  | `skills/event-boundary/SKILL.md` |
@@ -33,4 +34,4 @@ Auto-generated from SKILL.md frontmatter. Do not edit by hand.
 | visual-artist | Maximize the aesthetic quality of static visual output — posters, covers, charts, infographics, diagrams, and shapes — with a numeric visual-quality scorecard, art-direction brief, and critique-and-re | `skills/visual-artist/SKILL.md` |
 | writer-master | Highest-quality editorial writing — editorial strategy, research, story shape, drafting, literary editing, fact-checking, and an editor-in-chief publish gate for tech blogs, essays, reports, and publi | `skills/writer-master/SKILL.md` |
 
-Generated: 2026-11-11
+Generated: 2026-11-14

@@ -52,6 +52,9 @@ echo "== frontmatter =="
 bash tests/agents-lint.sh
 node scripts/package-lint.js
 
+echo "== design channels =="
+node scripts/design-channel-check.js code scripts
+
 echo "== hooks =="
 bash tests/hooks.test.sh
 

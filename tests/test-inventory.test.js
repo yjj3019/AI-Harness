@@ -31,6 +31,7 @@ const PRODUCTION_FILES = [
   ".claude/agents/compound.md",
   ".claude/commands/phase-harness.md",
   "scripts/context-contract.js",
+  "scripts/design-channel-check.js",
   "scripts/handoff-lint.js",
   "scripts/merge-guard.js",
   "scripts/package-lint.js",
