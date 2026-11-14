@@ -287,6 +287,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: A detector's effectiveness is only as trustworthy as (a) its source's license evidence and (b) positive controls whose fixture text matches the pattern's actual syntax.
 - **Resolution/Pattern**: Every external repo review: GitHub API spdx_id 실측 + LICENSE 보조 실측 → decisions ideas-only/기록/미채택, code copy 0. Gate 확장 시 양성 대조 7종(정규식과 픽스처 문법 일치) + 자기 스킬 셋 clean + 기존 테스트 전부 통과를 동시에 검증. 양성 대조 문구가 패턴과 어긋나면(예: 'Never tell' vs 'do not tell') 대조가 silently miss — 픽스처를 패턴 구문에 맞게 고정.
 
+### [2026-11-14] Simulation - 10x determinism runs expose a probe-shape blind spot and a latent CI fixture gap
+
+- **Issue/Risk**: 전체 스위트 386테스트 중 정확히 1건 fail (`inventory guard counts files and rejects a shrunken suite`, 실패 테스트 이름 확인까지 3회의 스위트 런 소요). 같은 자리에서 감쪽같이 가려진 잠복 결함 발견: run-all.sh의 신규 스테이지 `node scripts/design-channel-check.js code scripts`가 fixture(`test-inventory.test.js`의 PRODUCTION_FILES)에 없음 → WSL 스텁 호스트에서는 127 트랩에 가려 보이지 않지만 **Ubuntu CI에서는 완료 분기가 MODULE_NOT_FOUND로 확정 실패**.
+- **Root Cause**: (a) bash 탐지(`-c "exit 0"`)가 **실제 사용 형태(Windows 경로 인자 스폰)와 다름** — WSL 런처 스텁이 `-c`는 통과, 경로 인자는 백슬래시를 이스케이프로 변조해 `C:Usersuser...` → 127. 탐지와 사용 형태의 불일치 = 판별 검증이 실제 경로를 걷지 않은 것. (b) run-all.sh에 스테이지 추가 시 fixture 복사 목록을 갱신하는 규칙이 없었음.
+- **Resolution/Pattern**: 탐지는 반드시 **실제 사용 형태 그대로** 측정 (임시 스크립트를 경로 인자로 스폰). run-all.sh가 스폰하는 모든 파일 리스트 ⊆ fixture PRODUCTION_FILES 교차검증을 커밋 전 게이트로 수행. 추가 파일=양성 대조·fixture 갱신·결정론 재실측 3종 셋.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
