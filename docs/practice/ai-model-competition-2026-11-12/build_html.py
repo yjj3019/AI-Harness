@@ -143,8 +143,8 @@ for i in range(4):
     s.r(6.83 + i * 0.26, 6.08, 0.14, 0.14, PAPER if i == 0 else INK_LINE)
 s.t(7.98, 6.05, 3.0, 0.24, [([("4 TIERS (F3)", {"size": 8, "color": INK_TX2, "spc": 200})], {})])
 s.hl(0.9, 6.82, 11.53, INK_LINE)
-s.t(0.9, 7.02, 8.6, 0.3, [([("산출물 8종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})], {})])
-s.t(10.43, 7.02, 2.0, 0.3, [([("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": "right"})], {})])
+s.t(0.9, 7.02, 8.6, 0.3, [([("산출물 10종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})], {})])
+s.t(10.43, 7.02, 2.0, 0.3, [([("ARTIFACTS 10", {"size": 9, "color": INK_TX2, "mono": True, "align": "right"})], {})])
 slides.append(s)
 
 # ===== S2 statement =====
