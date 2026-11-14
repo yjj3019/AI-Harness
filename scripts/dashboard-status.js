@@ -25,7 +25,7 @@ if (!process.argv.includes("--force")) {
   }
   let outMtime = -1;
   try { outMtime = fs.statSync(out).mtimeMs; } catch { /* first run */ }
-  if (outMtime >= newest) {
+  if (newest > 0 && outMtime >= newest) {
     console.log(`dashboard-status: up-to-date (소스 미변경). --force로 강제 재생성`);
     process.exit(0);
   }

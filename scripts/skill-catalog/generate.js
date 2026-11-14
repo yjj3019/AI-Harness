@@ -21,7 +21,9 @@ if (!process.argv.includes('--force')) {
   }
   let outMtime = -1;
   try { outMtime = fs.statSync(outFile).mtimeMs; } catch { /* first run */ }
-  if (outMtime >= newest) {
+  // 소스 SKILL.md가 하나도 없으면(found = 0) 스킵하지 않는다: 소스 없음은 "최신"이 아니라
+  // "생성 필요"다 (dashboard-status.js와 동일 회귀 방지: 빈 소스에서 생성 대신 스킵 → stale 유지).
+  if (found > 0 && outMtime >= newest) {
     console.log(`skill-catalog: up-to-date (소스 미변경, skills ${found}개). --force로 강제 재생성`);
     process.exit(0);
   }
