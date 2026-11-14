@@ -1,7 +1,7 @@
 # Patterns Adapted from agent-autoloop
 
-Source: https://github.com/KKKKhazix/agent-autoloop  
-Adapted as optional skills. Does not vendor upstream code.
+Source: https://github.com/KKKKhazix/agent-autoloop — **MIT** (GitHub API spdx_id 실측 2026-11-14)
+License verified clean. Adapted as optional skills (ideas-only). Does not vendor upstream code.
 
 | Pattern | Skill | Purpose |
 |---------|-------|---------|

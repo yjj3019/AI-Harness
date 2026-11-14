@@ -8,15 +8,15 @@ license: Apache-2.0
 
 **Goal**: Produce interfaces and visual systems that are intentional, product-specific, and verifiable — not generic AI slop.
 
-Synthesized from the strongest open patterns (2026):
-- Anthropic `frontend-design` — distinctive art direction before code
-- [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — art direction + browser check
-- [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) — searchable patterns
-- [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — critique and anti-patterns
-- [emilkowalski/skills](https://github.com/emilkowalski/skills) — motion and design engineering taste
-- Anthropic `brand-guidelines` — consistent tokens
-- [AgentsORG/DESIGN](https://github.com/AgentsORG/DESIGN) — living `.design` visual contract
-- [tigerless-labs/design-harness](https://github.com/tigerless-labs/design-harness) — evidence-linked design reasoning
+Synthesized from the strongest open patterns (2026) — licenses measured via GitHub API spdx_id 2026-11-14:
+- Anthropic `frontend-design` — distinctive art direction before code (Anthropic 상표·명칭 미사용, 아이디어만)
+- [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT) — art direction + browser check
+- [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) (MIT) — searchable patterns
+- [pbakaus/impeccable](https://github.com/pbakaus/impeccable) (Apache-2.0) — critique and anti-patterns
+- [emilkowalski/skills](https://github.com/emilkowalski/skills) (MIT) — motion and design engineering taste
+- Anthropic `brand-guidelines` — consistent tokens (Anthropic 상표·명칭 미사용, 아이디어만)
+- [AgentsORG/DESIGN](https://github.com/AgentsORG/DESIGN) (MIT) — living `.design` visual contract
+- [tigerless-labs/design-harness](https://github.com/tigerless-labs/design-harness) (NOASSERTION — 커스텀 라이선스, 코드 복사 금지, 아이디어만)
 
 Does not vendor upstream code. Apply this skill’s gates on top of any external design skill.
 
