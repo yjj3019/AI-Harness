@@ -57,10 +57,11 @@ phase handoff-lint node scripts/handoff-lint.js
 phase agents-lint bash tests/agents-lint.sh
 phase package-lint node scripts/package-lint.js
 phase design-channel node scripts/design-channel-check.js code scripts
+phase eval-set node scripts/eval-set-check.js
 phase hooks bash tests/hooks.test.sh
 wait
 fails=0
-for l in skill-audit secret-scan tree-exclude handoff-lint agents-lint package-lint design-channel hooks; do
+for l in skill-audit secret-scan tree-exclude handoff-lint agents-lint package-lint design-channel eval-set hooks; do
   echo "== $l =="
   cat "$tmp_dir/out.$l"
   s=$(cat "$tmp_dir/st.$l" 2>/dev/null || echo 2)

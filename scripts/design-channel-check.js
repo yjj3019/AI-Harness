@@ -4,6 +4,7 @@
 //   node scripts/design-channel-check.js html <file.html>     static HTML/CSS layout hygiene
 //   node scripts/design-channel-check.js code <file-or-dir>   token-scale scan of code
 //   node scripts/design-channel-check.js evidence <channel> <evidence.json>  render-evidence contract
+//   node scripts/design-channel-check.js scorecard <scorecard.json>        scorecard metric/UNKNOWN contract
 // Exit 0 = clean, 1 = findings, 2 = usage/IO error. Heuristics are signals for
 // review, not verdicts. Positive controls live in tests/design-channel-check.test.js.
 
@@ -79,6 +80,21 @@ function checkEvidence(channel, file) {
   return bad.length ? [`evidence contract (${channel}): ${bad.join(", ")}`] : null;
 }
 
+function checkScorecard(file) {
+  const data = JSON.parse(fs.readFileSync(file, "utf8"));
+  const items = Array.isArray(data) ? data : data.items;
+  if (!Array.isArray(items)) return ["scorecard must be an array or { items: [...] }"];
+  const bad = [];
+  for (const it of items) {
+    const label = it && typeof it.item === "string" ? it.item : "?";
+    if (typeof label === "?" || !label) { bad.push("item label missing"); continue; }
+    if (it.unknown === true) continue;               // UNKNOWN 명시 = 허용 (미검증은 UNKNOWN 표기 규율)
+    if (typeof it.metric === "undefined" || it.metric === null || String(it.metric).trim() === "") bad.push(label + ": scorecard item without measured metric (set a metric or unknown: true)");
+    if (typeof it.evidence !== "string" || !it.evidence) bad.push(label + ": scorecard item without evidence");
+  }
+  return bad.length ? bad : null;
+}
+
 function main() {
   const [cmd, arg, arg2] = process.argv.slice(2);
   if (cmd === "html" && arg) {
@@ -99,8 +115,13 @@ function main() {
     const f = hits(checkEvidence(arg, arg2) || []);
     if (f) { console.log(`design-channel-check evidence ${arg}: FAIL\n - ${f.join("\n - ")}`); process.exit(1); }
     console.log(`design-channel-check evidence ${arg}: ok`);
+  } else if (cmd === "scorecard" && arg) {
+    const data = JSON.parse(fs.readFileSync(arg, "utf8"));
+    const f = hits(checkScorecard(arg) || []);
+    if (f) { console.log(`design-channel-check scorecard: FAIL\n - ${f.join("\n - ")}`); process.exit(1); }
+    console.log(`design-channel-check scorecard: ok (${(Array.isArray(data) ? data : data.items).length} items)`);
   } else {
-    console.error("usage: design-channel-check.js html <file> | code <file-or-dir> | evidence <channel> <json>");
+    console.error("usage: design-channel-check.js html <file> | code <file-or-dir> | evidence <channel> <json> | scorecard <json>");
     process.exit(2);
   }
 }
