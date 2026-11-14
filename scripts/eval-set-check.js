@@ -23,7 +23,8 @@ function main() {
     }
     const p = path.join(path.dirname(file), e.path);
     if (!fs.existsSync(p)) { bad.push(e.path + " (missing)"); continue; }
-    const actual = crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+    // 줄바꿈(LF/CRLF/CR)을 LF로 정규화한 뒤 해시 — checkout 방식(autocrlf)과 무관하게 동일 다이제스트.
+    const actual = crypto.createHash("sha256").update(fs.readFileSync(p, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n")).digest("hex");
     if (actual !== e.sha256) bad.push(e.path + ` (sha256 mismatch ${actual.slice(0, 12)}…)`);
   }
   if (bad.length) {
