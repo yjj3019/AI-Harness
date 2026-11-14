@@ -5,12 +5,12 @@ It is intentionally general — no project-specific scenarios.
 
 ## Source Repositories
 
-| Repository | Focus | Key Contribution |
-|------------|-------|------------------|
-| [obra/superpowers](https://github.com/obra/superpowers) | Skills framework | Forced lifecycle: brainstorm → plan → TDD → review → verify |
-| [anthropics/cwc-long-running-agents](https://github.com/anthropics/cwc-long-running-agents) | Harness primitives | Default-FAIL contract, fresh-context evaluator, agent-maintained handoff |
-| [snarktank/ralph](https://github.com/snarktank/ralph) | Autonomous loop | PRD → small stories with `passes: false`, append-only progress log |
-| [ghuntley/ralph](https://ghuntley.com/ralph/) | Loop engineering | Agent backpressure via compilers, tests, and type checkers |
+| Repository | Focus | License (GitHub API spdx_id, measured 2026-11-14) | Key Contribution |
+|------------|-------|--------|------------------|
+| [obra/superpowers](https://github.com/obra/superpowers) | Skills framework | MIT | Forced lifecycle: brainstorm → plan → TDD → review → verify |
+| [anthropics/cwc-long-running-agents](https://github.com/anthropics/cwc-long-running-agents) | Harness primitives | Apache-2.0 | Default-FAIL contract, fresh-context evaluator, agent-maintained handoff |
+| [snarktank/ralph](https://github.com/snarktank/ralph) | Autonomous loop | MIT | PRD → small stories with `passes: false`, append-only progress log |
+| [ghuntley/ralph](https://ghuntley.com/ralph/) | Loop engineering | n/a (personal blog article, not a repository) | Agent backpressure via compilers, tests, and type checkers |
 
 ## Pattern 1: Forced Lifecycle (Superpowers)
 
@@ -78,7 +78,7 @@ The harness does not rely on the model's self-assessment. The environment is the
 
 ## Pattern 6: Lazy Senior / YAGNI (Ponytail)
 
-Source: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
+Source: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) — **MIT** (GitHub API spdx_id 실측 2026-11-14)
 
 The best code is the code never written. Solve the whole problem with the least new code.
 
@@ -101,7 +101,7 @@ The best code is the code never written. Solve the whole problem with the least 
 
 ## Pattern 7: Karpathy Behavioral Guidelines (detail)
 
-Source: [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)
+Source: [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) — **라이선스 미검증** (GitHub API spdx_id null, 2026-11-14 실측 — 코드 복사 금지, 아이디어만)
 
 These four principles are already primary rules in `CLAUDE.md`. The source adds concrete operational detail:
 
