@@ -14,7 +14,7 @@
 | 11 | 프롬프트 20종·DeepSeek Super-Agent·RSI-Dojo·개발팀 프롬프트·Skills·모션 제작 | document-master·design-master·evidence-preserving-editor·super-agent-architecture-notes·document-job 존재. 실제 모델 A/B·토큰 절감 실측 없음 | 아이디어만 채택, 외부 복사 0건 (12·13·14절 source-adoption 장부) |
 | 12 | 24개 저장소 전수 표·반영 후보 A~H·요청문 | 후보 A(HANDOFF)·B(usage-accounting)·C~H → 대조 결과 아래 2절 | A·B 반영 확인 / C~H **제안 유지** |
 | 13 | 보안 감사 coverage·메모리 출처·브라우저 증거·9개 저장소 | security-master·memory-guard·browser-evidence 존재, coverage ledger·레지스터 계약은 제안 | 기존 기능 반영 / 신규 **제안 유지** |
-| 14 | 자기개선·소스 채택 장부·Draft PR #49 | 장부 기록 문서만 main 반영 (`docs/external-patterns-14repo-2026-11-14.md`·`docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`). validator(`scripts/source-adoption-check.js`·`docs/source-adoption-2026-11-14.json`·`tests/source-adoption-check.test.js`)는 **Draft PR #49(OPEN, 미병합, 브랜치 `audit/source-adoption-ledger-20261114`)에만 존재 — main `git ls-files` 0건, 문서가 인용한 PR #50/#51은 AI 경쟁 주제 (2026-11-14 실측)** | 장부 문서 **반영** / validator 스크립트 **제안 (draft PR #49) 유지** |
+| 14 | 자기개선·소스 채택 장부·Draft PR #49 | validator(`scripts/source-adoption-check.js`·`docs/source-adoption-2026-11-14.json`·`tests/source-adoption-check.test.js`) **v1.3.0 반영** (PR #58 — 로컬 실측 tests 6/6 pass, CLI "6 declarations consistent; license authenticity NOT verified"). 장부 기록 문서(`docs/external-patterns-14repo-2026-11-14.md`·`docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`)도 main 반영 | **반영** (자기개선 루프 자동화는 제안 유지) |
 | 15 | Complexity-aware Design × Coding Loop | coding-master·design-master·design-evidence-harness·paired-evaluation 존재 | 기존 기능 반영 / 신규 도구 도입 **제안 유지** |
 
 ## 2. P0 후보 A~H 실측 대조 (13.3 표의 A~H)
@@ -42,7 +42,6 @@
 ## 4. 미반영 (제안 유지) — 실행 승인 대기
 
 - Router/Worker 최소 PoC (P1-A), 스킬 trigger 3~5회 평가 (P1-B), 재현 기반 자기개선 자동화 (P1-C), 컨텍스트·토큰 실측 (P1-D), 콘텐츠 Task Profile (P2), 브라우저/영상 제작 평가, guardrail·memory-engineering·coverage ledger 신규 도입, 외부 프레임워크(Remotion·firecrawl 등) 도입, 24개·9개 저장소 코드 채택 0건 유지 (source-adoption 장부 기록).
-- source-adoption 장부 validator(`scripts/source-adoption-check.js`·`docs/source-adoption-2026-11-14.json`·test) — **Draft PR #49(OPEN, 미병합)** — main 재개설/병합 승인 대기 (2026-11-14 실측).
 - 가이드의 성능·정확도·비용 수치 전부 이 저장소 실측값 아님 — 인용 금지 (UNKNOWN 유지).
 
 ## 5. 이 저장소에 이미 반영된 근거 (변경 이력)
@@ -52,4 +51,4 @@
 
 ## 6. 요약
 
-- 2026-11-14 기준 **P0 후보 A~H 전수 항목은 이미 반영**되어 있으며, 이번 v1.2.1은 그 대조 결과와 상태를 반영 기록으로 남긴다. v1.2.2에서 14절의 source-adoption "반영" 표기를 실측으로 교정했다 (validator는 Draft PR #49 미병합). 나머지는 제안 상태 유지 — 승인 결정 대기.
+- 2026-11-14 기준 **P0 후보 A~H 전수 항목은 이미 반영**되어 있으며, v1.2.1은 그 대조 결과와 상태를 반영 기록으로 남긴다. v1.2.2에서 14절의 source-adoption "반영" 표기를 실측으로 교정했고, v1.3.0에서 validator를 main 반영해 최종 정합했다. 나머지는 제안 상태 유지 — 승인 결정 대기.

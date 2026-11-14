@@ -2,6 +2,12 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.3.0] - 2026-11-14
+
+### 추가 (source-adoption 장부 validator 정식 반영 — 근거: 로컬 실측)
+- `scripts/source-adoption-check.js` (read-only 소스 채택 선언 검증기) · `docs/source-adoption-2026-11-14.json` (라이선스 검사 완료 참조 소스 6건 장부) · `tests/source-adoption-check.test.js` (6 test) — Draft PR #49 내용을 main 반영. 로컬 실측: tests **6/6 pass** / fail 0, CLI 출력 "6 declarations consistent; license authenticity NOT verified" (라이선스 진위는 도구가 검증하지 않음 — 독립 확인 필요).
+- `docs/external-guide-review-2026-11-14.md` 14절 "제안 (draft PR #49) 유지" → **반영** 재교정 — v1.2.2 교정과 최종 정합.
+
 ## [1.2.2] - 2026-11-14
 
 ### 문서 (검토서의 source-adoption "반영" 표기 오류 교정 — 실측 근거)

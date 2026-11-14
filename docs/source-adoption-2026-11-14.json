@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "id": "cloudflare-security-audit",
+      "source_url": "https://github.com/cloudflare/security-audit-skill",
+      "license_url": "https://github.com/cloudflare/security-audit-skill/blob/main/LICENSE",
+      "license_label": "MIT",
+      "checked_at": "2026-11-14",
+      "method": "ideas-only",
+      "copied_files": [],
+      "credit_url": "https://github.com/cloudflare/security-audit-skill",
+      "concept": "Coverage ledger, bounded findings, attempted falsification, independent record review. No upstream code included."
+    },
+    {
+      "id": "shadcn-improve",
+      "source_url": "https://github.com/shadcn/improve",
+      "license_url": "https://github.com/shadcn/improve/blob/main/LICENSE.md",
+      "license_label": "MIT",
+      "checked_at": "2026-11-14",
+      "method": "ideas-only",
+      "copied_files": [],
+      "credit_url": "https://github.com/shadcn/improve",
+      "concept": "Prioritized code audit, self-contained execution plans, reconciliation. No upstream code included."
+    },
+    {
+      "id": "walkinglabs-learn-harness-engineering",
+      "source_url": "https://github.com/walkinglabs/learn-harness-engineering",
+      "license_url": "https://github.com/walkinglabs/learn-harness-engineering/blob/main/LICENSE",
+      "license_label": "MIT",
+      "checked_at": "2026-11-14",
+      "method": "ideas-only",
+      "copied_files": [],
+      "credit_url": "https://github.com/walkinglabs/learn-harness-engineering",
+      "concept": "Progressive, project-based fixtures and lifecycle learning. No upstream code included."
+    },
+    {
+      "id": "anthropics-knowledge-work-plugins",
+      "source_url": "https://github.com/anthropics/knowledge-work-plugins",
+      "license_url": "https://github.com/anthropics/knowledge-work-plugins/blob/main/LICENSE",
+      "license_label": "Apache-2.0",
+      "checked_at": "2026-11-14",
+      "method": "ideas-only",
+      "copied_files": [],
+      "credit_url": "https://github.com/anthropics/knowledge-work-plugins",
+      "concept": "Role-specific workflows with explicit connectors and reusable skills. No upstream code included."
+    },
+    {
+      "id": "yang0-handraw-style",
+      "source_url": "https://github.com/yang0/handraw-style",
+      "license_url": "https://github.com/yang0/handraw-style/blob/master/LICENSE",
+      "license_label": "CUSTOM-ATTRIBUTION",
+      "checked_at": "2026-11-14",
+      "method": "reference-only",
+      "copied_files": [],
+      "credit_url": "https://github.com/yang0/handraw-style",
+      "concept": "High-level notion of style and layout taxonomy only. No images, templates, or code transferred. License has an additional credit requirement."
+    },
+    {
+      "id": "pbakaus-impeccable",
+      "source_url": "https://github.com/pbakaus/impeccable",
+      "license_url": "https://github.com/pbakaus/impeccable/blob/main/LICENSE",
+      "license_label": "Apache-2.0",
+      "checked_at": "2026-11-14",
+      "method": "ideas-only",
+      "copied_files": [],
+      "credit_url": "https://github.com/pbakaus/impeccable",
+      "concept": "UI critique and deterministic visual quality checks as process ideas. No upstream code included."
+    }
+  ]
+}
