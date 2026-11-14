@@ -32,6 +32,7 @@ const PRODUCTION_FILES = [
   ".claude/commands/phase-harness.md",
   "scripts/context-contract.js",
   "scripts/design-channel-check.js",
+  "scripts/eval-set-check.js",
   "scripts/handoff-lint.js",
   "scripts/merge-guard.js",
   "scripts/package-lint.js",
