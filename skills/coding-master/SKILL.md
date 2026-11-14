@@ -8,10 +8,10 @@ license: Apache-2.0
 
 **Goal**: Produce production-grade code with the discipline of a careful senior engineer — spec before code, tests as proof, small verified slices, and independent review.
 
-Synthesized from the strongest open patterns (2026):
-- [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — full DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP lifecycle, TDD, spec-driven, source-driven, doubt-driven, code-review
-- [mattpocock/skills](https://github.com/mattpocock/skills) — TDD, improve-codebase-architecture, grill-me / to-spec
-- [adityaarakeri/senior-agent-skills](https://github.com/adityaarakeri/senior-agent-skills) — repo-recon, plan-first, tdd-loop, debug-protocol, safe-refactor, self-review, verify-done, git-hygiene
+Synthesized from the strongest open patterns (2026) — licenses measured via GitHub API spdx_id 2026-11-14:
+- [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) (MIT) — full DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP lifecycle, TDD, spec-driven, source-driven, doubt-driven, code-review
+- [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) — TDD, improve-codebase-architecture, grill-me / to-spec
+- [adityaarakeri/senior-agent-skills](https://github.com/adityaarakeri/senior-agent-skills) (라이선스 부재 — GitHub API spdx_id null 실측, 2026-11-14) — repo-recon, plan-first, tdd-loop, debug-protocol, safe-refactor, self-review, verify-done, git-hygiene
 - SOLID / clean architecture patterns from various senior-engineer skills
 
 Does not vendor upstream code. Apply this skill’s gates on top of any external coding skill.
