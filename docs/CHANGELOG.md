@@ -2,6 +2,11 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.1.1] - 2026-11-14
+
+### 수정
+- `scripts/perf-bench.js`: 쓰기 생성기 측정을 임시 복사본(`scripts/` 포함) 기준으로 수정 — 1차 실측에서 `skill-catalog/generate.js`의 `__dirname` 기반 출력으로 원본 `docs/skill-catalog.md` 1건이 덮어쓴 것을 확인, 복원 완료 (정정: `docs/perf-bench-2026-11-14.md`). 측정값은 유효.
+
 ## [1.1.0] - 2026-11-14
 
 ### 추가 (성능 실측: `docs/perf-bench-2026-11-14.md`)
