@@ -14,7 +14,7 @@
 | 11 | 프롬프트 20종·DeepSeek Super-Agent·RSI-Dojo·개발팀 프롬프트·Skills·모션 제작 | document-master·design-master·evidence-preserving-editor·super-agent-architecture-notes·document-job 존재. 실제 모델 A/B·토큰 절감 실측 없음 | 아이디어만 채택, 외부 복사 0건 (12·13·14절 source-adoption 장부) |
 | 12 | 24개 저장소 전수 표·반영 후보 A~H·요청문 | 후보 A(HANDOFF)·B(usage-accounting)·C~H → 대조 결과 아래 2절 | A·B 반영 확인 / C~H **제안 유지** |
 | 13 | 보안 감사 coverage·메모리 출처·브라우저 증거·9개 저장소 | security-master·memory-guard·browser-evidence 존재, coverage ledger·레지스터 계약은 제안 | 기존 기능 반영 / 신규 **제안 유지** |
-| 14 | 자기개선·소스 채택 장부·Draft PR #49 | validator(`scripts/source-adoption-check.js`·`docs/source-adoption-2026-11-14.json`·`tests/source-adoption-check.test.js`) **v1.3.0 반영** (PR #58 — 로컬 실측 tests 6/6 pass, CLI "6 declarations consistent; license authenticity NOT verified"). 장부 기록 문서(`docs/external-patterns-14repo-2026-11-14.md`·`docs/maturity/CONTEXT-ADOPTION-2026-10-26.md`)도 main 반영 | **반영** (자기개선 루프 자동화는 제안 유지) |
+| 14 | 자기개선·소스 채택 장부·Draft PR #49 | validator(`scripts/source-adoption-check.js`·`docs/source-adoption-2026-11-14.json`·`tests/source-adoption-check.test.js`) **v1.3.0 반영** (PR #58 — 로컬 실측 tests 6/6 pass). **v1.3.1에서 GitHub API 전수 대조 실측 기록** (2026-11-15: 6건 HTTP 200 — MIT×3·Apache-2.0×2·CUSTOM-ATTRIBUTION 전수 일치) | **반영** (자기개선 루프 자동화는 제안 유지) |
 | 15 | Complexity-aware Design × Coding Loop | coding-master·design-master·design-evidence-harness·paired-evaluation 존재 | 기존 기능 반영 / 신규 도구 도입 **제안 유지** |
 
 ## 2. P0 후보 A~H 실측 대조 (13.3 표의 A~H)

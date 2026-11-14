@@ -13,11 +13,14 @@ test('reviewed adoption declarations are consistent and contain no copied files'
   assert.deepEqual(validate(manifest), { entries: 6, copied_files: 0, certification: 'NOT_PERFORMED' });
   assert.deepEqual(manifest.entries.map(x => x.license_label),
     ['MIT', 'MIT', 'MIT', 'Apache-2.0', 'CUSTOM-ATTRIBUTION', 'Apache-2.0']);
+  assert.deepEqual(manifest.entries.map(x => x.verified_spdx),
+    ['MIT', 'MIT', 'MIT', 'Apache-2.0', 'CUSTOM-ATTRIBUTION', 'Apache-2.0']);
 });
-test('rejects copied file claims and unknown fields', () => {
+test('rejects copied file claims, unknown fields, and verified_spdx mismatches', () => {
   assert.throws(() => validate(modified(m => m.entries[0].copied_files = ['external.js'])));
   assert.throws(() => validate(modified(m => m.entries[0].unapproved = 'yes')));
   assert.throws(() => validate(modified(m => m.entries[0].method = 'copy')));
+  assert.throws(() => validate(modified(m => m.entries[0].verified_spdx = 'Apache-2.0')));
 });
 test('rejects repeated sources and identifiers', () => {
   assert.throws(() => validate(modified(m => m.entries[1].id = m.entries[0].id)));
@@ -37,5 +40,5 @@ test('CLI validates the reviewed baseline in read-only mode', () => {
   const result = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'source-adoption-check.js'), manifestPath], {encoding:'utf8'});
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /6 declarations consistent/);
-  assert.match(result.stdout, /NOT verified/);
+  assert.match(result.stdout, /verified_spdx cross-checked/);
 });
