@@ -140,8 +140,8 @@ tb(s, 6.83, 5.02, 5.6, 0.5, [("안전과 신뢰 × 공익 구조", {"size": 23, 
 tb(s, 6.83, 5.62, 5.6, 0.3, [("안전 체계 · 검증 프로그램 분리 · PBC·S-1 (F5·F7)", {"size": 10, "color": INK_TX2})])
 tb(s, 6.28, 5.2, 0.75, 0.3, [("VS", {"size": 10, "color": INK_TX2, "mono": True, "align": PP_ALIGN.CENTER, "spc": 200})])
 hairline(s, 0.9, 6.82, 11.53, INK_LINE)
-tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 8종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})])
-tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 08", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
+tb(s, 0.9, 7.02, 8.6, 0.3, [("산출물 10종 · 구조 · 렌더 · 스코어카드 검증 — 04-verification-log.md", {"size": 9, "color": INK_TX2, "spc": 60})])
+tb(s, 10.43, 7.02, 2.0, 0.3, [("ARTIFACTS 10", {"size": 9, "color": INK_TX2, "mono": True, "align": PP_ALIGN.RIGHT})])
 
 # ===== S2 — archetype: statement =====
 s = new_slide(); chrome(s, "01 — 질문 Question", "비교의 단위를 바꾸자 — 모델이 아니라 티어", 2)
