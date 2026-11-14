@@ -8,14 +8,14 @@ license: Apache-2.0
 
 **Goal**: Deliver a deck a colleague can open in PowerPoint and keep editing — native shapes, text, charts, and tables — with a clear argument and verified visual quality.
 
-Synthesized from the strongest open patterns (2026):
-- [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — routed native PPTX pipeline
-- [likaku/Mck-ppt-design-skill](https://github.com/likaku/Mck-ppt-design-skill) — consulting layout patterns
-- [Gabberflast/academic-pptx-skill](https://github.com/Gabberflast/academic-pptx-skill) — action titles & ghost-deck test
-- [siril9/presentation-skill](https://github.com/siril9/presentation-skill) — JSON source + visual QA
-- [sunchaokun/PPT-Design-Skill](https://github.com/sunchaokun/PPT-Design-Skill) — design decision gates
-- Anthropic official `pptx` skill — baseline file operations
-- [EveryInc/hands-on-deck](https://github.com/EveryInc/hands-on-deck) — atomic edit discipline
+Synthesized from the strongest open patterns (2026) — licenses measured via GitHub API spdx_id 2026-11-14:
+- [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) (MIT) — routed native PPTX pipeline
+- [likaku/Mck-ppt-design-skill](https://github.com/likaku/Mck-ppt-design-skill) (Apache-2.0) — consulting layout patterns
+- [Gabberflast/academic-pptx-skill](https://github.com/Gabberflast/academic-pptx-skill) (MIT) — action titles & ghost-deck test
+- [siril9/presentation-skill](https://github.com/siril9/presentation-skill) (MIT) — JSON source + visual QA
+- [sunchaokun/PPT-Design-Skill](https://github.com/sunchaokun/PPT-Design-Skill) (MIT) — design decision gates
+- Anthropic official `pptx` skill — baseline file operations (anthropics/skills 독점 항목 — 상표·명칭 미사용, 아이디어만)
+- [EveryInc/hands-on-deck](https://github.com/EveryInc/hands-on-deck) (MIT) — atomic edit discipline
 
 Does not vendor upstream code. Full native export still benefits from installing one of the above when available.
 
