@@ -3,3 +3,7 @@
 # what CI runs. Documentation and JSON may follow core.autocrlf.
 *.sh text eol=lf
 *.js text eol=lf
+# Frontmatter targets of tests/agents-lint.sh are first-line checked, so they must not
+# become CRLF on a Windows checkout (1.2.0: 로컬 실측 0D 0A 오탐 제거).
+.claude/agents/*.md text eol=lf
+.claude/commands/*.md text eol=lf

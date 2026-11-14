@@ -12,6 +12,25 @@ const attestDir = path.join("docs", "attestations");
 const out = path.join("dashboard", "status.json");
 const STEPS = 5;
 
+// 1.2.0 증분 갱신: 소스(PHASES.md·attestations)가 출력보다 오래되지 않았으면 스킵 (실측 근거:
+// 생성 1.5s/회 — 스폰 2.3s 계수 지배. --force로 강제 재생성).
+if (!process.argv.includes("--force")) {
+  let newest = 0;
+  try { newest = fs.statSync(phasesFile).mtimeMs; } catch { newest = 0; }
+  if (fs.existsSync(attestDir)) {
+    for (const name of fs.readdirSync(attestDir)) {
+      const s = fs.statSync(path.join(attestDir, name)).mtimeMs;
+      if (s > newest) newest = s;
+    }
+  }
+  let outMtime = -1;
+  try { outMtime = fs.statSync(out).mtimeMs; } catch { /* first run */ }
+  if (newest > 0 && outMtime >= newest) {
+    console.log(`dashboard-status: up-to-date (소스 미변경). --force로 강제 재생성`);
+    process.exit(0);
+  }
+}
+
 // Mirror phase-gate.js and verify-attestation-inventory.js: a phase id is the first
 // non-whitespace, non-colon token; the title after ": " is optional there, so a
 // colon-less heading must not silently vanish from the dashboard.

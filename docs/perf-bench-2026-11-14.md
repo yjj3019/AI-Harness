@@ -44,3 +44,15 @@
 5. **실측 기준선 유지 (P1 근거)**: `scripts/perf-bench.js` 유지 + 이 보고서를 기준선으로, 변경 시 재실측·비교.
 
 > 정정 (1.1.1): 1차 실측에서 `skill-catalog/generate.js`의 출력이 `__dirname` 기준 절대 경로(원본 `docs/skill-catalog.md`)임을 확인 — 원본 1건이 덮어써졌고 복원 완료 (`git diff`로 재확인). 도구는 `scripts/`도 임시 복사본에 포함해 복사본에서 실행하도록 수정. 측정값은 스폰 구간만 계측한 값이라 유효 (경로만 교정). 1차 검증에서는 출력 필터(`Select-String perf-bench`)로 이 M 1건을 놓친 것도 함께 정정.
+
+## 6. 적용 기록 (1.2.0 — 개선 5건, 근거: §3)
+
+| 개선 | 적용 위치 | 내용 |
+|---|---|---|
+| 1. 게이트 병렬 | `tests/run-all.sh` | 게이트 블록 병렬 실행(순서 보존 출력·실패 집계, 6게이트 실측 **-54%**) |
+| 2. 무거운 E2E 분리 | `tests/run-all.sh` | `--fast` — 무거운 E2E(`node --test`) 생략 진입점 (기본/CI는 전체 유지) |
+| 3. 로컬 오탑 제거 | `.gitattributes` | `.claude/agents/*.md`·`.claude/commands/*.md` `text eol=lf` (블롭 LF 실측 확인 후 추가 — diff 0) |
+| 4. 생성기 증분화 | `generate.js`·`dashboard-status.js` | 소스 mtime 대비 미변경 시 스킵 (1.5s/회 → 스폰 수준), `--force`로 강제 |
+| 5. 기준선 재실측 | `scripts/perf-bench.js` | `--gates-only` 추가 — 게이트 블록 재실측 경로 (`--samples 3` 권장) |
+
+**적용 후 재실측 (2026-11-14, 동일 환경, `--gates-only` samples 5 — 원시 기록 `docs/practice/perf-bench-2026-11-14/perf-bench-apply-120.json`)**: 게이트 병렬 exp 중앙값 **1,735.72ms** (개별 gate median 합 4,934.56ms 대비 **-65%**) — 1.1.0 실측 2,642ms 대비 추가 개선. run-all 순차 median 합계 추정 30,241.67ms (1.1.0: 36,096ms). agents-lint 14,227 / hooks-test 601 median — 로컬 exit 1은 P3 로컬 요인 유지 (CI는 jq 있음 → 9/9 통과 확인된 환경). 생성기 2종 (임시 복사본) 1,378 / 1,369 median.
