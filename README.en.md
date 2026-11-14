@@ -273,5 +273,5 @@ Opt-in Phase contracts are checked against typed, full-text local checkpoints be
 ## Recent updates (2026-11-06) — memory guard hardening, static gates listed
 
 - `scripts/memory-guard.js`: external URLs (`https://`/`mailto:`/`//`) and anchors (#anchor) are no longer reported as broken links — stores may legitimately reference the web. Regression test added (fail 0).
-- Static gates indexed: skill license/metadata audit `scripts/skill-audit.js` (license required, Apache-2.0 consistency), distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js` (same listing in AGENTS.md/CLAUDE.md).
+- Static gates indexed: skill security/metadata audit `scripts/skill-audit.js` (license required, Apache-2.0 consistency), distilled-store reviewer `scripts/memory-guard.js`, evidence redaction `scripts/evidence-redact.js`, secret scan `scripts/secret-scan.js` (same listing in AGENTS.md/CLAUDE.md).
 - 100-round simulation (secret-scan + skill-audit x100) measured **ALL_OK** (200/200 exit 0) — zero variance for the deterministic gates.

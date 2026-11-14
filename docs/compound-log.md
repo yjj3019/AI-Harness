@@ -281,6 +281,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: GitHub 상태 페이지는 전무장(전일 21:21Z 해결된 Actions 대형 사고 이후 잔여 영향 추정 — 미검증). 저장소 코드·워크플로와 무관한 디스패치 계층 실패(0 스텝 = 코드 미실행).
 - **Resolution/Pattern**: 실패 판정 시 `steps` 개수·러너 할당·동일 시점의 main push 런을 대조해 **플랫폼 실패인지 코드 실패인지** 먼저 분리. 플랫폼 실패면 게이트를 약화하지 않고(룰셋 우회 금지) 주기적 재시도로 대기, 전이력·근거를 검증 로그와 최종 보고에 기록.
 
+### [2026-11-14] External review - Verify licenses by API, adopt ideas-only, probe positive controls
+
+- **Issue/Risk**: Adopting external detector "pattern concepts" without license verification, or trusting a gate extension without planted-sample controls.
+- **Root Cause**: A detector's effectiveness is only as trustworthy as (a) its source's license evidence and (b) positive controls whose fixture text matches the pattern's actual syntax.
+- **Resolution/Pattern**: Every external repo review: GitHub API spdx_id 실측 + LICENSE 보조 실측 → decisions ideas-only/기록/미채택, code copy 0. Gate 확장 시 양성 대조 7종(정규식과 픽스처 문법 일치) + 자기 스킬 셋 clean + 기존 테스트 전부 통과를 동시에 검증. 양성 대조 문구가 패턴과 어긋나면(예: 'Never tell' vs 'do not tell') 대조가 silently miss — 픽스처를 패턴 구문에 맞게 고정.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
