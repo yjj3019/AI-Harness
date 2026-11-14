@@ -159,14 +159,16 @@ async function main() {
     results["exp:병렬6게이트-동시"] = { ...statOf(parRuns), seqSumOfMedians: +seqSum.toFixed(2), status: parStatus };
   }
 
-  // 쓰기 생성기: 임시 복사본(원본 트리 불변)에서 측정
+  // 쓰기 생성기: 임시 복사본(원본 트리 불변)에서 측정.
+  // 1차 실행에서 skill-catalog/generate.js가 __dirname 기준 절대 경로로 출력
+  // (ROOT/docs/skill-catalog.md)하는 것이 확인되어 scripts/도 함께 복사해 복사본에서 실행한다.
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ah-perf-"));
   try {
-    for (const d of ["skills", "docs", "dashboard"]) {
+    for (const d of ["skills", "scripts", "docs", "dashboard"]) {
       fs.cpSync(path.join(ROOT, d), path.join(tmp, d), { recursive: true });
     }
     const genTargets = [
-      { name: "write:skill-catalog-generate", args: [path.join(ROOT, "scripts", "skill-catalog", "generate.js")] },
+      { name: "write:skill-catalog-generate", args: [path.join(tmp, "scripts", "skill-catalog", "generate.js")] },
       { name: "write:dashboard-status", args: [path.join(ROOT, "scripts", "dashboard-status.js")] },
     ];
     for (const g of genTargets) {
