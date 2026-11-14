@@ -40,6 +40,8 @@ const PRODUCTION_FILES = [
   "scripts/secret-scan.js",
   "scripts/tree-exclude-check.js",
   "skills/skill-audit/SKILL.md",
+  "docs/eval-set/eval-set.json",
+  "docs/report-editing-cases.json",
   "docs/HANDOFF.md",
   ".github/workflows/ci.yml",
   "tests/agents-lint.sh",
