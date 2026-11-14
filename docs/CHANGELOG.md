@@ -2,6 +2,14 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.2.0] - 2026-11-14
+
+### 변경 (성능 실측 5건 적용 — 근거: `docs/perf-bench-2026-11-14.md` 실측)
+- `tests/run-all.sh`: 게이트 블록 **병렬 실행**(순서 보존 출력) + `--fast`(기본 전체 수트 유지, 무거운 E2E 생략 진입점) 추가 (개선 1·2).
+- `.gitattributes`: `.claude/agents/*.md`·`.claude/commands/*.md` `text eol=lf` 추가 (개선 3 — 로컬 CRLF 오탐 제거, 블롭은 이미 LF 실측).
+- `scripts/skill-catalog/generate.js`·`scripts/dashboard-status.js`: 소스 대비 mtime 미변경 시 재생성 스킵 (`--force`로 강제) (개선 4).
+- `scripts/perf-bench.js`: `--gates-only` 추가 — 기준 재실측 경로 (개선 5).
+
 ## [1.1.1] - 2026-11-14
 
 ### 수정
