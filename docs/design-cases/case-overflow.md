@@ -1,0 +1,29 @@
+# Design Case — Overflow (오버플로) (design-omniskill P5)
+
+> 근거: design-skill-engine-2026-11-14 §3-4 (측정 루프) — 케이스는 before/after 스코어카드를 실측으로만 기록한다. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 주관 표현은 기록할 수 없음 — 미측정은 `unknown: true` 로만 표기.
+
+## 1. 고정 입력
+
+- 오버플로 유발 문장/레이아웃 (고정 텍스트 말뭉치 — `docs/eval-set/eval-set.json` 등록 대상)
+- 렌더 포렌식: 스크린샷/래스터 실측 → 합성 → 눈금 비교 3단계 (render-diff 규격)
+
+## 2. Scorecard (구조)
+
+```json
+{ "items": [
+  { "item": "overflow", "metric": "", "evidence": "clip 횟수 렌더 실측 경로" },
+  { "item": "overflow::unknown", "unknown": true, "evidence": "측정 불가 지점" }
+] }
+```
+
+## 3. Before (사용 전 — 실측)
+
+- **상태**: 미기록 (최초 사용 후 기록 예정 — `design-channel-check.js scorecard` 검사 통과 기준).
+
+## 4. After + 재실측
+
+- **상태**: 미기록 (사용 후 기록 예정).
+
+## 5. 재실측 기록
+
+- **상태**: 미기록 (사용 후 기록 예정 — 10회 반복 variants=1 규율 적용 대상).
