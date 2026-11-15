@@ -293,6 +293,18 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: (a) bash 탐지(`-c "exit 0"`)가 **실제 사용 형태(Windows 경로 인자 스폰)와 다름** — WSL 런처 스텁이 `-c`는 통과, 경로 인자는 백슬래시를 이스케이프로 변조해 `C:Usersuser...` → 127. 탐지와 사용 형태의 불일치 = 판별 검증이 실제 경로를 걷지 않은 것. (b) run-all.sh에 스테이지 추가 시 fixture 복사 목록을 갱신하는 규칙이 없었음.
 - **Resolution/Pattern**: 탐지는 반드시 **실제 사용 형태 그대로** 측정 (임시 스크립트를 경로 인자로 스폰). run-all.sh가 스폰하는 모든 파일 리스트 ⊆ fixture PRODUCTION_FILES 교차검증을 커밋 전 게이트로 수행. 추가 파일=양성 대조·fixture 갱신·결정론 재실측 3종 셋.
 
+### [2026-11-15] P1 build - probe() note param clobbered measured stdout; assert.match needs RegExp; merge-guard checks-file argv has no PR number
+
+- **Issue/Risk**: Three latent defects found while wiring B1/B3: (1) `host-permission-matrix.js` net probe printed "curl ok (no status code captured)" — the `note` argument to `probe()` overwrites the detail with a static string, hiding the `-w %{http_code}` stdout the caller needs to parse; (2) a test asserted `assert.match(stdout, `^\\| win32/`)` with a **string**, which throws `ERR_INVALID_ARG_TYPE` instead of failing the assertion; (3) invoking merge-guard as `merge-guard.js 61 --checks-file …` silently ran **live mode** (argv[0] must be the PR number or `--checks-file`), producing a usage error that looks like a checks-file failure.
+- **Root Cause**: (1) `probe()` conflates "human label" with "measured output" — when status is ok it returns `note || firstLineOfStdout`, so any probe whose value lives in stdout must omit the note; (2) `assert.match` (strict) requires a RegExp instance — template-literal strings are not auto-compiled; (3) `main()` dispatches on `argv[0]` only, so extra leading args route to the live path.
+- **Resolution/Pattern**: (1) For value-bearing probes, pass no note and parse `detail` with an anchored regex; keep notes only for probes whose detail is a label. (2) Build RegExp with `new RegExp(...)` when the pattern is dynamic. (3) Documented argv shapes: live = `<pr-number>`; snapshot = `--checks-file <path> --expected-head <sha>` (no PR number) — both refuse (exit 2) by design, and the refusal messages are the measured evidence (B3 H-08).
+
+### [2026-11-15] Local run-all on Windows - hooks gate takes 35+ min under concurrent load; log stays silent until gates flush
+
+- **Issue/Risk**: `bash tests/run-all.sh` showed no output for 35+ minutes (gate phase buffers per-gate output until flush), risking a false "hung" diagnosis while a determinism loop and a 5-file `node --test` ran concurrently.
+- **Root Cause**: The gate phase runs 9 gates in parallel with order-preserving output (buffered), and the hooks gate spawns many short-lived Git Bash child processes per case (306 cases); on Windows Git Bash each spawn is slow, and CPU contention from concurrent work stretches it well past the nominal 22–26 min total. The parent bash's own CPU time stays low (~12s) because it mostly waits on children.
+- **Resolution/Pattern**: To check liveness without trusting log silence: list `bash.exe` processes and watch (a) the `hooks.test.sh` parent still accumulating CPU and (b) **fresh child bash/hook processes appearing with new start times** (e.g. `evidence-guard.sh` spawning). No new children + flat CPU = actually stuck. Avoid heavy concurrent work during the gate phase; a full run-all under load measured ~70 min here (410 pass/6 skip/0 fail, hooks 306/306, ALL CHECKS PASSED) versus 22–26 min unloaded. Also: `jq` is a hard run-all prerequisite on Windows — `choco install jq` (the same route CI's Windows job uses) when `ERROR: missing required tool 'jq'` appears.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

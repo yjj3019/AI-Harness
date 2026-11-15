@@ -26,7 +26,8 @@
 
 ## 현재 버전
 
-- 현재 버전: **1.5.0** (2026-11-15) — 하네스 보강 P0 (평가셋 고정 게이트 `eval-set-check.js` · `scorecard` 서브커맨드 (실측/UNKNOWN 강제) · 디자인 말뭉치 6케이스 — 게이트 9종, tests 8/8·306/306 실측).
+- 현재 버전: **1.6.0** (2026-11-15) — 하네스 보강 P1 (호스트 권한 실측 매트릭스 `host-permission-matrix.js` + CI step·artifact · 토큰 실측 `token-meter.js` · H-01~H-10 재주입 실측 — 신규 스크립트 2종·test 13건, 로컬 ALL CHECKS PASSED (410/416, skip 6) 실측).
+- 1.5.0 (2026-11-15) — 하네스 보강 P0 (평가셋 고정 게이트 `eval-set-check.js` · `scorecard` 서브커맨드 (실측/UNKNOWN 강제) · 디자인 말뭉치 6케이스 — 게이트 9종, tests 8/8·306/306 실측).
 - 1.2.2 (2026-11-14) — 검토서 source-adoption 표기 교정 (validator·JSON·test는 Draft PR #49 미병합 실측 — 장부 기록 문서만 main 반영).
 - 1.2.1 (2026-11-14) — 외부 개선 제안 가이드 정밀 분석 반영 (P0 후보 전수 대조 — 전부 이미 반영 확인, 검토서 `docs/external-guide-review-2026-11-14.md`).
 - 1.2.0 (2026-11-14) — 성능 실측 개선 5건 적용 (게이트 병렬·--fast·속성 eol·생성기 증분·재실측 경로).
