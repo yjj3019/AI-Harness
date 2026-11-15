@@ -38,7 +38,7 @@ design-omniskill (진입점 SKILL.md — progressive disclosure)
 
 ## 3. 강화 방법 (요청 핵심 — 8가지)
 
-1. **점수카드 숫자 보정(calibration)**: 각 채널에 기준문(reference rubric) + 승인된 레퍼런스 산출물 연결 — *주관 판정을 실측 축으로 치환* (visual-artist 선례 확장).
+1. **점수카드 숫자 보정(calibration)**: 각 채널에 기준문(reference rubric) + 승인된 레퍼런스 산출물 연결 — *주관 판정을 실측 축으로 치환* (visual-artist 선례 확장). — **v1.5.0 실장 (A2: `metric` 또는 `unknown:true`+evidence 강제) · v1.7.0 강화 (C3: UNKNOWN `reason` 필수 · `metric` 수치 검증(number 또는 숫자 시작 문자열) · 빈 배열 거부 — `design-channel-check.js scorecard`)**
 2. **렌더 포렌식 게이트 재사용**: 항상 "스크린샷/래스터 실측 → 합성 → 눈금 비교" 3단계 (기존 render12 규격 승격). PPTX 승인 게이트(기존 불가침) 유지 — HTML 승인은 PPTX 통과 대체 안 됨 (기존 규율 고정).
 3. **양성 대조 프로브**: 스코어카드가 "깨짐을 깨짐으로" 잡는지 방울 케이스(오버플로·명암비 불량·폰트 폴백) 1-2개씩 채널별 보유 — 이번 세션의 10회 시뮬레이션 규율(skill-audit 양성 대조 7종)과 동일 신뢰 정책.
 4. **측정 루프**: 각 사용에서 before/after 점수 실측 기록 → `docs/design-cases/` 말뭉치에 누적 → 다음 강화의 근거 (증거 우선 규율).
@@ -55,7 +55,7 @@ design-omniskill (진입점 SKILL.md — progressive disclosure)
 | P2 진입점 SKILL.md + tokens.md | `skills/design-omniskill/` | skill-audit(29 skills clean) ✅ 실측 |
 | P3 채널 1기: html·pdf (렌더 포렌식 계약) | 채널 서브문서 + 스코어카드 | ✅ 양성 대조 통과 |
 | P4 채널 2기: image·docx·pptx·code | 채널 서브문서 | ✅ 작성 완료 (사용자 승인 2026-11-14) |
-| P5 말뭉치 + 교정 루프 | `docs/design-cases/` 6케이스 | ⏳ 대기 (미승인) |
+| P5 말뭉치 + 교정 루프 | `docs/design-cases/` 6케이스 | ✅ 6케이스 작성 (v1.5.0) — 실측 수치는 P2 C1 실사용 단계에서 기록 |
 | P6 결정론 검증 | `scripts/design-channel-check.js` + 양성 대조 4종 | ✅ **tests 4/4 · 10회 variants=1** 실측 |
 
 ## 5. 판정 기록

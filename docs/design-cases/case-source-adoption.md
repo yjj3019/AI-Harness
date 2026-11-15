@@ -1,6 +1,6 @@
 # Design Case — Source Adoption (소스 채택) (design-omniskill P5)
 
-> 근거: docs/source-adoption-2026-11-14.json (6건, 라이선스 실측 완료) — 채택 소스의 출처·라이선스·방식 기록. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 미측정은 `unknown: true` 로만 표기.
+> 근거: docs/source-adoption-2026-11-14.json (6건, 라이선스 실측 완료) — 채택 소스의 출처·라이선스·방식 기록. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 미측정은 `unknown: true` + `reason` 로만 표기 (v1.7.0 C3 계약).
 
 ## 1. 고정 입력
 
@@ -12,7 +12,7 @@
 ```json
 { "items": [
   { "item": "source-adoption", "metric": "", "evidence": "장부·스캔 실측 기록 경로" },
-  { "item": "source-adoption::unknown", "unknown": true, "evidence": "실측 불가 지점 (UNKNOWN 명시)" }
+  { "item": "source-adoption::unknown", "unknown": true, "reason": "미측정 — 최초 사용 후 실측/사유 기록 예정", "evidence": "실측 불가 지점 (UNKNOWN 명시)" }
 ] }
 ```
 

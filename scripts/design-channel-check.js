@@ -80,16 +80,30 @@ function checkEvidence(channel, file) {
   return bad.length ? [`evidence contract (${channel}): ${bad.join(", ")}`] : null;
 }
 
+// C3 (v1.7.0): metric must be a measured number — a finite number, or a string
+// that starts with a number (allows units/ratios such as "4.6:1" or "0 clipped").
+function isNumericMetric(m) {
+  if (typeof m === "number") return Number.isFinite(m);
+  return typeof m === "string" && /^\s*-?\d/.test(m);
+}
+
 function checkScorecard(file) {
   const data = JSON.parse(fs.readFileSync(file, "utf8"));
   const items = Array.isArray(data) ? data : data.items;
   if (!Array.isArray(items)) return ["scorecard must be an array or { items: [...] }"];
+  if (items.length === 0) return ["scorecard has no items (a scorecard with no measured rows is no evaluation)"];
   const bad = [];
   for (const it of items) {
     const label = it && typeof it.item === "string" ? it.item : "?";
     if (typeof label === "?" || !label) { bad.push("item label missing"); continue; }
-    if (it.unknown === true) continue;               // UNKNOWN 명시 = 허용 (미검증은 UNKNOWN 표기 규율)
-    if (typeof it.metric === "undefined" || it.metric === null || String(it.metric).trim() === "") bad.push(label + ": scorecard item without measured metric (set a metric or unknown: true)");
+    if (it.unknown === true) {
+      // UNKNOWN 명시 = 허용 (미검증은 UNKNOWN 표기 규율) — 단 사유(reason)는 필수.
+      if (typeof it.reason !== "string" || it.reason.trim() === "") bad.push(label + ": UNKNOWN item without reason (why unmeasured?)");
+      continue;
+    }
+    const m = it.metric;
+    if (typeof m === "undefined" || m === null || (typeof m === "string" && m.trim() === "")) bad.push(label + ": scorecard item without measured metric (set a metric or unknown: true)");
+    else if (!isNumericMetric(m)) bad.push(label + ": metric must be a measured number, got " + JSON.stringify(String(m)));
     if (typeof it.evidence !== "string" || !it.evidence) bad.push(label + ": scorecard item without evidence");
   }
   return bad.length ? bad : null;

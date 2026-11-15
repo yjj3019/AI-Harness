@@ -1,0 +1,9 @@
+{
+  "status": "SUCCESS",
+  "engine": "chromium (Playwright MCP, headless, isolated profile), fullPage screenshot",
+  "input": "docs/practice/design-omniskill-v1.7.0-2026-11-15/onepager.html",
+  "output": "docs/practice/design-omniskill-v1.7.0-2026-11-15/render-1440.png",
+  "width": 1440,
+  "height": 955,
+  "sha256": "0d0a32c9f8bda06fb057e8e2619d007aa44a0e381aa2d0cf8448ae8f1da579d6"
+}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI-Harness v1.7.0 — P2 요약 원페이지만</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #19191f;
+    --muted: #4b4b57;
+    --primary: #1d4ed8;
+    --card: #eef2ff;
+    --line: #d9d9e3;
+    --space-4: 4px; --space-8: 8px; --space-12: 12px; --space-16: 16px;
+    --space-24: 24px; --space-32: 32px; --space-48: 48px; --space-64: 64px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-48) var(--space-32);
+  }
+  .badge {
+    display: inline-block;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-family: "Cascadia Code", "Consolas", "Noto Sans KR", monospace;
+    font-size: 14px;
+    padding: var(--space-4) var(--space-12);
+    margin: 0 0 var(--space-16) 0;
+  }
+  h1 {
+    font-size: 32px;
+    line-height: 1.25;
+    margin: 0 0 var(--space-8) 0;
+    color: var(--ink);
+  }
+  .sub {
+    font-size: 16px;
+    color: var(--muted);
+    margin: 0 0 var(--space-32) 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-24);
+    margin: 0 0 var(--space-32) 0;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--primary);
+    padding: var(--space-24);
+  }
+  .card h3 {
+    font-size: 20px;
+    margin: 0 0 var(--space-8) 0;
+    color: var(--primary);
+  }
+  .card p {
+    font-size: 16px;
+    margin: 0;
+    color: var(--ink);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 var(--space-32) 0;
+    font-size: 16px;
+  }
+  th {
+    font-size: 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--ink);
+    padding: var(--space-8) var(--space-12);
+  }
+  td {
+    border-bottom: 1px solid var(--line);
+    padding: var(--space-8) var(--space-12);
+    vertical-align: top;
+  }
+  td.num { font-family: "Cascadia Code", "Consolas", "Noto Sans KR", monospace; white-space: nowrap; }
+  .foot {
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-16);
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .foot p { margin: 0 0 var(--space-8) 0; }
+  .foot code { font-family: "Cascadia Code", "Consolas", "Noto Sans KR", monospace; font-size: 14px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="page">
+  <span class="badge">v1.7.0 · P2</span>
+  <h1>AI-Harness v1.7.0 — P2 보강·운영 확정 요약</h1>
+  <p class="sub">harness-reinforcement-plan C1~C4 실측 요약 (2026-11-15) — design-omniskill HTML 채널 실사용 산출물</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>C1 — design-omniskill 운영 확정</h3>
+      <p>진입점 스킬(8파일)을 운영 스킬로 확정. 실사용 1회 실측(본 페이지) + 스코어카드·렌더 증거 기록. 채널별 트리거 실측 · PPTX render-diff 게이트 불가침 유지.</p>
+    </div>
+    <div class="card">
+      <h3>C2 — 인계 스키마 · 영상 PoC</h3>
+      <p>HANDOFF 확장 스키마 <code>handoff-state/1</code>(상태·스코어카드·평가셋 참조) 제안 + 예시 검증 1건(정상·부정 통제). 렌더→영상 PoC 1편 기록.</p>
+    </div>
+    <div class="card">
+      <h3>C3 — scorecard 3-gap 강화</h3>
+      <p>UNKNOWN 항목 <code>reason</code> 필수 · metric 수치 검증(number 또는 숫자 시작 문자열) · 빈 배열 거부. 양성/음성 대조 5종 추가, 10회 variants=1.</p>
+    </div>
+    <div class="card">
+      <h3>C4 — darwin read 탐침 변경</h3>
+      <p><code>/etc/hostname</code> → <code>/etc/hosts</code> (macOS 러너에서 전자가 부재해 권한 실측 오염). 기존 DENIED 행은 역사 보존, P2 CI 재실측.</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>실측 항목</th><th>결과</th><th>근거</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>design-channel tests</td><td class="num">7/7 pass</td><td>node --test (C3 신규 대조 5종 포함)</td></tr>
+      <tr><td>host-permission-matrix tests</td><td class="num">6/6 pass</td><td>node --test (C4 대상 고정 대조 추가)</td></tr>
+      <tr><td>10회 결정성 (scorecard 스위트)</td><td class="num">variants=1</td><td>10/10 run: exit=0, stdout-sha1(12)=39A5DB4B3FDD</td></tr>
+      <tr><td>handoff 스키마 검증</td><td class="num">ok + 4/4 탐지</td><td>정상 경로 exit 0 · 부정 통제 4변이 전부 FAIL</td></tr>
+      <tr><td>CI (v1.6.0 기준)</td><td class="num">9/9 success</td><td>run 43672554810 (head 0868334) — P2 run은 진행 중</td></tr>
+    </tbody>
+  </table>
+
+  <div class="foot">
+    <p>증거: <code>scorecard.json</code> · <code>evidence-1440.json</code> · <code>evidence-1920.json</code> · <code>render-1440.png</code> · <code>render-1920.png</code> · <code>report.md</code> (본 디렉터리)</p>
+    <p>규율: PPTX 승인 게이트·render-diff 게이트 불가침 (HTML 승인은 PPTX 게이트 대체 불가) · UNKNOWN은 사유(reason)와 함께 표기 (v1.7.0 C3 계약)</p>
+  </div>
+</div>
+</body>
+</html>

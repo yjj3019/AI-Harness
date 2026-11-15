@@ -1,6 +1,6 @@
 # Design Case — Document Preservation (문서 보존) (design-omniskill P5)
 
-> 근거: docs/report-editing-cases.json (9건) — required_claims·protected_spans 보존. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 미측정은 `unknown: true` 로만 표기.
+> 근거: docs/report-editing-cases.json (9건) — required_claims·protected_spans 보존. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 미측정은 `unknown: true` + `reason` 로만 표기 (v1.7.0 C3 계약).
 
 ## 1. 고정 입력
 
@@ -11,7 +11,7 @@
 ```json
 { "items": [
   { "item": "preservation", "metric": "", "evidence": "보존 서술 대조 실측 경로" },
-  { "item": "preservation::unknown", "unknown": true, "evidence": "비교 대상 없는 지점" }
+  { "item": "preservation::unknown", "unknown": true, "reason": "미측정 — 최초 사용 후 실측/사유 기록 예정", "evidence": "비교 대상 없는 지점" }
 ] }
 ```
 
