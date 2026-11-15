@@ -24,11 +24,13 @@ CI 연동 (게이트가 아닌 step·artifact만 추가, job 집합 불변 — m
 
 | 호스트 (os/arch) | 측정 시각 (UTC) | read | write | exec | net |
 |---|---|---|---|---|---|
-| win32/x64 (DESKTOP-TG975V0, node v26.13.0, Windows 10.0.26300) | 2026-11-15 00:49 | OK | OK | OK | OK |
-| linux/x64 (ip-10-0-141-132, node v22.23.4, ubuntu-latest CI) | 2026-11-15 02:19 | OK | OK | OK | OK(200) |
-| win32/x64 (runnervmm7ud1, node v22.23.4, windows-latest CI) | 2026-11-15 02:23 | OK | OK | OK | OK(200) |
-| darwin/arm64 (chi22-dq224-…, node v22.23.4, macos-latest CI) | 2026-11-15 02:19 | **DENIED** ¹ | OK | OK | OK(200) |
-| darwin/arm64 (sjc22-bm213-…, node v22.23.4, macos-latest CI) | 2026-11-15 05:41 | OK | OK | OK | OK(403) ² |
+| win32/x64 (로컬 개발 PC, node v26.13.0) | 2026-11-15 00:49 | OK | OK | OK | OK |
+| linux/x64 (ubuntu-latest CI 러너, node v22.23.4) | 2026-11-15 02:19 | OK | OK | OK | OK(200) |
+| win32/x64 (windows-latest CI 러너, node v22.23.4) | 2026-11-15 02:23 | OK | OK | OK | OK(200) |
+| darwin/arm64 (macos-latest CI 러너 A, node v22.23.4) | 2026-11-15 02:19 | **DENIED** ¹ | OK | OK | OK(200) |
+| darwin/arm64 (macos-latest CI 러너 B, node v22.23.4) | 2026-11-15 05:41 | OK | OK | OK | OK(403) ² |
+
+> **2026-11-15 적출 (v1.8.0, 민감도 감사)**: 호스트 식별자(로컬 PC 호스트명·OS 빌드, CI 러너 호스트명·러너 내부 IP)를 일반화 라벨로 교체 — 근거 `docs/sensitivity-audit-2026-11-15.md` F2/F3. 측정 값(read/write/exec/net · 시각 · run ID · probe details)은 원본 그대로 보존.
 
 > CI 3행 출처: PR #62 CI run **43667190047** (head `73cc33b`) 로그의 `HOST-MATRIX` 컴팩트 행 + `host-permission-matrix-{ubuntu,windows-latest,macos-latest}` artifact — 추측·전용값 금지 규율에 따른 실측만.
 >
