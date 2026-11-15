@@ -2,6 +2,14 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.9.0] - 2026-11-15
+
+### 변경 (호환성 — 중복 JSON 키 거부)
+- `scripts/task-graph.js`, `scripts/context-contract.js`: JSON.parse 성공 후 디코딩된 키 기준으로 중복 멤버 이름(`\u` 이스케이프 동등 키 포함)을 거부 (fail-closed). 이전에는 마지막 값이 적용되어 앞선 제한(constraints 등)이 조용히 사라질 수 있었다.
+- 회귀 테스트 2건 추가 (`tests/task-graph.test.js`, `tests/context-contract.test.js`) — 수정 제거 시 실패(음성 대조) 확인. 관련 4개 테스트 파일 55/55 통과.
+- **호환성 변경**: 중복 키를 가진 기존 계약·그래프 파일은 거부된다. 중첩 1000단계 초과도 거부. `analyze()` 직접 호출은 이미 파싱된 객체라 검출 불가(문서화).
+- `docs/task-graph.md`, `docs/task-contracts/README.md` 문구를 1.9.0 동작으로 갱신.
+
 ## [1.8.1] - 2026-11-15
 
 ### 수정 (문서 동기화 + 테스트 시한폭탄 수정 — 게이트 코드 변경 없음)

@@ -17,7 +17,7 @@ All properties below are required, with no additional properties. The root is `{
 - `status`: `PENDING`, `PASS`, `FAIL`, or `UNKNOWN`. `PENDING` requires zero attempts; `PASS` and `FAIL` require at least one. `UNKNOWN` may have zero attempts when execution is unverified.
 - `effect`: `NONE` or `EXTERNAL`, a declaration, not verified effect evidence.
 
-JSON object member names should be unique; as with JavaScript's JSON parser, duplicate names are resolved to the last value. Do not use this tool where that ambiguity is unacceptable. Arrays and IDs are case-sensitive. Graph size, labels, and retry budgets are bounded, but the parser is not a hardened hostile-input security boundary.
+JSON object member names must be unique: since 1.9.0 the CLI rejects duplicate member names (including names that become equal after `\u` escape decoding) with `FAIL` and `duplicate JSON object member`, instead of JavaScript's last-value-wins. This applies to file input via the CLI; `analyze()` receives an already parsed object, where a dropped duplicate can no longer be detected. Existing graph files with repeated keys are now rejected. Arrays and IDs are case-sensitive. Graph size, labels, and retry budgets are bounded, but the parser is not a hardened hostile-input security boundary.
 
 Example:
 
