@@ -2,6 +2,20 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.6.0] - 2026-11-15
+
+### 추가 (하네스 보강 P1 묶음 — 호스트 권한 실측 · 토큰 실측 · H-01~H-10 재주입 실측 — 근거: 로컬 실측, CI 행은 병합 전 갱신)
+- **B1 호스트 권한 실측 매트릭스** (게이트 아님 — 실측 기록): `scripts/host-permission-matrix.js` (read/write/exec/net 4탐침, 상태 ok/denied/unknown, exit 0 고정) + `tests/host-permission-matrix.test.js` (5 test, portable) + `docs/host-permission-matrix-2026-11-15.md` (win32/x64 행 실측: read=ok write=ok exec=ok net=ok(200) @ 2026-11-15T00:49:07Z). CI는 **step·artifact만 추가** (checks ubuntu-latest + portability windows/macos, `upload-artifact@cf430e03… # v7` — job 집합 불변, merge-guard `REQUIRED_CHECKS` 9종 보존, YAML 파싱 검증 실측). CI 2행은 CI 실행 후 갱신 예정.
+- **B2 토큰 실측**: `scripts/token-meter.js` (읽기 전용 — claude `~/.claude/projects/**.jsonl` + subagents, codex `~/.codex/sessions/**/rollout-*.jsonl`; 호스트별 최근 N, MAX 256MiB/2M행, cost-state·total-token cross-check: match/carried/divergent/unknown) + `tests/token-meter.test.js` (8 test) + `docs/token-meter-2026-11-15.md` (실측: claude 20/50세션 calls=1643 · codex 20/205세션 calls=5258 · 총 calls=6901 total=1,808,171,695 @ 2026-11-15T00:40:03Z — 시점 실측, live 세션 성장 반영). 스킬/기능 귀속·DSH·WSL 토큰 = UNKNOWN 명시.
+- **B3 H-01~H-10 재주입 실측**: `docs/host-scenario-replay-2026-11-15.md` — 시나리오별 1행 (재현 성공 8 · 재현 실패 0 · UNKNOWN 2: H-03 대상 미정의, H-09 라이브 모델 필요). H-10은 enabled 3경로(유효·변조·누락 checkpoint) + inactive 경로를 throwaway fixture로 실측.
+- 신규 검사 2종 10회 결정성 실측: token-meter variants=1 (8/8×10) · host-permission-matrix variants=1 (5/5×10).
+
+### 변경 (CI)
+- `.github/workflows/ci.yml`: checks·portability job에 host-permission-matrix 측정 step + artifact upload 추가 (신규 job 0 — merge-guard 필수 체크 9종 allowlist 유지).
+
+### 검증 (로컬, 2026-11-15)
+- `bash tests/run-all.sh` (Windows, node v26.13.0): **ALL CHECKS PASSED** (exit 0) — 게이트 9종 (skill-audit 29 clean · secret-scan clean · tree-exclude 4/4 · handoff-lint ok · agents-lint 6/0 · package-lint 35 · design-channel 27 clean · eval-set 1 match · **hooks 306/306**) + node tests **416 = 410 pass / 6 skip(Windows 사유 스킵) / 0 fail** (46 파일, duration 2440s — 동시 부하 포함).
+
 ## [1.5.0] - 2026-11-15
 
 ### 추가 (하네스 보강 P0 묶음 — 평가셋 고정 · 점수카드 실측 강제 · 말뭉치 6케이스 — 근거: 로컬 실측)
