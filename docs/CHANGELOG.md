@@ -23,7 +23,7 @@
 - 대상 `node --test`: design-channel-check **7/7** · host-permission-matrix **6/6** (fail 0).
 - `bash tests/run-all.sh --fast` (Windows, Git-Bash): **ALL CHECKS PASSED (fast)** (exit 0, ~40분) — 게이트 9종: skill-audit 29 clean · secret-scan clean · tree-exclude 4/4 · handoff-lint ok · agents-lint 6 files 0 problems · package-lint 35 checked 0 errors · design-channel code clean (27 files) · eval-set 1 pinned match · **hooks 306/306 passed**.
 - 최종 트리 재검증 (문서 편집 후, 위 run의 게이트 시작 시점 트리 대비): handoff-lint ok · secret-scan clean · tree-exclude 4/4 재실행 통과 (scripts·tests·hooks는 run 시작 후 미변경 — run 증거 유효).
-- CI: 9/9 — PR run 실측 후 병합 전 갱신 (macos-latest run의 darwin read 재실측 포함).
+- CI (P2): PR #64 run **43682070828** (head `1a64264`) **9/9 success** (checks/node 22·node 24 · self-qa/shellcheck · portability/windows-latest·macos-latest · toolbroker/windows·macos·ubuntu · isolation/linux-namespace) — macos-latest run에서 **darwin read=ok 재실측** (C4 — matrix 문서 5행 동기화, run 05:41:14Z).
 
 ## [1.6.0] - 2026-11-15
 
