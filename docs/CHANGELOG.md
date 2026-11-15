@@ -23,7 +23,7 @@
 - 결정성 10회 재녹화 + ref 5회 emit + PSNR 3점 (7.33/40.39/40.17 dB) + SKIP 계약 (playwright 부재 → `{"status":"skip"}` exit 0) — 전부 로컬 실측 (practice `report.md` §3~§5).
 - `bash tests/run-all.sh --fast` (Windows, Git-Bash, ~35분): **ALL CHECKS PASSED (fast)** (exit 0) — test files 46 (floor 15) · 게이트 9종: skill-audit 29 clean · secret-scan clean · tree-exclude 4/4 · handoff-lint ok (3 플랫폼) · agents-lint 6 files 0 problems · package-lint 35 checked 0 errors · design-channel code clean (28 files) · eval-set 1 pinned match · **hooks 306/306 passed**.
 - 최종 트리 재검증 (문서 편집 후, 위 run의 게이트 시작 시점 트리 대비): handoff-lint ok · secret-scan clean · tree-exclude 4/4 · skill-audit 29 clean (4/4 exit 0 실측).
-- CI: PR run 9/9 — 병합 확인 후 갱신.
+- CI: PR #65 1차 run (head `24d7be1`) 43693832844 **9/9 success** (checks node 22/24 · isolation linux · portability macos/windows · self-qa shellcheck · toolbroker ubuntu/windows/macos) — 본 행 갱신 커밋의 재실행도 전원 pass 확인 후 병합.
 
 ## [1.7.0] - 2026-11-15
 
