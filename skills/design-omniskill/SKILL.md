@@ -1,16 +1,17 @@
 ---
 name: design-omniskill
-description: Entry-point design skill for HTML, image, PDF, PPTX, DOCX, and code artifacts — pick the artifact format, then use the channel document for its rubric, render evidence contract, and scorecard. Use before shipping any designed artifact, after the authoring skill, and before the evidence gates. Not for visual-artist-only images and not a replacement for the PPTX approval gate.
+description: Entry-point design skill for HTML, image, PDF, PPTX, DOCX, and code artifacts — pick the artifact format, then use the channel document for its rubric, render evidence contract, and scorecard. Video is an experimental PoC channel (channel-video.md) with a measurement-only contract — never gate evidence (D4). Use before shipping any designed artifact, after the authoring skill, and before the evidence gates. Not for visual-artist-only images and not a replacement for the PPTX approval gate.
 license: Apache-2.0
 ---
 
 # Design OmniSkill (Entry)
 
-**Goal**: One entry point that routes any designed artifact (HTML, image, PDF, PPTX, DOCX, code) to its channel document, and gives every channel the same backbone: tokens, scorecard, render evidence, and a four-block report.
+**Goal**: One entry point that routes any designed artifact (HTML, image, PDF, PPTX, DOCX, code — video is experimental) to its channel document, and gives every channel the same backbone: tokens, scorecard, render evidence, and a four-block report.
 
 ## Trigger
 
 - Authoring/reviewing a designed artifact in HTML, image, PDF, PPTX, DOCX, or UI/code layout.
+- Rendering a designed HTML page to video (experimental channel, `channel-video.md`).
 - Before shipping a designed artifact or claiming design quality.
 - Not for: plain text drafting (document-master/writer-master), PPTX-only flows (ppt-master), interface contracts without visual layout (api-design).
 
@@ -24,6 +25,7 @@ license: Apache-2.0
 | PPTX | `channel-pptx.md` (ppt-master + render-diff) | PDF render diff vs approved reference; PPTX gate is never replaced by HTML approval |
 | DOCX | `channel-docx.md` (office-master + typography) | print-layout raster check, 1-page typography checks |
 | Code with UI layout | `channel-code.md` (api-design + token consistency) | token scan of layout units and naming |
+| HTML video render (experimental, PoC) | `channel-video.md` | `scripts/render-video.js` → webm: viewport 1440×900, size + sha256 + duration/fps/codec measured — **D4: artifact + measurement only, never gate evidence** |
 
 ## Backbone (every channel)
 

@@ -1,0 +1,176 @@
+{
+  "generated": "2026-11-15",
+  "host": "local Windows PC (Edge 157.0.4341.46, playwright 1.65.1 installed in a machine-local dir outside the repo, resolved via PLAYWRIGHT_MODULE)",
+  "input": "docs/practice/design-omniskill-v1.7.0-2026-11-15/onepager.html (committed blob sha256 696ecd0069c88b91faf22e1206a25bb346fd94dbccdc75c3258eb870e4235d08, LF, 5335 B; Windows worktree checkout is CRLF 5481 B sha256 6fe35ac10edb60cf9fd18c09a31dbd69c7a0db07e32837a8dd09ce6f37d36a2f — CRLF->LF verified byte-identical to the committed blob; line endings are browser-inert)",
+  "command": "node scripts/render-video.js --page <onepager> --out run<N>.webm --duration 5 (PLAYWRIGHT_MODULE set; 10 sequential runs, 107.99 s total)",
+  "summary": {
+    "runs": 10,
+    "invariants": {
+      "width": [
+        1440
+      ],
+      "height": [
+        900
+      ],
+      "fps": [
+        25
+      ],
+      "codec": [
+        "vp9"
+      ],
+      "requested_duration_s": [
+        5
+      ],
+      "browser_channel": [
+        "msedge"
+      ],
+      "browser_version": [
+        "157.0.4341.46"
+      ],
+      "playwright_version": [
+        "1.65.1"
+      ]
+    },
+    "observed_variation": {
+      "duration_s_values": [
+        4.8,
+        4.84,
+        4.76,
+        4.92,
+        4.76,
+        4.76,
+        4.68,
+        5,
+        4.76,
+        4.88
+      ],
+      "size_values": [
+        485932,
+        513678,
+        485726,
+        514172,
+        485726,
+        485726,
+        485244,
+        514721,
+        485726,
+        513805
+      ],
+      "distinct_sha256": 10,
+      "distinct_creation_time": 10
+    },
+    "verdict": "variants=1 on dimensions/fps/codec; byte-level and duration_s vary (as documented, not promised)"
+  },
+  "runs": [
+    {
+      "status": "ok",
+      "size": 485932,
+      "sha256": "d2853cf7a9c6731b04064f6d6c9b75b309739cb04a7545e6dde433712f82074b",
+      "duration_s": 4.8,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:05:57.870000Z"
+    },
+    {
+      "status": "ok",
+      "size": 513678,
+      "sha256": "a305c27d8da0f4369e36ebdd4addc70f7db721dab80f90dedab1c1ae0db0ab90",
+      "duration_s": 4.84,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:06:08.805000Z"
+    },
+    {
+      "status": "ok",
+      "size": 485726,
+      "sha256": "ca7bbb435d2dc0486672187b6171715e0cde0cafaa98b673669ca545afdba764",
+      "duration_s": 4.76,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:06:19.590000Z"
+    },
+    {
+      "status": "ok",
+      "size": 514172,
+      "sha256": "c753bb0c7a9381afbccff874d464b0bda74f6bba5ac59fca5564f84ad24c50ca",
+      "duration_s": 4.92,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:06:30.266000Z"
+    },
+    {
+      "status": "ok",
+      "size": 485726,
+      "sha256": "5e2c345b641e47c32459a1bc4df6e1e1ad756bfe4c0fe6a14fa6fd8f759f428b",
+      "duration_s": 4.76,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:06:41.114000Z"
+    },
+    {
+      "status": "ok",
+      "size": 485726,
+      "sha256": "905f0a2d897cae8640d25baebf9b6522087f53f0539491abc26fed7c9db3e243",
+      "duration_s": 4.76,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:06:51.746000Z"
+    },
+    {
+      "status": "ok",
+      "size": 485244,
+      "sha256": "7da51408655c9bf8a6a8ed51caa11b0a6e2e956178a7deeda6fe2fb8849d3ed3",
+      "duration_s": 4.68,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:07:02.620000Z"
+    },
+    {
+      "status": "ok",
+      "size": 514721,
+      "sha256": "dbf5760aa55e30e6ecf29aa2fe3e5cb27e1dc9160fe1cb39ec7560a9edb007ab",
+      "duration_s": 5,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:07:13.314000Z"
+    },
+    {
+      "status": "ok",
+      "size": 485726,
+      "sha256": "31771c30ecfefc54479aa3cadc21ed6f366642b38534835996512ad31f10db1c",
+      "duration_s": 4.76,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:07:24.349000Z"
+    },
+    {
+      "status": "ok",
+      "size": 513805,
+      "sha256": "1529c34fcb493e8d291abddf8ed0f234b0b43a6d15441d5418571bd9594b21c1",
+      "duration_s": 4.88,
+      "width": 1440,
+      "height": 900,
+      "fps": 25,
+      "codec": "vp9",
+      "creation_time": "2026-11-15T07:07:35.002000Z"
+    }
+  ]
+}
