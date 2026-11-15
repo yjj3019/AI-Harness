@@ -4,7 +4,7 @@
 > 수용 기준은 전부 **측정 가능한 항목**으로만 둔다 — "품질 향상" 같은 주관 표현은 수용 기준으로 쓰지 않는다.
 > 구현 범위와 버전 상승은 승인(사용자) 후 확정한다. 계획 승인 ≠ 구현 승인 (기존 규율 유지).
 
-> **진행 상태 (2026-11-15)**: **P0 (A1~A3) 완료 — v1.5.0 반영** (실측: tests 8/8 · 게이트 블록 306/306 · 10회 variants=1). **P1 (B1~B3) 구현 완료 — 로컬 실측** (run-all ALL CHECKS PASSED: node 410 pass/6 skip(Windows 사유)/0 fail·46파일, hooks 306/306; 신규 검사 2종 10회 variants=1) — v1.6.0은 CI 9/9 확인 + 호스트 매트릭스 ubuntu/macos 행 CI 실측 채운 후 병합. P2 (C1~C2)는 승인 대기 (삭제하지 않음).
+> **진행 상태 (2026-11-15)**: **P0 (A1~A3) 완료 — v1.5.0 반영** (실측: tests 8/8 · 게이트 블록 306/306 · 10회 variants=1). **P1 (B1~B3) 완료 — v1.6.0 병합·태그 실측** (PR #62 merge run 43672554810 **9/9 success** · main 병합 후 run 43673128839 success · `git ls-remote --tags origin v1.6.0` 존재 확인; run 43667190047의 toolbroker/windows 8/9는 WinError 10053 네트워크 플레이크 — 재실행으로 9/9 확인). **P2 (C1~C4) 완료 — v1.7.0 예정 (병합·태그는 CI 9/9 확인 후)** (승인 2026-11-15 사용자 지시 "다음 단계 권장안으로 진행해줘"; C3·C4는 권장안으로 범위 추가).
 
 ## 0. 현재 완성도 요약 (실측)
 
@@ -53,15 +53,31 @@
 
 ## 3. 우선순위: P2 (PoC·운영 결정 — 승인 필요, 정의만)
 
-### C1. 디자인 하네스 운영 확정 (P2)
+### C1. 디자인 하네스 운영 확정 (P2) — ✅ **완료 (v1.7.0)**
 - **방안**: `skills/design-omniskill`(추적 8파일 실측)을 운영 스킬로 확정 — 운영 확정 시: 채널별 트리거 실측 · skill-audit 29스킬 clean 유지 · PPTX render-diff 불가침 유지.
 - **수용 기준**: 운영 확정 후 실제 사용 1회 이상 실측 + 스코어카드/렌더 증거 기록.
 - **버전**: MINOR (운영 확정 + 검사 연동 시).
+- **완료 실측 (2026-11-15)**: 실사용 1회 `docs/practice/design-omniskill-v1.7.0-2026-11-15/` — html check clean (exit 0) · WCAG 대조율 8짝 전부 ≥4.5:1 (가장 약한 accent 5.99:1) · overflow 0 (1440/1920 scrollWidth==clientWidth) · fonts.check 20/20 true · scorecard ok (8 items) · evidence html ok 2종 (EVIDENCE_CONTRACT 8필드) · skill-audit 29 skills clean · PPTX render-diff 불가침 (`git diff main...HEAD -- SKILL.md channel-pptx.md` = 빈, exit 0) · design-cases 3종(contrast/overflow/font-fallback) 실측 기록 (aspect-ratio/document-preservation/source-adoption = 미기록, report §5 Uncovered) · DECISIONS D11 기록. 한계: LLM 세션 트리거 활성화 미검증 [unverified] · 단일 Windows-chromium 렌더 (D4: MCP 렌더 = 산출물, 게이트 증거 아님).
 
-### C2. 세션 인계 스키마·영상 PoC
+### C2. 세션 인계 스키마·영상 PoC — ✅ **완료 (v1.7.0)**
 - **방안**: 인계 = HANDOFF 확장 스키마(상태·스코어카드·평가셋 참조) 제안 문서 · 영상 = browser-evidence 기반 렌더→영상 PoC 1편.
 - **수용 기준**: 인계 스키마 예시 검증 1건 · PoC 산출물 1개 + 렌더 증거.
 - **버전**: MINOR.
+- **완료 실측 (2026-11-15)**: (a) `docs/handoff-schema-proposal-2026-11-15.md` — `handoff-state/1` (state/scorecard_refs/eval_set_refs/measured/unknown/next_actions; 제안, 게이트 아님 — head는 시점 스냅샷, scorecard 교차검증 미포함). 예시 검증 1건: 정상 경로 `ok` exit 0 (scorecard_refs=6 · eval_set_refs=1 · measured=2 · unknown=1 · next_actions=2) + 부정 통제 4변이 전부 탐지 (version 불일치 · scorecard ref 부재 · unknown reason 부재 · next_actions 빈). (b) 렌더→영상 PoC 1편 `video-render-1440.webm` (1,023,537 B · sha256 70258f71… · 10.64 s · vp8 1440×900 25fps) + `video-poc.md` (D4 한계 표기 — 게이트 증거 아님; 영상 채널은 SKILL.md 미추가, 후속 후보 3건 기록).
+
+### C3. 스코어카드 3-gap 강화 (권장안 추가 — P2 범위)
+- **부족 근거 (실측, `scripts/design-channel-check.js` L85–95)**: ① L91 `unknown: true` 항목은 라벨 외 아무 검증도 없음 (UNKNOWN 사유 미기재 허용 — "UNKNOWN은 기록하지 말것" 원칙과 모순) ② L92 `metric`은 비어 있지 않은 문자열이면 통과 (수치가 아닌 문장 "좋음"도 허용) ③ L88–95 `items: []` 빈 배열 스코어카드가 통과 (항목 0개 = 평가 부재지만 clean 판정).
+- **방안**: ① `unknown: true` → 비어 있지 않은 `reason` 문자열 필수 ② `metric` → number(유한) 또는 숫자로 시작하는 문자열(예: `"4.6:1"`, `"0 clipped"`, `"200"`) — 숫자 없는 순수 문장 거부 ③ `items` 빈 배열 → 거부 ("scorecard has no items"). 회귀: 기존 수치 metric+evidence 통과 대조는 그대로 통과 (UNKNOWN 대조는 `reason` 포함으로 갱신 — 새 계약의 의도된 변경).
+- **수용 기준**: 신규 양성/음성 대조 5종(UNKNOWN 무사유 거부 · UNKNOWN 사유 있음 통과 · 비수치 metric 거부 · 단위/비율 metric 통과 · 빈 배열 거부) tests 반영 · 기존 4종 통제 회귀 통과 · 10회 variants=1 · 설계 문서(§3-1 계약)·design-cases 템플릿 갱신.
+- **버전**: MINOR (검사 로직 변경).
+- **완료 실측 (2026-11-15)**: `isNumericMetric` (finite number 또는 `/^\s*-?\d/` 문자열) + 빈 items 거부 + UNKNOWN reason 필수 구현. design-channel tests **7/7 pass** (신규 대조 5종: UNKNOWN 무사유 거부 /UNKNOWN item without reason/ · UNKNOWN+reason 통과 · "좋음" 거부 /metric must be a measured number/ · "4.5:1"/1920/"0 clipped" 통과 · `{items:[]}`·`[]` 거부 /no items/) · 기존 수치 대조 회귀 통과 (UNKNOWN 대조는 reason 포함 갱신 = 의도된 계약 변경) · **10회 variants=1** (10/10 exit=0, stdout-sha1(12)=39A5DB4B3FDD) · design-skill-engine §3-1 + design-cases 템플릿 갱신. 회귀 리스크 0 확인: run-all.sh 게이트에 scorecard JSON 입력 0건 (서브커맨드 on-demand) — 실존 gate 입력 없음.
+
+### C4. darwin read 탐침 대상 변경: `/etc/hostname` → `/etc/hosts` (권장안 추가 — P2 범위)
+- **부족 근거 (실측)**: `scripts/host-permission-matrix.js` L56 darwin read 탐침이 `cat /etc/hostname` — GitHub macos runner에 `/etc/hostname`이 존재하지 않아 CI darwin read 행이 DENIED¹(산출물 부재)로 고정 (docs/host-permission-matrix-2026-11-15.md 실측 행). 권한 실측이 아니라 대상 파일 부재가 측정값을 오염.
+- **방안**: L56 → `cat /etc/hosts` (macos·linux 공용으로 존재하는 표준 파일; darwin/linux/win32 3호스트 전부에서 read 가능해야 하는 파일로 정합). 기존 darwin DENIED¹ 행은 **역사 기록으로 보존**, P2 CI에서 새 대상 재실측 후 행 동기화 (미검증은 UNKNOWN으로, 새 대상 재실측 전에는 백필 금지).
+- **수용 기준**: P2 CI macos-latest run에서 darwin read = OK 실측 (또는 DENIED이면 그 사유 실측) · test 갱신 · 매트릭스 문서에 탐침 변경 기록 + 재실측 행 반영.
+- **버전**: MINOR (스크립트 로직 변경).
+- **완료 실측 (2026-11-15, CI 재실측 대기)**: `host-permission-matrix.js` L56 → `cat /etc/hosts` (macos·linux·win32 공통 존재 파일; win32는 이미 hosts 사용) · 로컬 실행 win32/x64 read=ok write=ok exec=ok net=ok(200) · host-permission-matrix tests **6/6 pass** (신규: "read probe targets a standard file present on every runner image" — win32:hosts/darwin:etc/hosts/linux:os-release 고정) · 매트릭스 문서 "C4 탐침 대상 변경 기록" 섹션 추가 (기존 DENIED¹ 4행 역사 보존 · 재실측 = **UNKNOWN — P2 CI macos-latest 재실측 후 머지 전 동기화**).
 
 ## 4. 실행 원칙 (전체 공통)
 
