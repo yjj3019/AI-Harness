@@ -68,3 +68,11 @@
 - 버린 것 1: bash로 작성한 E2E. Node는 이미 테스트 러너이고 Windows·리눅스에서 같은 코드로 돈다.
 - 버린 것 2: 실제 `claude -p` 호출. CI에 모델 자격 증명이 필요하고 비결정적이다. 오케스트레이터 계약(명령 순서와 기록 형식)은 스크립트로 재현할 수 있다.
 - 근거: 단위 테스트 30건은 배선을 검증하지 못했고, 실제로 Windows 경로 결함을 잡지 못했다. E2E는 훅을 실제로 호출해 그 결함을 재현한다.
+
+## D11. design-omniskill 운영 확정 (v1.7.0 C1)
+
+- 선택: 진입점 스킬 `skills/design-omniskill`을 운영으로 확정한다. 확정 기준은 "실사용 1회 + 실측 기록"이다: P2 one-pager(HTML)를 실제로 만들어 `design-channel-check.js`로 검사하고, 렌더·대조율·오버플로·글리프 커버리지를 실측해 `docs/design-cases/`에 기록한다. 산출물+실측은 `docs/practice/design-omniskill-v1.7.0-2026-11-15/`에 커밋한다.
+- 버린 것 1: 게이트 연동. 렌더/렌더-diff를 `tests/run-all.sh` 기본 게이트에 넣는 것은 이 결정과 별개이며, 이번 범위에서는 SKILL.md·channel-pptx.md를 그대로 둔다(실측: `git diff main...HEAD` 대상 2파일 = 빈, exit 0).
+- 버린 것 2: LLM 세션 트리거 활성화 실측. SKILL.md의 정적 규칙(트리거/채널 라우트)을 실제 LLM 세션에서 발동하는지 확인하지 않았다 [unverified].
+- 근거 (2026-11-15 실측): `design-channel-check.js html` = clean (exit 0) · WCAG 대조율 8짝 전부 ≥4.5:1 (가장 약한 accent 5.99:1) · overflow 0 (1440/1920 둘 다 scrollWidth==clientWidth) · `scorecard` ok (8 items, C3 계약 적용) · `evidence html` ok 2종 (EVIDENCE_CONTRACT 8필드) · `skill-audit` 29 skills clean · design-cases 3종(contrast/overflow/font-fallback) 실측 기록.
+- 한계: ① MCP(Playwright) 렌더 산출물은 D4에 따라 게이트 증거가 아닌 산출물+실측이다. ② 렌더는 Windows 호스트 chromium 한 환경뿐이다(다른 OS/엔진 미검증). ③ grid-12col 좌표는 미측정(scorecard에서 `unknown: true` + reason 표기). ④ aspect-ratio·document-preservation·source-adoption 케이스는 미기록(운영 확정 범위 밖).

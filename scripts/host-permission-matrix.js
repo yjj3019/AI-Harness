@@ -53,7 +53,7 @@ function probe(cmd, args, note) {
 function readProbe() {
   switch (process.platform) {
     case "win32": return probe("cmd", ["/c", "type", "C:\\Windows\\System32\\drivers\\etc\\hosts"], "read C:\\Windows\\System32\\drivers\\etc\\hosts");
-    case "darwin": return probe("cat", ["/etc/hostname"], "read /etc/hostname");
+    case "darwin": return probe("cat", ["/etc/hosts"], "read /etc/hosts"); // C4 (v1.7.0): /etc/hostname is absent on GitHub macos runners, so the v1.6.0 darwin read row measured file absence, not permission.
     default: return probe("cat", ["/etc/os-release"], "read /etc/os-release");
   }
 }

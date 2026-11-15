@@ -77,7 +77,7 @@ test("design channel scorecard: measured metric + evidence passes", (t) => {
   const f = tmp(t, "good.json", JSON.stringify({ items: [
     { item: "contrast", metric: "4.6:1", evidence: "docs/design-cases/case-contrast.md" },
     { item: "overflow", metric: "0 clipped", evidence: "render/r1.png" },
-    { item: "tokens", unknown: true, evidence: "docs/design-cases/case-font-fallback.md" },
+    { item: "tokens", unknown: true, reason: "측정 대상 폰트 정의 없음", evidence: "docs/design-cases/case-font-fallback.md" },
   ] }));
   const r = run(["scorecard", f]);
   assert.equal(r.status, 0, r.out);
@@ -95,4 +95,33 @@ test("design channel scorecard: item without metric/UNKNOWN or without evidence 
   assert.match(noEvidence.out, /without evidence/);
   const badJson = run(["scorecard", tmp(t, "bad.json", "{ nope")]);
   assert.equal(badJson.status, 1);
+});
+
+test("design channel scorecard (C3 v1.7.0): UNKNOWN requires reason, metric must be numeric, empty items rejected", (t) => {
+  // 1. UNKNOWN without reason -> rejected
+  const noReason = run(["scorecard", tmp(t, "noreason.json", JSON.stringify({ items: [{ item: "tokens", unknown: true }] }))]);
+  assert.equal(noReason.status, 1);
+  assert.match(noReason.out, /UNKNOWN item without reason/);
+  // 2. UNKNOWN with reason -> passes
+  const withReason = run(["scorecard", tmp(t, "reason.json", JSON.stringify({ items: [{ item: "tokens", unknown: true, reason: "색상 정의 없음" }] }))]);
+  assert.equal(withReason.status, 0, withReason.out);
+  assert.match(withReason.out, /1 items/);
+  // 3. non-numeric (prose) metric -> rejected
+  const textMetric = run(["scorecard", tmp(t, "textmetric.json", JSON.stringify({ items: [{ item: "contrast", metric: "좋음", evidence: "e" }] }))]);
+  assert.equal(textMetric.status, 1);
+  assert.match(textMetric.out, /metric must be a measured number/);
+  // 4. unit/ratio/integer metrics (string and number) -> pass
+  const unitMetric = run(["scorecard", tmp(t, "unitmetric.json", JSON.stringify({ items: [
+    { item: "contrast", metric: "4.5:1", evidence: "e" },
+    { item: "width", metric: 1920, evidence: "e" },
+    { item: "overflow", metric: "0 clipped", evidence: "e" },
+  ] }))]);
+  assert.equal(unitMetric.status, 0, unitMetric.out);
+  // 5. empty items array -> rejected (array form and object form)
+  const emptyArr = run(["scorecard", tmp(t, "empty1.json", JSON.stringify({ items: [] }))]);
+  assert.equal(emptyArr.status, 1);
+  assert.match(emptyArr.out, /no items/);
+  const emptyBare = run(["scorecard", tmp(t, "empty2.json", JSON.stringify([]))]);
+  assert.equal(emptyBare.status, 1);
+  assert.match(emptyBare.out, /no items/);
 });

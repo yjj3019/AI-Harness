@@ -53,6 +53,15 @@ test("host-permission-matrix: bad arguments exit 2", () => {
   assert.match(r.stderr, /unknown argument/);
 });
 
+test("host-permission-matrix: read probe targets a standard file present on every runner image (C4)", () => {
+  const r = run("--json");
+  assert.equal(r.status, 0, r.stderr);
+  const m = JSON.parse(r.stdout);
+  const expected = { win32: "hosts", darwin: "etc/hosts", linux: "os-release" }[process.platform];
+  assert.ok(expected, `unsupported platform: ${process.platform}`);
+  assert.ok(m.probes.read.detail.includes(expected), `read probe should target ${expected} on ${process.platform}, got: ${m.probes.read.detail}`);
+});
+
 test("host-permission-matrix: leaves no probe file behind in the home directory", () => {
   const r = run("--json");
   assert.equal(r.status, 0, r.stderr);
