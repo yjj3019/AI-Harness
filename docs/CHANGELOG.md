@@ -2,6 +2,29 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.7.0] - 2026-11-15
+
+### 추가 (하네스 보강 P2 묶음 — design-omniskill 운영 확정 · 인계 스키마 · 영상 PoC · scorecard 강화 · darwin 탐침 교정 — 근거: 로컬 실측, CI 행은 병합 전 갱신)
+- **C1 design-omniskill 운영 확정** (DECISIONS D11): 실사용 1회 `docs/practice/design-omniskill-v1.7.0-2026-11-15/` (onepager.html + render 1440/1920 PNG + scorecard.json 8 items + evidence 2종 + report.md) — 실측: `design-channel-check.js html` clean (exit 0) · WCAG 대조율 8짝 전부 ≥4.5:1 (가장 약한 accent 5.99:1) · overflow 0 (1440/1920 scrollWidth==clientWidth) · `document.fonts.check` 20/20 true (2 family) · scorecard ok (8 items) · evidence html ok 2종 (EVIDENCE_CONTRACT 8필드) · `skill-audit` 29 skills clean · PPTX render-diff 불가침 (`git diff main...HEAD -- skills/design-omniskill/SKILL.md channel-pptx.md` = 빈, exit 0). design-cases 3종(contrast/overflow/font-fallback) 실측 기록 충당; aspect-ratio·document-preservation·source-adoption = 미기록 (report §5 Uncovered — 운영 확정 범위 밖). 한계: MCP 렌더 = 산출물+실측 (게이트 증거 아님, D4) · 단일 Windows-chromium · LLM 세션 트리거 활성화 미검증 [unverified] · grid-12col 미측정 (unknown+reason).
+- **C2a 인계 확장 스키마 제안** `docs/handoff-schema-proposal-2026-11-15.md` — `handoff-state/1` (state.version/head · scorecard_refs[{path,role}] · eval_set_refs · measured[{fact,value,source}] · unknown[{item,reason}] = C3 계약 · next_actions non-empty; 제안, 게이트 아님 — head는 시점 스냅샷, scorecard 교차검증 미포함). 예시 검증 1건 실측: 정상 경로 `HANDOFF-SCHEMA-VALIDATE ok` (exit 0, scorecard_refs=6 · eval_set_refs=1 · measured=2 · unknown=1 · next_actions=2) + 부정 통제 4변이 전부 탐지 (state.version 불일치 · scorecard ref 경로 부재 · unknown reason 부재 · next_actions 빈).
+- **C2b 렌더→영상 PoC 1편**: `video-render-1440.webm` (1,023,537 B · sha256 `70258f711b5b8e30646b5367e3e07bc9e591d29337ac95b0aed35b81984826e9` · 10.64 s · vp8 yuv420p 1440×900 25fps · 769 kb/s) + `video-poc.md` — Playwright MCP `recordVideo` (새 컨텍스트, file:// one-pager, 스크립트 스크롤+호버) · D4 한계 표기 (게이트 증거 아님) · SKILL.md 영상 채널 미추가 (후속 후보 3건 기록: 채널 행 신설 · 스크립트화+CI 결정성 · 프레임 대조).
+- **C3 scorecard 3-gap 강화** (`scripts/design-channel-check.js`): ① `unknown: true` → 비어 있지 않은 `reason` 필수 ② `metric` → finite number 또는 `/^\s*-?\d/` 문자열 (단위/비율 "4.6:1"·"0 clipped" 허용, 순수 문장 거부) ③ 빈 `items` 배열 거부 — design-channel tests **7/7 pass** (신규 대조 5종: UNKNOWN 무사유 거부 · UNKNOWN+reason 통과 · "좋음" metric 거부 · 단위/비율 metric 통과 · `{items:[]}`·`[]` 거부) + 기존 수치 대조 회귀 통과 · **10회 variants=1** (10/10 exit=0, stdout-sha1(12)=39A5DB4B3FDD) · design-skill-engine §3-1 계약 + design-cases 템플릿 갱신. 회귀 리스크 0 근거: run-all.sh 게이트의 scorecard JSON 입력 0건 (scorecard 서브커맨드는 on-demand).
+- **C4 darwin read 탐침 교정** (`scripts/host-permission-matrix.js`): L56 `/etc/hostname` → `/etc/hosts` (macos 러너에서 hostname 부재 → 파일 부재가 권한 실측 오염; 3호스트 공통 존재 파일) — 로컬 win32/x64 read=ok write=ok exec=ok net=ok(200) · tests **6/6 pass** (탐침 대상 고정 대조: win32:hosts/darwin:etc/hosts/linux:os-release) · 매트릭스 문서 "C4 탐침 대상 변경 기록" 추가 (기존 DENIED¹ 4행 역사 보존; 새 대상 재실측 = **UNKNOWN — P2 CI macos-latest run 실측 후 병합 전 동기화**).
+
+### 변경 (문서)
+- `docs/DECISIONS.md` D11 (design-omniskill 운영 확정 — 선택/버린 것 2/이유/한계 4).
+- `docs/design-cases/` 3종 실측 충당 + 6종 템플릿 계약 갱신 (미측정 = `unknown:true`+`reason`, v1.7.0 C3).
+- `docs/design-skill-engine-2026-11-14.md` §3-1 "v1.7.0 강화 (C3)" · P5 로드맵 행 갱신.
+- `docs/host-permission-matrix-2026-11-15.md` read-probe 행 갱신 + C4 변경 기록 섹션.
+- `docs/harness-reinforcement-plan-2026-11-15.md` P2 C1~C4 완료 실측 반영.
+- `docs/HANDOFF.md` 현재 상태 v1.7.0.
+
+### 검증 (로컬, 2026-11-15)
+- 대상 `node --test`: design-channel-check **7/7** · host-permission-matrix **6/6** (fail 0).
+- `bash tests/run-all.sh --fast` (Windows, Git-Bash): **ALL CHECKS PASSED (fast)** (exit 0, ~40분) — 게이트 9종: skill-audit 29 clean · secret-scan clean · tree-exclude 4/4 · handoff-lint ok · agents-lint 6 files 0 problems · package-lint 35 checked 0 errors · design-channel code clean (27 files) · eval-set 1 pinned match · **hooks 306/306 passed**.
+- 최종 트리 재검증 (문서 편집 후, 위 run의 게이트 시작 시점 트리 대비): handoff-lint ok · secret-scan clean · tree-exclude 4/4 재실행 통과 (scripts·tests·hooks는 run 시작 후 미변경 — run 증거 유효).
+- CI: 9/9 — PR run 실측 후 병합 전 갱신 (macos-latest run의 darwin read 재실측 포함).
+
 ## [1.6.0] - 2026-11-15
 
 ### 추가 (하네스 보강 P1 묶음 — 호스트 권한 실측 · 토큰 실측 · H-01~H-10 재주입 실측 — 근거: 로컬 실측, CI 행은 병합 전 갱신)

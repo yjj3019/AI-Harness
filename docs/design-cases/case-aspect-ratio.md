@@ -1,6 +1,6 @@
 # Design Case — Aspect Ratio (이전 렌더) (design-omniskill P5)
 
-> 근거: design-skill-engine-2026-11-14 §3-4 (측정 루프) — 케이스는 before/after 스코어카드를 실측으로만 기록한다. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 주관 표현("더 좋아 보임")은 기록할 수 없음 — 미측정은 `unknown: true` 로만 표기.
+> 근거: design-skill-engine-2026-11-14 §3-4 (측정 루프) — 케이스는 before/after 스코어카드를 실측으로만 기록한다. 케이스 구조 필수 4종: ①고정 입력 ②before 스코어카드 ③after 스코어카드 ④재실측 기록. 주관 표현("더 좋아 보임")은 기록할 수 없음 — 미측정은 `unknown: true` + `reason` 로만 표기 (v1.7.0 C3 계약).
 
 ## 1. 고정 입력
 
@@ -12,7 +12,7 @@
 ```json
 { "items": [
   { "item": "aspect-ratio", "metric": "", "evidence": "이전/이후 렌더 경로" },
-  { "item": "aspect-ratio::unknown", "unknown": true, "evidence": "측정 불가 지점" }
+  { "item": "aspect-ratio::unknown", "unknown": true, "reason": "미측정 — 최초 사용 후 실측/사유 기록 예정", "evidence": "측정 불가 지점" }
 ] }
 ```
 

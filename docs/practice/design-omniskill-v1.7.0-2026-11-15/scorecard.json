@@ -1,0 +1,12 @@
+{
+  "items": [
+    { "item": "contrast::body", "metric": "17.50:1", "evidence": "docs/practice/design-omniskill-v1.7.0-2026-11-15/report.md #2-contrast (ink #19191f / bg #ffffff)" },
+    { "item": "contrast::muted", "metric": "7.69:1", "evidence": "docs/practice/design-omniskill-v1.7.0-2026-11-15/report.md #2-contrast (muted #4b4b57 / card #eef2ff — weakest muted pair)" },
+    { "item": "contrast::accent", "metric": "5.99:1", "evidence": "docs/practice/design-omniskill-v1.7.0-2026-11-15/report.md #2-contrast (primary #1d4ed8 / card #eef2ff — weakest accent pair, AA 4.5:1+)" },
+    { "item": "overflow", "metric": "0 clipped", "evidence": "docs/practice/design-omniskill-v1.7.0-2026-11-15/report.md #1-overflow (scrollWidth==clientWidth @1440/1920, no element past viewport)" },
+    { "item": "spacing-scale", "metric": "0 off-scale", "evidence": "design-channel-check.js html: clean (0 findings) — docs/practice/design-omniskill-v1.7.0-2026-11-15/onepager.html" },
+    { "item": "font-sizes", "metric": "4 on-axis", "evidence": "14/16/20/32px, all even within 10-96 (design-channel-check.js html scan)" },
+    { "item": "type-families", "metric": "2", "evidence": "computed style at render: sans 5-chain (Segoe UI/Noto Sans KR/Malgun Gothic/system-ui/sans-serif) + mono 4-chain (Cascadia Code/Consolas/Noto Sans KR/monospace)" },
+    { "item": "grid-12col", "unknown": true, "reason": "12-column coordinate-level alignment not measured this pass — reported in report.md Uncovered block" }
+  ]
+}
