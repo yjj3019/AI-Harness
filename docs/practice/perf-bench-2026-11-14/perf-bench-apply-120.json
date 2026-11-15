@@ -1,0 +1,177 @@
+{
+  "tool": "scripts/perf-bench.js",
+  "measuredAt": "2026-11-14T12:33:27.878Z",
+  "env": {
+    "node": "v26.13.0",
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) i7-14700",
+    "bash": "C:\\Program Files\\Git\\bin\\bash.exe",
+    "jq": "missing(해당 syntax 단계 제외)"
+  },
+  "inputScale": {
+    "skills": {
+      "files": 65,
+      "bytes": 127309
+    },
+    "docs": {
+      "files": 326,
+      "bytes": 8161243
+    },
+    "scripts": {
+      "files": 23,
+      "bytes": 131335
+    },
+    "tests": {
+      "files": 52,
+      "bytes": 340844
+    },
+    ".claude": {
+      "files": 14,
+      "bytes": 74802
+    },
+    "dashboard": {
+      "files": 2,
+      "bytes": 3022
+    },
+    "core": {
+      "files": 482,
+      "bytes": 8838555
+    }
+  },
+  "testFiles": 42,
+  "results": {
+    "baseline:node-coldstart": {
+      "min": 1210.41,
+      "median": 1269.06,
+      "mean": 1296.77,
+      "max": 1405.52,
+      "samples": 5,
+      "status": 0
+    },
+    "baseline:bash-coldstart": {
+      "min": 430.22,
+      "median": 456.47,
+      "mean": 456.21,
+      "max": 492,
+      "samples": 5,
+      "status": 0
+    },
+    "ref:raw-scan-walk": {
+      "min": 1318.78,
+      "median": 1401.18,
+      "mean": 1388.3,
+      "max": 1422.04,
+      "samples": 5,
+      "status": 0
+    },
+    "syntax:node-check(4파일)": {
+      "min": 5096.54,
+      "median": 5702.59,
+      "mean": 5639.85,
+      "max": 6072.36,
+      "samples": 5,
+      "status": 0
+    },
+    "syntax:bash-n(쉘 수트)": {
+      "min": 2081.45,
+      "median": 2408.37,
+      "mean": 2460.14,
+      "max": 2816.83,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:skill-audit": {
+      "min": 1083.9,
+      "median": 1267.95,
+      "mean": 1267.46,
+      "max": 1416.53,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:secret-scan": {
+      "min": 1204.29,
+      "median": 1272.92,
+      "mean": 1327.18,
+      "max": 1462.63,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:tree-exclude": {
+      "min": 1042.62,
+      "median": 1302.73,
+      "mean": 1242.44,
+      "max": 1308.96,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:handoff-lint": {
+      "min": 1010.49,
+      "median": 1192.65,
+      "mean": 1158.8,
+      "max": 1281.13,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:agents-lint(bash)": {
+      "min": 12299.41,
+      "median": 14227.33,
+      "mean": 14012.49,
+      "max": 15285.58,
+      "samples": 5,
+      "status": 1
+    },
+    "gate:package-lint": {
+      "min": 1027.16,
+      "median": 1201.04,
+      "mean": 1169.04,
+      "max": 1343.78,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:design-channel": {
+      "min": 936.8,
+      "median": 1064.88,
+      "mean": 1080.16,
+      "max": 1205.88,
+      "samples": 5,
+      "status": 0
+    },
+    "gate:hooks-test(bash)": {
+      "min": 559.72,
+      "median": 601.21,
+      "mean": 605.93,
+      "max": 659.43,
+      "samples": 5,
+      "status": 1
+    },
+    "estimate:run-all-순차-합계": {
+      "median": 30241.67,
+      "basis": "위 단계 median 합(추정)"
+    },
+    "exp:병렬6게이트-동시": {
+      "min": 1568.09,
+      "median": 1735.72,
+      "mean": 1680.51,
+      "max": 1737.71,
+      "seqSumOfMedians": 4934.56,
+      "status": 0
+    },
+    "write:skill-catalog-generate": {
+      "min": 1319.44,
+      "median": 1377.82,
+      "mean": 1364.6,
+      "max": 1396.55,
+      "samples": 3,
+      "status": 0
+    },
+    "write:dashboard-status": {
+      "min": 1342.37,
+      "median": 1369.16,
+      "mean": 1370.78,
+      "max": 1400.8,
+      "samples": 3,
+      "status": 0
+    }
+  }
+}
