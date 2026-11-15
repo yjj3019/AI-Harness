@@ -166,3 +166,28 @@ test('malformed JSON and invalid UTF-8 return FAIL', () => {
     }
   } finally { fs.openSync = original.open; fs.fstatSync = original.stat; fs.readSync = original.read; fs.closeSync = original.close; console.log = original.log; }
 });
+
+test('CLI rejects ambiguous duplicate members including escaped equivalents', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'task-graph-duplicates-'));
+  try {
+    const input = path.join(dir, 'graph.json');
+    const cli = path.resolve(__dirname, '../scripts/task-graph.js');
+    const valid = JSON.stringify(graph(task('a')));
+    for (const source of [
+      valid.replace('"version":1', '"version":2,"version":1'),
+      valid.replace('"status":"PENDING"', '"status":"PASS","status":"PENDING"'),
+      valid.replace('"effect":"NONE"', '"effect":"EXTERNAL","\\u0065ffect":"NONE"')
+    ]) {
+      fs.writeFileSync(input, source);
+      const result = spawnSync(process.execPath, [cli, input], { encoding: 'utf8', timeout: 15000 });
+      assert.ifError(result.error);
+      assert.equal(result.status, 1);
+      assert.equal(JSON.parse(result.stdout).verdict, 'FAIL');
+    }
+    fs.writeFileSync(input, valid);
+    const result = spawnSync(process.execPath, [cli, input], { encoding: 'utf8', timeout: 15000 });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0);
+    assert.equal(JSON.parse(result.stdout).verdict, 'PASS');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

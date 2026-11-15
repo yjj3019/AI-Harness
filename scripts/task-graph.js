@@ -4,6 +4,7 @@
 const path = require('node:path');
 const fs = require('node:fs');
 const childProcess = require('node:child_process');
+const { parse: parseStrictJson } = require('./evaluation-accounting');
 const MAX_BYTES = 1024 * 1024;
 const MAX_TASKS = 256;
 const MAX_LIST = 256;
@@ -210,10 +211,7 @@ function main(argv) {
   } finally { if (fd !== undefined) require('node:fs').closeSync(fd); }
   let result;
   try {
-    if (bytes.length > MAX_BYTES) throw new Error('input exceeds byte limit');
-    if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) throw new Error('BOM not allowed');
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    result = analyze(JSON.parse(text), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot, requireBoundTree: opts.requireBoundTree });
+    result = analyze(parseStrictJson(bytes), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot, requireBoundTree: opts.requireBoundTree });
   } catch (error) { result = { verdict: 'FAIL', errors: ['invalid or oversized UTF-8 JSON'] }; }
   console.log(JSON.stringify(result));
   return result.verdict === 'PASS' ? 0 : 1;

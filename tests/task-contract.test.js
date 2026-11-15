@@ -65,3 +65,22 @@ test("bounded regular UTF-8 JSON input and CLI statuses", () => {
     assert.equal(result.status, 1); assert.match(result.stderr, /Usage:/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+test("rejects duplicate contract and limit members, including escaped keys", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "task-contract-duplicate-"));
+  try {
+    const file = path.join(dir, "input.json");
+    const input = JSON.stringify(valid());
+    for (const content of [
+      input.replace('"restrictions":["No network"]', '"restrictions":["No writes"],"restrictions":["No network"]'),
+      input.replace('"max_steps":10', '"max_steps":999,"max_\\u0073teps":10')
+    ]) {
+      fs.writeFileSync(file, content);
+      const result = spawnSync(process.execPath, [script, "validate", file], { encoding: "utf8", timeout: 15000 });
+      assert.ifError(result.error);
+      assert.equal(result.status, 2);
+      assert.equal(JSON.parse(result.stdout).ok, false);
+    }
+    fs.writeFileSync(file, input);
+    assert.deepEqual(validateFile(file), { ok: true });
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

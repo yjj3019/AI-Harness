@@ -1,7 +1,7 @@
 "use strict";
 // Standalone shape validation only; it neither authorizes nor executes a task.
 const fs = require("node:fs");
-const { TextDecoder } = require("node:util");
+const { parse: parseStrictJson } = require("./evaluation-accounting");
 const MAX_BYTES = 256 * 1024;
 const MAX_ITEMS = 50;
 const MAX_TEXT = 2000;
@@ -59,12 +59,8 @@ function validateFile(file) {
   try { bytes = readBounded(file); }
   catch (error) { return { ok: false, error: `cannot read input: ${error.message}` }; }
   try {
-    // Reject a BOM rather than silently dropping it.
-    if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)
-      throw new Error("UTF-8 BOM is not allowed");
-    const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-    return validateTaskContract(JSON.parse(decoded));
-  } catch { return { ok: false, error: "input must be valid UTF-8 JSON without a BOM" }; }
+    return validateTaskContract(parseStrictJson(bytes));
+  } catch { return { ok: false, error: "input must be valid UTF-8 JSON without a BOM or duplicate members, with nesting at most 20" }; }
 }
 function main(args) {
   if (args.length !== 2 || args[0] !== "validate") {

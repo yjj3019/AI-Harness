@@ -311,6 +311,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: (1) Socket tests that race a clean close against a TCP RST are timing-sensitive: on one Windows runner the RST reached the test socket instead of a clean EOF. Flake diagnosis rested on three facts: toolbroker code/tests/CI job were byte-identical to the v1.5.0 run that passed 26/26 on the same windows-latest image 2h earlier; ubuntu+macos legs of the same PR run passed; local Windows re-run passed 26/26. (2) The darwin read probe targets `/etc/hostname`, which does not exist on macOS (`cat: /etc/hostname: No such file or directory` — measured in the artifact probe details), so `denied` means missing probe target, not a denied permission.
 - **Resolution/Pattern**: (1) For a single-test socket error on one OS leg: confirm (a) code unchanged in the run, (b) other OS legs green, (c) local re-run green — then rerun only the failed job (`gh run rerun <id> --failed`) instead of patching; if it fails twice, inspect the test's close-vs-RST timing assumptions. (2) Any `denied` in a single-target read probe must be read together with the probe detail (error body) before concluding "host denies reads"; the detail is co-published in the matrix doc/artifact by design. Candidate future fix: a darwin read target that exists on macOS (e.g. `/etc/hosts`). (3) Environment (this PC): GitHub Actions log/artifact downloads fail with a direct-dial timeout because a corporate PAC (registry `AutoConfigURL`) routes non-GitHub traffic through a corporate egress proxy while direct Azure blob IPs are blackholed; setting `HTTPS_PROXY`/`HTTP_PROXY` to that PAC proxy makes `gh` log and artifact downloads work (curl on Windows does not honor the PAC, so it needs the explicit proxy too).
 
+### [2026-11-15] Task contracts and graphs - reject ambiguous JSON members
+
+- **Issue/Risk**: A duplicate `restrictions`, `status`, or `effect` member could be silently replaced by the last value and pass a shape check, producing an ambiguous handoff.
+- **Root Cause**: Both file readers used `JSON.parse` directly, which discards earlier duplicate members before validation.
+- **Resolution/Pattern**: Reuse the evaluation accounting strict JSON parser for both file readers, test ordinary and escaped duplicate keys and valid controls, and retain the explicit distinction between a valid declaration and enforced host permissions. Already parsed objects cannot reveal discarded members.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]

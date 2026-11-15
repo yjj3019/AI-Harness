@@ -17,7 +17,7 @@ All properties below are required, with no additional properties. The root is `{
 - `status`: `PENDING`, `PASS`, `FAIL`, or `UNKNOWN`. `PENDING` requires zero attempts; `PASS` and `FAIL` require at least one. `UNKNOWN` may have zero attempts when execution is unverified.
 - `effect`: `NONE` or `EXTERNAL`, a declaration, not verified effect evidence.
 
-JSON object member names should be unique; as with JavaScript's JSON parser, duplicate names are resolved to the last value. Do not use this tool where that ambiguity is unacceptable. Arrays and IDs are case-sensitive. Graph size, labels, and retry budgets are bounded, but the parser is not a hardened hostile-input security boundary.
+The CLI rejects duplicate JSON object member names, including escaped equivalents, and nesting beyond 20 levels, using the same parser as evaluation accounting. Inputs previously accepted using last-value-wins must be corrected. Programmatic `analyze` receives an already parsed object and cannot detect duplicate names discarded by a caller's parser. Arrays and IDs are case-sensitive. Graph size, labels, and retry budgets are bounded, but the parser is not a hardened hostile-input security boundary.
 
 Example:
 
