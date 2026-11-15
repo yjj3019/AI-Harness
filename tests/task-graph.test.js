@@ -166,3 +166,27 @@ test('malformed JSON and invalid UTF-8 return FAIL', () => {
     }
   } finally { fs.openSync = original.open; fs.fstatSync = original.stat; fs.readSync = original.read; fs.closeSync = original.close; console.log = original.log; }
 });
+test('duplicate JSON member names (plain, escaped, nested) are rejected, not last-value-wins', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'task-graph-dup-'));
+  try {
+    const good = JSON.stringify(graph(task('a'), task('b')));
+    const bad = [
+      good.replace(/^\{/, '{"tasks":[],'),
+      good.replace(/^\{/, '{"\u0074asks":[],'),
+      good.replace('"id":"a"', '"id":"a","id":"z"')
+    ];
+    const cli = path.resolve(__dirname, '../scripts/task-graph.js');
+    const run = text => {
+      const f = path.join(dir, 'in.json'); fs.writeFileSync(f, text);
+      const r = spawnSync(process.execPath, [cli, f], { encoding: 'utf8', timeout: 15000 });
+      assert.ifError(r.error); return r;
+    };
+    assert.equal(run(good).status, 0);
+    for (const text of bad) {
+      assert.notEqual(text, good);
+      const r = run(text);
+      assert.equal(r.status, 1);
+      assert.match(JSON.parse(r.stdout).errors[0], /duplicate JSON object member/);
+    }
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
