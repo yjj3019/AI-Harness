@@ -2,6 +2,29 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [1.8.0] - 2026-11-15
+
+### 추가 (사용자 결정 항목 2건 — 공개 저장소 민감도 감사 + C2b 후속 3건 (영상 채널 실험화) — 근거: 로컬 실측, CI 행은 병합 전 갱신)
+- **사용자 결정 항목 ① 공개 저장소 민감도 감사** (`docs/sensitivity-audit-2026-11-15.md`, DECISIONS D13): 공개 저장소 `yjj3019/AI-Harness` (visibility=PUBLIC 실측) 전 역사 + 7채널 감사 — ① object DB **2,121 objects** 전수 (`git cat-file --batch-all-objects --batch` 단일 파이프, batch-check 총수와 0 불일치 — 누락 0) ② 공개 노출 집합 2,098 (로컬 전용 23개는 미노출) ③ 커밋 메타데이터 ④ CI 로그 (P2 macos job 581,842 B 샘플) ⑤ 워크플로 전 파일 ⑥ 릴리즈/LFS (0건/LFS 없음) ⑦ GitHub 부가 메타 (description="AI-Harness" · topics/homepage 없음 · issues 0 · wiki 미초기화 · PR 본문 60~64). 방법: 24종 ASCII 패턴 + 19종 UTF-16LE (바이너리 33개) + keyword 히트 전수 수동 분류. **고위험(credential/토큰/내부 네트워크): 0건 실측**. 판정 F1~F6: F1 실명+개인 이메일 49커밋 (gmail 34 + hanmail 15) **MEDIUM** — 히스토리 rewrite **미수행** (D13; 새 커밋 전부 noreply 실측 → 새 노출 0) · F2 로컬 PC 호스트명 **LOW-MEDIUM** — 현재 트리 적출 · F3 CI 러너 식별자 **LOW** — 현재 트리 적출 (공개 CI 로그 잔존 = GitHub 인프라) · F4 noreply 정형 **INFO** · F5 `C:\Users\*` 합성값 **NONE** · F6 CI 로그 "PRIVATE KEY" 4행 = blinding 주석 **NONE**. 한계: 바이너리 2인코딩만 커버 (기타 인코딩 미검증) · CI 로그 1 job 샘플 · 패턴 커버리지 갭 실증 (러너 호스트명 1종은 문서 정독으로 발견).
+- **사용자 결정 항목 ② C2b 후속 3건 — 영상 채널 실험화** (video-poc.md §5 후속 후보 → `docs/practice/design-omniskill-video-channel-v1.8.0-2026-11-15/`, DECISIONS D12):
+  - **SKILL.md 영상 채널 행**: 라우트 테이블 + Trigger + description (실험 PoC — **D4: 산출물+실측만, 게이트 증거 아님**) + `skills/design-omniskill/channel-video.md` 신설 (렌더 계약 · 결정성 계약 · 프레임 대조 · Checks · scorecard = 미정의 (D4) · 승격 경로). PPTX render-diff 게이트 + SKILL.md PPTX 규칙 불가침 (P2 선례 유지).
+  - **`scripts/render-video.js` (zero npm deps)**: 저장소 package.json 변경 없음. playwright 선택 해석 (`--playwright <module>` → env `PLAYWRIGHT_MODULE` → repo `require.resolve`; 부재 → `{"status":"skip",...}` **exit 0** 실측 — **비게이트, `tests/run-all.sh` 게이트 블록 미포함**) · 시스템 브라우저 `msedge` (다운로드 없음) · ffmpeg 선택 (PATH → `FFMPEG_BIN` → ms-playwright 캐시, 최신 빌드 우선 — vp8→vp9 세대 대응) · stdout 단일 JSON. CI 워크플로/merge-guard `REQUIRED_CHECKS` 미변경.
+  - **결정성 10회 실측** (순차 재녹화 107.99 s, 10/10 ok): 불변 **variants=1** (1440×900 · 25 fps · vp9 · requested 5 s · msedge 157.0.4341.46 · playwright 1.65.1) · 관측 변이 (계약상 미보장): duration_s 4.68~5.00 (10개 각이) · size 485,244~514,721 B (10개 각이) · sha256/creation_time 10개 각이 → **byte-level 결정성 미보장**, byte-diff/duration_s를 판정 신호로 사용 금지 (channel-video.md 계약).
+  - **프레임 대조 실측**: viewport-matched ref (`--ref-out`) **5회 emit byte-identical** (29,895 B, sha256 `341f9eee…`) · frame-0 = 페인트 전 상태 가능 (캡처 시작 = 컨텍스트 생성) — 2변이 재현: unpainted **7.33 dB** (2-run byte-identical) / painted **40.39 dB** · 안정 프레임 t=1.0 s **40.17 dB** → 후보 임계값 **≥30 dB candidate-pass** (리뷰 신호, 판정 아님 — D4; 프레임 0은 실측값 그대로 보고, 암묵 교체 금지) · PSNR = 저장소 내 zero-dep (Node PNG 디코더 — GDI+ 독립 디코딩 교차 12/12 RGB 정확 일치) · minimal ffmpeg 빌드 제한 (psnr 필터·PNG 디코더·`-update` 부재) 실측 기록.
+  - **practice 산출물 7파일** (sha256 전부 실측, 로컬 절대경로 적출 — F2/F5 기준): `video-5s.webm` 613,418 B `af6a5962…` (vp9 1440×900 25 fps) · `ref-1440x900.png` · `frame0.png` (변이 A) · `frame1.png` (t=1.0 s) · `canonical-run.json` · `determinism-10run.json` · `report.md`.
+
+### 변경 (문서)
+- `docs/DECISIONS.md` D12 (영상 채널 실험화 — 선택/버린 것 3/근거/한계 4) + D13 (민감도 감사 — 히스토리 rewrite 미수행 + 재감사 트리거 3종).
+- `docs/host-permission-matrix-2026-11-15.md` 적출 5건 (F2/F3: 로컬 PC 호스트명 → "로컬 개발 PC", CI 러너 4행 → `<os>-latest CI 러너` 라벨 — 측정 값·시각 원본 보존) + `docs/host-scenario-replay-2026-11-15.md` 적출 1건 (F2: 호스트 행 — 커밋 전 스캐너 원본 재대조로 추가 발견, 감사 문서 한계 섹션에 기록) + 적출 주석 (감사 문서 참조).
+- `docs/harness-reinforcement-plan-2026-11-15.md` 진행 상태: P2 → "v1.7.0 병합·태그 완료" 실측 (PR #64 · run 43682070828 9/9 · merge `8d3436d` · 태그 존재 `git ls-remote` 실측) + v1.8.0 = 사용자 결정 항목 별도 브랜치로 표기.
+- `docs/HANDOFF.md` 현재 상태 v1.8.0.
+
+### 검증 (로컬, 2026-11-15)
+- 결정성 10회 재녹화 + ref 5회 emit + PSNR 3점 (7.33/40.39/40.17 dB) + SKIP 계약 (playwright 부재 → `{"status":"skip"}` exit 0) — 전부 로컬 실측 (practice `report.md` §3~§5).
+- `bash tests/run-all.sh --fast` (Windows, Git-Bash, ~35분): **ALL CHECKS PASSED (fast)** (exit 0) — test files 46 (floor 15) · 게이트 9종: skill-audit 29 clean · secret-scan clean · tree-exclude 4/4 · handoff-lint ok (3 플랫폼) · agents-lint 6 files 0 problems · package-lint 35 checked 0 errors · design-channel code clean (28 files) · eval-set 1 pinned match · **hooks 306/306 passed**.
+- 최종 트리 재검증 (문서 편집 후, 위 run의 게이트 시작 시점 트리 대비): handoff-lint ok · secret-scan clean · tree-exclude 4/4 · skill-audit 29 clean (4/4 exit 0 실측).
+- CI: PR run 9/9 — 병합 확인 후 갱신.
+
 ## [1.7.0] - 2026-11-15
 
 ### 추가 (하네스 보강 P2 묶음 — design-omniskill 운영 확정 · 인계 스키마 · 영상 PoC · scorecard 강화 · darwin 탐침 교정 — 근거: 로컬 실측, CI 행은 병합 전 갱신)

@@ -76,3 +76,20 @@
 - 버린 것 2: LLM 세션 트리거 활성화 실측. SKILL.md의 정적 규칙(트리거/채널 라우트)을 실제 LLM 세션에서 발동하는지 확인하지 않았다 [unverified].
 - 근거 (2026-11-15 실측): `design-channel-check.js html` = clean (exit 0) · WCAG 대조율 8짝 전부 ≥4.5:1 (가장 약한 accent 5.99:1) · overflow 0 (1440/1920 둘 다 scrollWidth==clientWidth) · `scorecard` ok (8 items, C3 계약 적용) · `evidence html` ok 2종 (EVIDENCE_CONTRACT 8필드) · `skill-audit` 29 skills clean · design-cases 3종(contrast/overflow/font-fallback) 실측 기록.
 - 한계: ① MCP(Playwright) 렌더 산출물은 D4에 따라 게이트 증거가 아닌 산출물+실측이다. ② 렌더는 Windows 호스트 chromium 한 환경뿐이다(다른 OS/엔진 미검증). ③ grid-12col 좌표는 미측정(scorecard에서 `unknown: true` + reason 표기). ④ aspect-ratio·document-preservation·source-adoption 케이스는 미기록(운영 확정 범위 밖).
+
+## D12. 영상 채널 실험화 (v1.8.0, C2b 후속 3건)
+
+- 선택: HTML 렌더→영상 채널을 design-omniskill 안의 **실험(experimental, PoC)** 채널로 확정한다: SKILL.md 라우트 테이블 + Trigger + description 1행 (실험, D4) + `channel-video.md` (렌더·결정성·프레임 대조 계약) + `scripts/render-video.js` (zero npm deps · playwright 선택 해석, 부재 → `{"status":"skip"}` exit 0 · 시스템 `msedge` · ffmpeg 선택 · stdout 단일 JSON).
+- 버린 것 1: 게이트 연동. `render-video.js`는 `tests/run-all.sh` 게이트 블록에 **미포함**, CI 워크플로/merge-guard `REQUIRED_CHECKS` 미변경, 신규 job 0. 통과/실패 판정은 `design-channel-check.js` 실행에서만 나온다 (D4); 영상 채널 scorecard는 미정의.
+- 버린 것 2: byte-level 결정성 약속. 10회 실측: dims/fps/codec **variants=1**이나 duration_s(4.68~5.00)·size·sha256(creation_time)는 전부 변이 → 계약은 불변(dims/fps/codec/requested duration)만 보장, byte-diff/duration_s를 판정 신호로 쓰는 것을 금지.
+- 버린 것 3: CI 러너 실행. 스크립트는 로컬 전용(시스템 msedge/chrome 필요). CI 실행 + merge-guard 변경은 별도 결정(후속 후보 1).
+- 근거 (2026-11-15 실측, `docs/practice/design-omniskill-video-channel-v1.8.0-2026-11-15/`): 결정성 10회 재녹화 (10/10 ok · 107.99 s · 불변 variants=1: 1440×900/25 fps/vp9/msedge 157.0.4341.46/playwright 1.65.1) · ref 1440×900 5회 emit **byte-identical** (29,895 B) · 프레임 대조: frame-0 페인트 변이 (unpainted 7.33 dB 2-run 재현 / painted 40.39 dB), 안정 프레임 t=1.0 s **40.17 dB** → 후보 임계값 ≥30 dB (리뷰 신호, 판정 아님) · PSNR 저장소 내 zero-dep (Node PNG 디코더 — GDI+ 독립 디코딩 교차 12/12 RGB 정확 일치) · SKIP 계약 exit 0 실측.
+- 한계: ① 단일 호스트(Windows/Edge 157.0.4341.46)·단일 페이지·5 s 정적 대기 — 다른 OS/엔진·액션 시퀀스 미검증 [unverified]. ② 코덱은 playwright/브라우저 버전에 종속 (vp9 @ playwright 1.65.1 vs v1.7.0 PoC vp8) — 매 실행 JSON `codec` 필드로 기록. ③ frame 0은 페인트 전 상태일 수 있음(캡처 시작 = 컨텍스트 생성) — 실측값 그대로 보고, 암묵 교체 금지. ④ scorecard 미정의 (D4) — 승격 경로는 SKILL.md 개선 이력 규칙 (케이스 축적 → axis+양성 대조 정의 → 새 결정 기록).
+
+## D13. 공개 저장소 민감도 감사 — 히스토리 rewrite 미수행 (v1.8.0, 사용자 결정 항목 ①)
+
+- 선택: 공개 저장소(`yjj3019/AI-Harness`, visibility=PUBLIC 실측) 전 역사 민감도 감사를 수행하고 결과대로 조치한다 — object DB 2,121 objects 전수 스캔 + 7채널(커밋 메타·CI 로그 샘플·워크플로·릴리즈/LFS·GitHub 부가 메타) → **고위험(credential/토큰/내부 네트워크) 0건**. 판정 F1~F6 중 F1(실명+개인 이메일 49커밋, MEDIUM)은 **히스토리 rewrite 미수행**, F2/F3(로컬 PC 호스트명·CI 러너 식별자)는 현재 트리 적출 6건 (매트릭스 5 + scenario-replay 1), 감사 보고서 커밋(`docs/sensitivity-audit-2026-11-15.md` — 보고서 내 PII·proxy IP·로컬 경로도 적출).
+- 버린 것: 전 역사 rewrite(filter-branch/rebase). 대가(공개 저장소 전 커밋 SHA 변경, 모든 클론·PR·태그 무효화, 기여자 분기 손상)가 이익보다 크다 — 노출된 것은 credential이 아니라 이름+이메일이고, 새 커밋은 이미 전부 noreply identity(실측: 최근 3커밋) → **새 노출 0**.
+- 이유: ① noreply(`ID+username@users.noreply.github.com`)는 GitHub 공개 정형이고 numeric ID는 공개 정보 ② 필요 시 사용자 측 GitHub 설정("이메일 비공개 유지")으로 추가 차단 가능 — 저장소 밖 조치 ③ 재감사 트리거 3종 정의: (a) credential 의심 발견 즉시(패턴 재실행 + 해당 blob 전문 대조) (b) 새 바이너리 산출물 커밋 전(UTF-16 패스) (c) CI 로그에 환경변수 dump 단계 추가 시.
+- 한계: ① 바이너리 스캔은 ASCII + UTF-16LE 2인코딩만 커버 — 기타 인코딩/암호화 바이너리는 미검증(현재 바이너리 33개 = 세션 생성 산출물이라 리스크 낮음, 단 **미증명**) ② CI 로그는 최신 1 job(P2 macos, 581,842 B) 샘플만 ③ 패턴 커버리지 갭 실증 — 러너 호스트명 1종은 문서 정독으로 발견(패턴이 아님 → 정독 병행 필수) ④ fork/star 소셜 메타·Actions 전 run 로그·Security 설정은 범위 밖(잔존 위험 낮음).
+- 공개 CI 로그 잔존: F2/F3 원값은 공개 CI 로그에 유지된다(GitHub 인프라 — 재적출 불가·불요). 사용자 측 잔여 결정 = GitHub "이메일 비공개" 설정 (저장소 밖, 권고는 미수행 유지).
