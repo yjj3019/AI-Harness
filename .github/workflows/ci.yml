@@ -26,6 +26,19 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Run all checks
         run: bash tests/run-all.sh
+      # B1 measurement (not a gate): record what this host allows across read/write/exec/net.
+      # Node-22 leg only so the two matrix legs do not collide on the artifact name.
+      - name: Measure host permission matrix (ubuntu)
+        if: matrix.node == 22
+        run: |
+          node scripts/host-permission-matrix.js
+          node scripts/host-permission-matrix.js --markdown > host-permission-matrix-ubuntu.md
+      - name: Upload host permission matrix (ubuntu)
+        if: matrix.node == 22
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: host-permission-matrix-ubuntu
+          path: host-permission-matrix-ubuntu.md
       # Independent re-verification: every committed attestation is checked against the checked-out
       # code and its test command is run again here, not trusted from the local session.
       # Verify every file, even when multiple attestations name the same tree and test command.
@@ -75,6 +88,16 @@ jobs:
           fi
       - name: Run full regression on host
         run: bash tests/run-all.sh
+      # B1 measurement (not a gate): one row per host OS, captured as an artifact.
+      - name: Measure host permission matrix
+        run: |
+          node scripts/host-permission-matrix.js
+          node scripts/host-permission-matrix.js --markdown > "host-permission-matrix-${{ matrix.os }}.md"
+      - name: Upload host permission matrix
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: host-permission-matrix-${{ matrix.os }}
+          path: host-permission-matrix-${{ matrix.os }}.md
 
   isolation-linux:
     name: isolation / linux namespace
