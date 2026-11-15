@@ -1,0 +1,8 @@
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#dfe3e8}
+.slide{position:relative;width:1280px;height:720px;overflow:hidden;background:#FFFFFF;font-family:'Segoe UI','Malgun Gothic',sans-serif;margin:0 auto}
+.dark{background:#101418}
+.e{position:absolute}
+.c{display:flex;align-items:center;justify-content:center}
+.dot{border-radius:50%}
+p{margin:0}
