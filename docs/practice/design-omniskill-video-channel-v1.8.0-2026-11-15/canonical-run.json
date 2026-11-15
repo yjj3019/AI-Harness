@@ -1,0 +1,36 @@
+{
+  "status": "ok",
+  "page": "docs/practice/design-omniskill-v1.7.0-2026-11-15/onepager.html",
+  "out": "docs/practice/design-omniskill-video-channel-v1.8.0-2026-11-15/video-5s.webm",
+  "size": 613418,
+  "sha256": "af6a5962e6b7b4ec3a3a0183f482f1095f95c06c0532f1dfcc68243a342e790a",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "requested_duration_s": 5,
+  "duration_s": 5,
+  "width": 1440,
+  "height": 900,
+  "fps": 25,
+  "codec": "vp9",
+  "creation_time": "2026-11-15T07:10:03.201000Z",
+  "metadata_source": "ms-playwright cache (local, ffmpeg-1013/ffmpeg-win64.exe)",
+  "browser_channel": "msedge",
+  "browser_version": "157.0.4341.46",
+  "playwright_version": "1.65.1",
+  "ref": {
+    "path": "docs/practice/design-omniskill-video-channel-v1.8.0-2026-11-15/ref-1440x900.png",
+    "size": 29895,
+    "sha256": "341f9eee950edc19706f91a5839b34864322c2cb44b17d92fc42ede006617c3d"
+  },
+  "frame": {
+    "path": "docs/practice/design-omniskill-video-channel-v1.8.0-2026-11-15/frame0.png",
+    "time_s": 0,
+    "size": 149354,
+    "sha256": "677419e84ae48f32147161da444ca87237d82ada4dcf6b82949ce0c7e3da7cc4"
+  },
+  "psnr_db": 7.33,
+  "psnr_method": "node png-decode + rgb24 per-channel dB average (8-bit)",
+  "psnr_reason": null
+}
