@@ -173,6 +173,33 @@ function analyze(graph, options = {}) {
   return result;
 }
 
+// JSON.parse keeps only the last of repeated member names, silently dropping an earlier
+// entry (e.g. a restriction). Run after JSON.parse succeeds (syntax is then known valid); fail closed.
+function assertNoDuplicateKeys(src) {
+  let i = 0;
+  const ws = () => { while (src[i] === " " || src[i] === "\t" || src[i] === "\r" || src[i] === "\n") i++; };
+  const str = () => { const s = i++; while (src[i] !== '"') { if (src[i] === "\\") i++; i++; } i++; return JSON.parse(src.slice(s, i)); };
+  const val = depth => {
+    if (depth > 1000) throw new Error("JSON nesting exceeds limit");
+    ws();
+    if (src[i] === "{") {
+      i++; ws(); const keys = new Set();
+      if (src[i] === "}") { i++; return; }
+      for (;;) {
+        ws(); const name = str(); // decoded, so "a" and "a" collide
+        if (keys.has(name)) throw new Error("duplicate JSON object member");
+        keys.add(name); ws(); i++; val(depth + 1); ws();
+        if (src[i++] === "}") return;
+      }
+    } else if (src[i] === "[") {
+      i++; ws(); if (src[i] === "]") { i++; return; }
+      for (;;) { val(depth + 1); ws(); if (src[i++] === "]") return; }
+    } else if (src[i] === '"') str();
+    else while (i < src.length && !",}] \t\r\n".includes(src[i])) i++;
+  };
+  val(0);
+}
+function parseStrict(text) { const v = JSON.parse(text); assertNoDuplicateKeys(text); return v; }
 function main(argv) {
   // Flags must precede the input path (backward contract); anything after it is a usage error.
   const opts = { scopeWarnings: false, evidenceRoot: null, requireBoundTree: false };
@@ -213,8 +240,8 @@ function main(argv) {
     if (bytes.length > MAX_BYTES) throw new Error('input exceeds byte limit');
     if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) throw new Error('BOM not allowed');
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    result = analyze(JSON.parse(text), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot, requireBoundTree: opts.requireBoundTree });
-  } catch (error) { result = { verdict: 'FAIL', errors: ['invalid or oversized UTF-8 JSON'] }; }
+    result = analyze(parseStrict(text), { scopeWarnings: opts.scopeWarnings, evidenceRoot: opts.evidenceRoot, requireBoundTree: opts.requireBoundTree });
+  } catch (error) { result = { verdict: 'FAIL', errors: [/^duplicate JSON/.test(error.message) ? error.message : 'invalid or oversized UTF-8 JSON'] }; }
   console.log(JSON.stringify(result));
   return result.verdict === 'PASS' ? 0 : 1;
 }

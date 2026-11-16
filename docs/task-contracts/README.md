@@ -15,7 +15,7 @@ A human must review a tracked file named `docs/task-contracts/phase-1.json` when
 
 `user` and `policy` are the only permitted authoritative sources in this **reviewed Git file**. A model writing `role:user` does not authenticate the human who approved it. Exclude credentials and private customer material.
 
-**Duplicate JSON keys.** JSON object member names must be unique. JavaScript's JSON parser resolves a repeated key to its last value, so a later `constraints` (or any field) can silently replace an earlier one; this checker does not detect that. Review contract files for repeated keys. See `docs/task-graph.md` for the same limitation.
+**Duplicate JSON keys.** Since 1.9.0 `verifyPhaseContext` rejects duplicate JSON object member names (also names equal after `\u` escape decoding) in both the contract and the checkpoint, failing closed with the existing `unreadable authoritative contract` / `missing or invalid typed context checkpoint` reasons. Previously JavaScript's JSON parser kept only the last value, so a repeated `constraints` could silently drop earlier constraints. Existing files with repeated keys are now rejected; nesting deeper than 1000 levels is also rejected.
 
 ## Local checkpoint after a context reset
 

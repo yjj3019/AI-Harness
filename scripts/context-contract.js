@@ -18,6 +18,33 @@ function digest(value) { return crypto.createHash("sha256").update(value).digest
 // schema-valid checkpoint can exceed the cap; it now gets the existing invalid error.
 const CONTRACT_MAX_BYTES = 2 * 1024 * 1024;
 const CHECKPOINT_MAX_BYTES = 8 * 1024 * 1024;
+// JSON.parse keeps only the last of repeated member names, silently dropping an earlier
+// entry (e.g. a restriction). Run after JSON.parse succeeds (syntax is then known valid); fail closed.
+function assertNoDuplicateKeys(src) {
+  let i = 0;
+  const ws = () => { while (src[i] === " " || src[i] === "\t" || src[i] === "\r" || src[i] === "\n") i++; };
+  const str = () => { const s = i++; while (src[i] !== '"') { if (src[i] === "\\") i++; i++; } i++; return JSON.parse(src.slice(s, i)); };
+  const val = depth => {
+    if (depth > 1000) throw new Error("JSON nesting exceeds limit");
+    ws();
+    if (src[i] === "{") {
+      i++; ws(); const keys = new Set();
+      if (src[i] === "}") { i++; return; }
+      for (;;) {
+        ws(); const name = str(); // decoded, so "a" and "a" collide
+        if (keys.has(name)) throw new Error("duplicate JSON object member");
+        keys.add(name); ws(); i++; val(depth + 1); ws();
+        if (src[i++] === "}") return;
+      }
+    } else if (src[i] === "[") {
+      i++; ws(); if (src[i] === "]") { i++; return; }
+      for (;;) { val(depth + 1); ws(); if (src[i++] === "]") return; }
+    } else if (src[i] === '"') str();
+    else while (i < src.length && !",}] \t\r\n".includes(src[i])) i++;
+  };
+  val(0);
+}
+function parseStrict(text) { const v = JSON.parse(text); assertNoDuplicateKeys(text); return v; }
 function readBounded(file, maxBytes) {
   // Pre-check avoids opening known special files; O_NONBLOCK prevents FIFO opens from
   // hanging if a path is swapped before open. fstat checks the actual opened object.
@@ -67,12 +94,12 @@ function verifyPhaseContext(root, phase) {
     return fail("unreadable authoritative contract");
   }
   let contract, original, summary;
-  try { original = readBounded(contractPath, CONTRACT_MAX_BYTES); contract = JSON.parse(original.toString("utf8")); }
+  try { original = readBounded(contractPath, CONTRACT_MAX_BYTES); contract = parseStrict(original.toString("utf8")); }
   catch { return fail("unreadable authoritative contract"); }
   const invalid = validateContract(contract, phase);
   if (invalid) return fail(invalid);
   const summaryPath = path.join(root, ".phase-evidence", "phase-" + phase + "-context.json");
-  try { summary = JSON.parse(readBounded(summaryPath, CHECKPOINT_MAX_BYTES).toString("utf8")); }
+  try { summary = parseStrict(readBounded(summaryPath, CHECKPOINT_MAX_BYTES).toString("utf8")); }
   catch { return fail("missing or invalid typed context checkpoint"); }
   if (!keysEqual(summary, ["schema", "phase", "contract_sha256", "constraints", "observations"]) ||
       summary.schema !== 1 || summary.phase !== phase ||
