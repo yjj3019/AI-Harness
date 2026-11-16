@@ -63,6 +63,8 @@ function buildFixture() {
   fs.utimesSync(path.join(claude, `${UUID2}.jsonl`), new Date("2026-11-15T12:00:00Z"), new Date("2026-11-15T12:00:00Z"));
   fs.utimesSync(path.join(codex, "rollout-2026-11-15T10-00-00-01.jsonl"), new Date("2026-11-15T11:00:00Z"), new Date("2026-11-15T11:00:00Z"));
   fs.utimesSync(path.join(claude, `${UUID1}.jsonl`), new Date("2026-11-15T10:00:00Z"), new Date("2026-11-15T10:00:00Z"));
+  // The session mtime is the max over its files, subagent logs included: pin that one too, or UUID1 turns "newest" once the real clock passes the fixture dates.
+  fs.utimesSync(path.join(sub, "agent-abc.jsonl"), new Date("2026-11-15T09:00:00Z"), new Date("2026-11-15T09:00:00Z"));
   return root;
 }
 
