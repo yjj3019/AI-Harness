@@ -166,3 +166,13 @@ test("a hung test command is bounded by PHASE_GATE_TEST_TIMEOUT_MS and recorded 
   }
   if (failure) throw failure;
 });
+
+test("invalid test timeout settings fail before gate execution", () => {
+  for (const value of ["", "0", "-1", "1.5", "86400001", "NaN"]) {
+    const result = spawnSync(NODE, [GATE, "list"], {
+      env: { ...process.env, PHASE_GATE_TEST_TIMEOUT_MS: value }, encoding: "utf8",
+    });
+    assert.equal(result.status, 1, resultMessage(result));
+    assert.match(result.stderr, /PHASE_GATE_TEST_TIMEOUT_MS must be an integer/);
+  }
+});

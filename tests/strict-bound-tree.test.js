@@ -59,6 +59,22 @@ function run(call, inject, flags, script) {
 }
 function finish(record) { for (const step of ["verify", "review", "compound"]) record(step); }
 
+test("Git routing overrides fail before the test command executes", () => fixture(({ root }) => {
+  const marker = path.join(root, ".phase-evidence/executed");
+  for (const key of ["GIT_INDEX_FILE", "GIT_DIR", "GIT_CONFIG_COUNT", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM"]) {
+    const env = { ...process.env, PHASE_GATE_ROOT: root, [key]: key === "GIT_CONFIG_COUNT" ? "0" : path.join(root, "alternate") };
+    const result = spawnSync(process.execPath, [gatePath, "run", "1", "test", "--require-bound-tree", "--", process.execPath, "-e", `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ran')`], { cwd: root, env, encoding: "utf8" });
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /Git environment overrides are not supported/);
+    assert.equal(fs.existsSync(marker), false);
+  }
+  const emptyEnv = { ...process.env, PHASE_GATE_ROOT: root, GIT_INDEX_FILE: "" };
+  const empty = spawnSync(process.execPath, [gatePath, "run", "1", "test", "--require-bound-tree", "--", process.execPath, "-e", `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ran')`], { cwd: root, env: emptyEnv, encoding: "utf8" });
+  assert.equal(empty.status, 2, empty.stdout + empty.stderr);
+  assert.match(empty.stderr, /Git environment overrides are not supported/);
+  assert.equal(fs.existsSync(marker), false);
+}));
+
  test("legacy dual unavailable runs and retains unbound PASS", () => fixture(({ call, ok, evidence, record }) => {
   ok(run(call, "1,2", [], "console.log('legacy')"));
   assert.equal(evidence().status, "PASS");

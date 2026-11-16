@@ -7,6 +7,25 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const workflow = fs.readFileSync(path.join(__dirname, "../.github/workflows/ci.yml"), "utf8");
+test("checks job budget accommodates a full run and bounded replay", () => {
+  const checks = workflow.match(/^  checks:\r?\n([\s\S]*?)(?=^  portability:)/m);
+  assert.ok(checks);
+  const jobMinutes = Number(checks[1].match(/timeout-minutes:\s*(\d+)/)?.[1]);
+  const gate = fs.readFileSync(path.join(__dirname, "../.claude/workflows/phase-gate.js"), "utf8");
+  const gateMinutes = Number(gate.match(/TIMEOUT_RAW === undefined \? (\d+) \* 60 \* 1000/)?.[1]);
+  const runMinutes = Number(checks[1].match(/name: Run all checks\s+timeout-minutes:\s*(\d+)/)?.[1]);
+  assert.ok(Number.isFinite(jobMinutes) && Number.isFinite(gateMinutes));
+  assert.equal(runMinutes, gateMinutes, "full run and individual replay need aligned bounds");
+  assert.ok(jobMinutes >= runMinutes + gateMinutes + 10, "job must allow one run, one replay and overhead");
+});
+test("portability job budget accommodates the full regression and setup", () => {
+  const job = workflow.match(/^  portability:\r?\n([\s\S]*?)(?=^  isolation-linux:)/m);
+  assert.ok(job);
+  const jobMinutes = Number(job[1].match(/timeout-minutes:\s*(\d+)/)?.[1]);
+  const runMinutes = Number(job[1].match(/name: Run full regression on host\s+timeout-minutes:\s*(\d+)/)?.[1]);
+  assert.equal(runMinutes, 150);
+  assert.ok(jobMinutes >= runMinutes + 30, "portability job must leave time for setup and artifacts");
+});
 const match = workflow.match(/      - name: Verify phase attestations\r?\n        run: \|\r?\n((?:          .*\r?\n)+)/);
 assert.ok(match, "CI attestation step must exist");
 const script = match[1].replace(/^          /gm, "");

@@ -10,6 +10,17 @@ const { TextDecoder } = require("node:util");
 
 const ROOT = path.resolve(__dirname, "..");
 const GATE = path.join(ROOT, ".claude", "workflows", "phase-gate.js");
+const DEFAULT_TEST_TIMEOUT_MS = 150 * 60 * 1000;
+const REPLAY_OVERHEAD_MS = 2 * 60 * 1000;
+
+function replayTimeout() {
+  const raw = process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+  const inner = raw === undefined ? DEFAULT_TEST_TIMEOUT_MS : Number(raw);
+  if (!Number.isSafeInteger(inner) || inner < 1 || inner > 24 * 60 * 60 * 1000) {
+    throw new Error("PHASE_GATE_TEST_TIMEOUT_MS must be an integer from 1 to 86400000");
+  }
+  return inner + REPLAY_OVERHEAD_MS;
+}
 
 // root and gatePath are dependency injection for callers/tests, not CLI options.
 function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight = false } = {}) {
@@ -51,15 +62,15 @@ function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight
     console.log(`Preflight: ${phases.length} required attestation file(s) present; attestations were not verified and no commands were run.`);
     return;
   }
+  const replayTimeoutMs = replayTimeout();
   for (const id of phases) {
     console.log(`Verifying attestation for phase ${id}...`);
-    // Bound the replay like sibling subprocess users (merge-guard.js 60s, gate-mutation-probe.js 120s):
-    // a hung gate replay must surface as a failure, not an unbounded wait.
+    // Leave time for the gate's own bounded replay, snapshots and cleanup.
     const result = spawnSync(process.execPath, [gatePath, "verify-attestation", id], {
       cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, stdio: "inherit", shell: false,
-      timeout: 300_000,
+      timeout: replayTimeoutMs,
     });
-    if (result.error && result.error.code === "ETIMEDOUT") throw new Error(`phase ${id} verification timed out after 300s; descendant cleanup is not guaranteed`);
+    if (result.error && result.error.code === "ETIMEDOUT") throw new Error(`phase ${id} verification timed out after ${replayTimeoutMs}ms; descendant cleanup is not guaranteed`);
     if (result.error) throw new Error(`phase ${id} verification could not start: ${result.error.message}`);
     if (result.status !== 0) throw new Error(`phase ${id} verification failed (${result.signal || `exit ${result.status}`})`);
   }
