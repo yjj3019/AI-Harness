@@ -120,3 +120,24 @@ test("duplicate ID, invalid role or phase cannot be authoritative",()=>trial(({r
   assert.equal(verifyPhaseContext(root,"1").ok,false);
   assert.equal(verifyPhaseContext(root,"../bad").ok,false);
 }));
+test("duplicate JSON member names in contract or checkpoint fail closed",()=>trial(({root,file})=>{
+  assert.equal(verifyPhaseContext(root,"1").ok,true);
+  const original=fs.readFileSync(file,"utf8");
+  const dupes=[original.replace(/^\{/,'{"constraints":[],'),original.replace(/^\{/,'{"\u0063onstraints":[],')];
+  for (const text of dupes) {
+    assert.notEqual(text,original);
+    fs.writeFileSync(file,text);
+    // Re-bind the checkpoint to the new bytes so only the duplicate key can fail.
+    const cp=path.join(root,".phase-evidence/phase-1-context.json");
+    const s=JSON.parse(fs.readFileSync(cp,"utf8")); s.contract_sha256=digest(fs.readFileSync(file));
+    fs.writeFileSync(cp,JSON.stringify(s));
+    const r=verifyPhaseContext(root,"1");
+    assert.equal(r.ok,false); assert.equal(r.reason,"unreadable authoritative contract");
+  }
+  fs.writeFileSync(file,original);
+  const cp=path.join(root,".phase-evidence/phase-1-context.json");
+  const s=JSON.parse(fs.readFileSync(cp,"utf8")); s.contract_sha256=digest(fs.readFileSync(file));
+  fs.writeFileSync(cp,JSON.stringify(s).replace(/^\{/,'{"observations":[],'));
+  const r=verifyPhaseContext(root,"1");
+  assert.equal(r.ok,false); assert.equal(r.reason,"missing or invalid typed context checkpoint");
+}));
