@@ -33,7 +33,7 @@
  *
  * PHASE_GATE_ROOT overrides the project root (used by tests).
  * PHASE_GATE_TEST_TIMEOUT_MS bounds each test command and attestation replay
- *   (default 30 min); a killed command is recorded as FAIL, never a hang.
+ *   (default 150 min, maximum 24 h); a killed command is recorded as FAIL.
  *   PHASE_GATE_DOCTOR_TIMEOUT_MS bounds each doctor tool probe (default 60 s).
  */
 
@@ -55,7 +55,12 @@ const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/; // no leading dot, max 128
 const ATTEST_DIR = path.join(ROOT, "docs", "attestations");
 // Bound every child test command so a hung test cannot block the gate (or CI) forever.
 // Overridable for very heavy suites; a killed child is a FAIL, never a hang.
-const TEST_TIMEOUT_MS = Number(process.env.PHASE_GATE_TEST_TIMEOUT_MS) || 30 * 60 * 1000;
+const TIMEOUT_RAW = process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+const TEST_TIMEOUT_MS = TIMEOUT_RAW === undefined ? 150 * 60 * 1000 : Number(TIMEOUT_RAW);
+if (!Number.isSafeInteger(TEST_TIMEOUT_MS) || TEST_TIMEOUT_MS < 1 || TEST_TIMEOUT_MS > 24 * 60 * 60 * 1000) {
+  console.error("ERROR: PHASE_GATE_TEST_TIMEOUT_MS must be an integer from 1 to 86400000");
+  process.exit(1);
+}
 const DOCTOR_TIMEOUT_MS = Number(process.env.PHASE_GATE_DOCTOR_TIMEOUT_MS) || 60 * 1000;
 // Files that legitimately change after the test step (or are environment state) are not part of the tree hash.
 // Intentional exclusions. Adding entries narrows the integrity check; review before extending.
@@ -102,6 +107,18 @@ function sha256(buf) {
 // A failed discovery probe remains ambiguous: Git may be unavailable, outside a
 // worktree, or the probe itself may have failed. Preserve legacy null in those cases.
 function treeHash() {
+  // Git's environment can redirect the index, repository, worktree, config, or
+  // object store. Refuse it rather than silently binding a different tree.
+  const routing = Object.keys(process.env).filter((key) => {
+    const name = key.toUpperCase();
+    if (!name.startsWith("GIT_")) return false;
+    if (name === "GIT_PAGER") return false;
+    if (name === "GIT_CONFIG_NOSYSTEM" && process.env[key] === "1") return false;
+    // Git for Windows does not accept Node's \\.\nul spelling as a config path.
+    if (name === "GIT_CONFIG_GLOBAL" && process.env[key] === (process.platform === "win32" ? "NUL" : "/dev/null")) return false;
+    return true;
+  }).sort();
+  if (routing.length) return { error: `Git environment overrides are not supported: ${routing.join(", ")}` };
   const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
     cwd: ROOT,
     encoding: "buffer",

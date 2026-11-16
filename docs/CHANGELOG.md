@@ -2,6 +2,19 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [2.0.0] - 2026-11-16 (작업 트리, 미병합)
+
+### 변경 (게이트 호환성)
+- 기본 테스트·attestation 재실행 제한을 30분에서 150분으로 조정하고 유효한 `PHASE_GATE_TEST_TIMEOUT_MS` 범위를 1~86400000ms로 제한했다. Windows LF worktree 실제 전체 실행이 118.6분이어서 120분은 여유가 부족했다. inventory 검증의 바깥 제한은 실제 내부 제한보다 2분 길다. CI의 전체 실행 step은 150분, checks 잡은 기본 전체 실행 1회+재실행 1회를 고려해 360분, portability 잡은 설정 여유를 포함해 180분으로 조정했다. 여러 attestation은 전체 잡 예산을 초과할 수 있고 시간 초과 후 하위 프로세스 정리는 보장되지 않는다.
+- Claude `Read` 훅 기본 제한을 10초에서 60초로 조정했다. 실제 호스트에서 새 기본 설정으로 읽기 기록 1회 성공을 확인했지만 모든 자원 부족 상황을 보장하지는 않는다.
+- Windows FIFO 스킵 사유를 명시하고 Phase 체크리스트가 실시간 상태 표시가 아닌 요구조건임을 명확히 했다.
+- 트리 해시가 실제 줄바꿈 바이트를 포함하므로 LF CI용 attestation은 별도 LF worktree에서 준비하도록 절차를 명시했다. 사용자 파일을 제자리에서 정규화하지 않는다.
+- Phase 트리 스냅샷은 인덱스·저장소·설정 경로를 바꿀 수 있는 상속된 `GIT_*` 환경변수를 값 출력 없이 거부한다. 예외는 `GIT_PAGER`, `GIT_CONFIG_NOSYSTEM=1`, 플랫폼 null 장치를 가리키는 `GIT_CONFIG_GLOBAL`이다. 기존에 거부 대상 환경변수로 실행하던 호출은 신뢰할 수 있는 환경에서 해당 변수를 제거해야 한다.
+- 이 검사는 Git 설정 파일이나 동시 변경을 격리하지 않으며 과거 증거의 환경을 소급 검증하지 않는다. Codex 읽기 신호와 실제 Phase 완료는 별도 미해결이다.
+- HANDOFF의 현재 작업 트리 상태와 기존 시점 기록을 구분했다.
+- 설정 격리 예외 추가 전 로컬 Windows / Node v26.13.0: strict-bound-tree·tree-enumeration-failure·attestation-race·attestation-tree-replay 테스트 33개 통과, 실패·skip 0. 전체 회귀와 CI는 미실행.
+- 설정 격리 예외 수정 후 Windows 대상 검증: strict-bound-tree·verify-attestation-inventory 22개 통과, 실패·skip 0 (이후 빈 환경변수 테스트 추가).
+
 ## [1.9.0] - 2026-11-15
 
 ### 변경 (호환성 — 중복 JSON 키 거부)

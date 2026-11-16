@@ -124,6 +124,37 @@ test("reports a replay timeout as a timeout", () => {
   });
 });
 
+test("inventory timeout exceeds the gate timeout and rejects invalid values before replay", () => {
+  const child = require("node:child_process");
+  const originalSpawn = child.spawnSync;
+  const previous = process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+  const observed = [];
+  child.spawnSync = (_program, _args, options) => { observed.push(options.timeout); return { status: 0 }; };
+  delete require.cache[checker];
+  const { verifyInventory } = require(checker);
+  child.spawnSync = originalSpawn;
+  delete require.cache[checker];
+  try {
+    fixture(({ root, manifest, att }) => {
+      att("1");
+      fs.writeFileSync(manifest, '["1"]');
+      delete process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+      verifyInventory(manifest, { root });
+      process.env.PHASE_GATE_TEST_TIMEOUT_MS = "2500";
+      verifyInventory(manifest, { root });
+      assert.deepEqual(observed, [9_120_000, 122_500]);
+      for (const invalid of ["", "0", "-1", "1.5", "86400001", "NaN"]) {
+        process.env.PHASE_GATE_TEST_TIMEOUT_MS = invalid;
+        assert.throws(() => verifyInventory(manifest, { root }), /PHASE_GATE_TEST_TIMEOUT_MS must be an integer/);
+      }
+      assert.equal(observed.length, 2, "invalid configuration must not spawn a replay");
+    });
+  } finally {
+    if (previous === undefined) delete process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+    else process.env.PHASE_GATE_TEST_TIMEOUT_MS = previous;
+  }
+});
+
 test("real gate rejects a malformed attestation in a fixture root", () => {
   fixture(({ root, manifest, att }) => {
     att("1");
@@ -145,7 +176,7 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
   // Do not let inherited Git routing/config redirect fixture operations elsewhere.
   for (const name of Object.keys(env)) if (/^GIT_/i.test(name)) delete env[name];
   env.GIT_CONFIG_NOSYSTEM = "1";
-  env.GIT_CONFIG_GLOBAL = path.join(root, "absent-git-config");
+  env.GIT_CONFIG_GLOBAL = process.platform === "win32" ? "NUL" : "/dev/null";
   delete env.NODE_TEST_CONTEXT; // Permit the fixture's independent Node test runner.
   const run = (program, args) => spawnSync(program, args, { cwd: root, env, encoding: "utf8" });
   const ok = (result, label) => assert.equal(result.status, 0, `${label}: ${result.error || ""}\n${result.stdout}\n${result.stderr}`);

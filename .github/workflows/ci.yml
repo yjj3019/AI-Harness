@@ -11,7 +11,8 @@ permissions:
 jobs:
   checks:
     name: checks / node ${{ matrix.node }}
-    timeout-minutes: 60
+    # One full run plus one attestation replay at the 150-minute gate limit.
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +26,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Run all checks
+        timeout-minutes: 150
         run: bash tests/run-all.sh
       # B1 measurement (not a gate): record what this host allows across read/write/exec/net.
       # Node-22 leg only so the two matrix legs do not collide on the artifact name.
@@ -57,7 +59,7 @@ jobs:
 
   portability:
     name: portability / ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +89,7 @@ jobs:
             command -v jq >/dev/null 2>&1 || choco install jq -y --no-progress
           fi
       - name: Run full regression on host
+        timeout-minutes: 150
         run: bash tests/run-all.sh
       # B1 measurement (not a gate): one row per host OS, captured as an artifact.
       - name: Measure host permission matrix

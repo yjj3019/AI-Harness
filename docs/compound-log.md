@@ -317,6 +317,32 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: (1) DSH 빌드의 브라우저만 비기본 경로에 설치되고 ffmpeg 헬퍼는 기본 경로로만 지연 설치됨; (2) 원격 모드에서는 video의 원본 경로를 의도적으로 감추고 `saveAs()`만 지원하는 API 설계; (3) vm 컨텍스트에 CJS require도 ESM dynamic import 콜백도 없다.
 - **Resolution/Pattern**: (1) MCP 서버와 **같은 npx 캐치의 playwright-core** `cli.js install ffmpeg` 실행 (playwright-core 버전 == 빌드 리비전 일치 보장) 후 `ffmpeg -version`으로 검증. (2) `path()` 없이 `saveAs(final)` 호출 + recordVideo dir에 쓰인 원본을 외부에서(size+sha256) 대조 후 원본 제거 — 동일성 검증 없이 rename 금지. (3) 파일시스템 작업은 vm 밖(호스트 셸)에서 수행, MCP 코드는 브라우저 오케스트레이션만. 영상 메타(길이/해상도/fps)는 설치된 ffmpeg 바이너리로 실측, API 추측 금지. (참고: html 편집 후 렌더/녹화 최종본을 반드시 재확정 — C1에서 sha 체인 불일치 1회 교훈 재확인.)
 
+### [2026-11-16] Tree binding - inherited Git routing and practical environment compatibility
+
+- **Issue/Risk**: Git environment overrides can redirect snapshot enumeration. Rejecting every `GIT_*` variable also rejected the ordinary `GIT_PAGER` inherited by this host, causing 29 regression test failures in the first targeted run.
+- **Root Cause**: Git subprocesses inherited routing and configuration overrides, while the initial blanket rejection did not distinguish the pager variable from tree-affecting overrides.
+- **Resolution/Pattern**: Fail closed on inherited `GIT_*` variables with narrowly scoped pager and config-disabling exceptions; test alternate index, repository and configuration environment overrides before test execution. Independent review also identified the real multi-phase fixture's config isolation variables, so that fixture uses the platform null device rather than an arbitrary global config path. This does not isolate Git configuration files, concurrent mutation or validate old evidence. Actual Codex read-signal integration remains unverified.
+- **Windows detail**: Git for Windows rejected Node's `os.devNull` spelling as a configuration file; the `NUL` spelling was verified locally and the real multi-phase fixture passed after the platform-specific correction. POSIX hosts remain unverified locally.
+
+### [2026-11-16] Claude read signal - test real host before Phase rerun
+
+- **Issue/Risk**: Codex shell reads cannot satisfy the existing verify read tracker, while a registered hook alone does not show that a host emits the required event.
+- **Root Cause**: The hook requires a `Read` event attributed to the `verify` subagent; host-specific tool events cannot be inferred from configuration.
+- **Resolution/Pattern**: In a disposable Git fixture, Claude Code 2.1.325 used a real verify subagent Read on a gate-generated test log. The hook produced a matching signal, and the fixture gate recorded verify PASS with `require_read_proof: true`. This verifies that fixture's Claude path, not Codex integration, host isolation, or review comprehension.
+
+### [2026-11-16] Phase run - passing tests with changed tree are not Phase PASS
+
+- **Issue/Risk**: The full Windows suite reported 415 passed, 6 skipped and 0 failed, but the Phase gate recorded FAIL because its initial and final tree snapshots differed. Five tracked practice binaries appeared modified after the run; their timestamps were old and the responsible actor was not established.
+- **Root Cause**: Unverified. The aggregate tree hash does not identify changed files or when they changed. Git status before and after provides a candidate set, not proof of causation.
+- **Resolution/Pattern**: Preserve changed binaries and failed evidence, do not equate test exit 0 with Phase success, and compare snapshots when rerunning. Do not restore or overwrite user files to force a matching hash.
+
+### [2026-11-16] Read hooks - fixture success can fail on the real host under resource pressure
+
+- **Issue/Risk**: A real Claude verify subagent read the successful test log, but strict verify could not record PASS because no read signal was generated.
+- **Root Cause**: Claude hook event output showed the actual `PostToolUse:Read` hooks were cancelled; one reported Git Bash `fork: Resource temporarily unavailable`. The specific resource exhaustion mechanism was not established.
+- **Resolution/Pattern**: Keep the valid bound test evidence and the Phase incomplete. Do not synthesize hook events. A failed strict record rotates the read token, so a later attempt needs a fresh real verify Read. Fixture success alone does not prove the production invocation will succeed under different load.
+- **Follow-up**: A fresh actual verify-subagent Read with a per-invocation 60-second hook setting produced successful hook events and a matching phase/token/log-hash signal. Strict verify was recorded with `require_read_proof: true`. This shows a successful configured invocation, not a controlled proof that the 10-second timeout caused earlier cancellations or a permanent repair of the default host configuration.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
@@ -324,3 +350,10 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Issue/Risk**: Description of problem or mistake encountered.
 - **Root Cause**: Why it happened.
 - **Resolution/Pattern**: Effective fix or rule to avoid repeating it.
+
+
+## 2026-11-16: Portable evidence and replay limits
+
+- Compare staged Git blobs with raw checkout bytes before binding evidence; Windows checkout conversion can invalidate an otherwise equivalent snapshot. Preserve user-modified artifacts separately.
+- The isolated LF snapshot passed the strict full test and genuine default-hook read proof; the inventory replay exit and output were lost during session transition and must not be reported as a pass. Capture long-running replay output and exit status durably in future.
+- A single GitHub Actions job has a finite budget; sequential replay of multiple individually bounded attestations can still exceed it. The current CI arrangement fails closed but does not solve this scaling limitation. A default hook success does not prove reliability under process exhaustion.
