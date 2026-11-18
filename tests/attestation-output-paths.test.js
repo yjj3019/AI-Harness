@@ -19,11 +19,15 @@ function fixture(fn, { nested = false, trailingSpace = false } = {}) {
   fs.mkdirSync(outside);
   fs.writeFileSync(preload, `
 const cp = require('node:child_process');
-const original = cp.spawnSync;
-cp.spawnSync = function(command, args, options) {
-  if (process.env.INJECT_CHILD_FAILURE === '1' && command === process.execPath && args[0] === 'runner.js') {
+const { EventEmitter } = require('node:events');
+const original = cp.spawn;
+cp.spawn = function(command, args, options) {
+  if (process.env.INJECT_CHILD_FAILURE === '1' && command === process.execPath && args[4] === 'runner.js') {
     const error = new Error('injected child spawn failure'); error.code = 'ENOENT';
-    return { error, status: null, signal: null };
+    const child = new EventEmitter();
+    child.stdout = new EventEmitter();
+    process.nextTick(() => child.emit('error', error));
+    return child;
   }
   return original.apply(this, arguments);
 };

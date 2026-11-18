@@ -357,3 +357,48 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - Compare staged Git blobs with raw checkout bytes before binding evidence; Windows checkout conversion can invalidate an otherwise equivalent snapshot. Preserve user-modified artifacts separately.
 - The isolated LF snapshot passed the strict full test and genuine default-hook read proof; the inventory replay exit and output were lost during session transition and must not be reported as a pass. Capture long-running replay output and exit status durably in future.
 - A single GitHub Actions job has a finite budget; sequential replay of multiple individually bounded attestations can still exceed it. The current CI arrangement fails closed but does not solve this scaling limitation. A default hook success does not prove reliability under process exhaustion.
+
+## 2026-11-17: Workflow provenance and tree modes
+
+- A GitHub Actions app identity and a required job name do not establish which workflow produced a check. Resolve its check suite to the reviewed workflow and head, and reject missing or ambiguous provenance. Actual PR and fork compatibility remains unverified.
+- Binding POSIX executable bits changes the tree hash format and makes earlier attestations stale. Windows now uses tracked Git index modes to allow matching ordinary POSIX checkouts, but cannot observe actual POSIX permission changes. Regenerate evidence with genuine required read proof. Cross-platform matching and mode-only POSIX behavior remain unverified on this Windows host.
+- Descendant cleanup, multi-attestation CI scaling, Codex read-proof integration, and current-tree attestation replay remain unresolved. Do not infer completion from passing fixture tests.
+- Live read-only PR #69 check (2026-11-17): the new provenance lookup returned all nine required jobs and correctly refused the failed Node 22 job. GitHub job metadata identifies `Verify phase attestations` as the failing step; log download timed out, so the underlying cause and fork compatibility remain unverified.
+- Attestation replay now uses separate CI matrix jobs and an aggregate dependency; local fixtures verify discovery, replay failure and skipped/failing aggregate rejection. The revised workflow has not run on GitHub. The gate requests Windows tree or POSIX group termination on timeout; a local Windows child/grandchild fixture passed, but escaping processes and gate death remain outside the mechanism.
+- The first Windows full regression exposed an unregistered example repository URL in a new test. The source-adoption checker reproduced it; the fixture now uses this repository's own identity. The first run was stopped after the failure, so it is not a completed regression result.
+- After correcting the fixture, Windows full regression exited 0: 430 tests, 423 passed, 7 skipped, 0 failed; hooks 306/306 (`.phase-evidence/full-test-final-20261117.log`). This does not prove Phase read-proof, POSIX behavior or the revised GitHub workflow. Linux Node was unavailable and TLS validation of the official download endpoint failed; no insecure workaround was used.
+
+## 2026-11-18: Source audit remediation
+
+- Keep attestation presence separate from verification. Generate reports from the current complete input list so deletions invalidate stale output. Use the same Phase ID parser for the gate, inventory, and dashboard.
+- Bind CI evidence to the jobs for one workflow run attempt. Serialize operations on the same Phase, cap child output before it reaches disk, and preserve stdout/stderr ordering so test counters retain their context.
+- The isolated LF candidate passed the strict Linux test step with 430 of 433 Node tests passing, zero failures, and 306 of 306 hooks passing. ToolBroker passed 27 of 27 on Windows and on Linux with loopback excluded from proxying. The Linux bound check stopped at the missing verify record. The previous attestation remains stale and must not be reused for the candidate.
+- When the bound runner lacks a native Read event, use a real verifier on an isolated checkout with the same bound tree, raw test log, test record and active read token. Transfer the unchanged hook output and run strict verify on the original evidence. The bound check then identifies the first remaining Phase step.
+
+## 2026-11-18: Priority evidence enforcement and portability
+
+- A discovered-file inventory can omit a required Phase. Require the versioned inventory in CI and merge readiness, and compare PR candidates with the base policy.
+- Compare Phase IDs case-insensitively before using them as filenames. Exclude only the generated dashboard status that depends on later evidence. Retain the dashboard code and Phase definitions in the tested tree.
+- Enforce strict test summaries and Read-proof flags through the gate. Preserve the legacy attest validation path and challenge the final tree before publication. The first Linux run caught four legacy diagnostic regressions and an unregistered test fixture reference. The full rerun passed after both causes were corrected.
+- A Windows Git archive used with the host's CRLF settings produced 213 blob mismatches after re-indexing in Linux. Transferring Git objects and checking out on the target host yielded 379 of 379 raw file and executable-mode matches.
+- The current Phase passed all five strict checks with a genuine Claude Read, and the required attestation replay passed in a separate clean checkout. Linux run and replay each recorded 436 of 439 tests passing, zero failures, and 306 of 306 hooks passing. All three Linux-skipped cases passed on Windows in addition to the 59 focused cases. The candidate still needs an actual GitHub workflow run to validate hosted and fork behavior.
+
+## 2026-11-18: Workflow freshness and JSON publication
+
+- Query the target workflow's run list before trusting job checks. A queued run may be visible before its jobs exist. Recheck the same workflow list before issuing readiness.
+- Write, flush and close sibling temporary files before replacing stored JSON. Inject failures during writing and replacement to verify that the previous evidence and attestation bytes survive. Keep Phase chain advancement separate from per-file replacement.
+- Share strict attestation flag requirements with the dashboard. Verify deadline descriptions against both ToolBroker transport paths.
+- All five strict Phase checks passed with a genuine Claude Read. A separate clean checkout replayed the required attestation, with 438 of 441 tests and all 306 hooks passing. All three Linux skips passed on Windows. Hosted GitHub behavior remains unverified.
+
+## 2026-11-18: Effective hosted rules and Codex read permissions
+
+- The classic branch protection endpoint returned 404 while an active ruleset enforced nine GitHub Actions checks and PRs on `main`. Check effective branch rules and the PR merge state before judging server-side enforcement.
+- The hosted Node 22 job for PR #69 passed its test step and reported an attestation tree mismatch. The current merge guard rejected the failed run. Positive hosted evidence for the refreshed candidate requires a run on its own PR head.
+- Codex native subagent lifecycle events established the `verify` role. The initial shell and MCP attempts returned no read result because of their respective policy denials. A role lifecycle event alone does not establish a successful read.
+- A local read-only MCP tool with truthful readOnlyHint metadata produced an actual Codex PostToolUse event carrying the verify role. Bind the recorder to that tool, its agent and tool IDs, current epoch hash and original test bytes. A separate budget keeps the final summary visible for long logs. The full Phase and clean replay passed.
+
+## 2026-11-18: Nested Codex startup and fork run metadata
+
+- Check native tool startup from the affected working directory. Resolve the Git worktree for both the MCP reader and hook, then require the event cwd to remain inside it. Add a doctor probe and real nested verify run.
+- When GitHub omits PR associations, bind checks to their selected suite and attempt. Read the PR base and merge SHA from successful GitHub step metadata and check the current merge ref. This uses the jobs API and keeps the unavailable-log path out of merge readiness.
+- All strict Phase steps and independent replay passed. The actual current same-repository GitHub PR still points to the prior failing run. Hosted validation of the new candidate and a real fork remains pending.

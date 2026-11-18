@@ -47,7 +47,7 @@ test("preflight checks presence without spawning or verifying attestation conten
       assert.match(output.join("\n"), /Phase 2:.*present.*unverified[\s\S]*Phase 1:.*present.*unverified/i);
       assert.match(output.join("\n"), /not verified and no commands were run/i);
       assert.doesNotMatch(output.join("\n"), /Verified \d+ required/);
-      for (const input of ["[]", "{}", "null", "[", '["1","1"]', '["../2"]', '["1",2]', '["fake"]', '["unknown"]', Buffer.from([0xff])]) {
+      for (const input of ["[]", "{}", "null", "[", '["1","1"]', '["../2"]', '[".draft"]', '["1",2]', '["fake"]', '["unknown"]', Buffer.from([0xff])]) {
         fs.writeFileSync(manifest, input);
         assert.throws(() => verifyInventory(manifest, { root, preflight: true }), /manifest|unknown phase/i);
       }
@@ -190,6 +190,7 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
     fs.copyFileSync(path.resolve(__dirname, "../scripts/context-contract.js"), path.join(root, "scripts", "context-contract.js"));
     fs.copyFileSync(gate, path.join(root, ".claude", "workflows", "phase-gate.js"));
     fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/test-summary.js"), path.join(root, ".claude", "workflows", "test-summary.js"));
+    fs.copyFileSync(path.resolve(__dirname, "../scripts/phase-definition.js"), path.join(root, "scripts", "phase-definition.js"));
     fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: One\n### Phase 2: Two\n");
     const manifest = path.join(root, "manifest.json");
     fs.writeFileSync(manifest, '["1","2"]');
@@ -245,6 +246,7 @@ test("CLI preflight reports fixture presence without running the gate", () => {
     fs.mkdirSync(path.join(root, "scripts"));
     const localChecker = path.join(root, "scripts", "verify-attestation-inventory.js");
     fs.copyFileSync(checker, localChecker);
+    fs.copyFileSync(path.join(path.dirname(checker), "phase-definition.js"), path.join(root, "scripts", "phase-definition.js"));
     const r = spawnSync(process.execPath, [localChecker, "--preflight", manifest], { cwd: root, encoding: "utf8" });
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /present \(unverified\)/);

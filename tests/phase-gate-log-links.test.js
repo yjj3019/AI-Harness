@@ -94,10 +94,19 @@ test("strict summary without trailing newline survives run and check", () => {
     fs.writeFileSync(preload, `
 const fs = require('node:fs');
 const cp = require('node:child_process');
+const { EventEmitter } = require('node:events');
 cp.spawnSync = function(cmd, args, opts) {
   if (cmd === 'git') return { status: 1 };
-  fs.writeSync(opts.stdio[1], '# tests 1\\n# pass 1\\n# fail 0');
-  return { status: 0 };
+  throw new Error('unexpected synchronous child');
+};
+cp.spawn = function(cmd, args, opts) {
+  const child = new EventEmitter();
+  child.stdout = new EventEmitter();
+  process.nextTick(() => {
+    child.stdout.emit('data', Buffer.from('# tests 1\\n# pass 1\\n# fail 0'));
+    child.emit('close', 0, null);
+  });
+  return child;
 };
 `);
     const gate = args => spawnSync(process.execPath, ["--require", preload, gateScript, ...args], {
@@ -130,6 +139,7 @@ for (const mode of ["seek", "tree-error", "tree-close-error"]) {
       fs.writeFileSync(preload, `
 const fs = require('node:fs');
 const cp = require('node:child_process');
+const { EventEmitter } = require('node:events');
 const mode = process.env.INJECT_MODE;
 let snapshots = 0, tempFd;
 const open = fs.openSync, close = fs.closeSync, lstat = fs.lstatSync;
@@ -137,9 +147,18 @@ fs.openSync = function(file, flags) { const fd = open.apply(this, arguments); if
 fs.closeSync = function(fd) { const r = close.apply(this, arguments); if (mode === 'tree-close-error' && fd === tempFd) throw new Error('injected close failure'); return r; };
 fs.lstatSync = function(file) { if (mode !== 'seek' && snapshots === 2 && String(file).endsWith('source')) { const e = new Error('injected tree read failure'); e.code = 'EACCES'; throw e; } return lstat.apply(this, arguments); };
 cp.spawnSync = function(cmd, args, opts) {
+  if (cmd === 'git' && args[0] === '--no-optional-locks') return { status: 0, stdout: Buffer.from('100644 ' + 'a'.repeat(40) + ' 0\\tsource\\0') };
   if (cmd === 'git') { snapshots++; return { status: 0, stdout: Buffer.from('source\\0') }; }
-  fs.writeSync(opts.stdio[1], Buffer.from('child output\\n'), 0, 13, 0);
-  return { status: 0 };
+  throw new Error('unexpected synchronous child');
+};
+cp.spawn = function(cmd, args, opts) {
+  const child = new EventEmitter();
+  child.stdout = new EventEmitter();
+  process.nextTick(() => {
+    child.stdout.emit('data', Buffer.from('child output\\n'));
+    child.emit('close', 0, null);
+  });
+  return child;
 };
 `);
       const gate = args => spawnSync(process.execPath, ["--require", preload, gateScript, ...args], {

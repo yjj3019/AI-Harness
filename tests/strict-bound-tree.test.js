@@ -146,6 +146,52 @@ test("phase workflow requests bound snapshots for both run and check", () => {
   assert.match(text, /phase-gate\.js check <id> --require-bound-tree/);
 });
 
+test("case-only Phase ID collisions are refused before overwriting evidence", () => fixture(({ root, call, ok }) => {
+  const phases = path.join(root, "docs/PHASES.md");
+  fs.writeFileSync(phases, "### Phase Alpha: Upper\n");
+  const record = id => call("", "record", id, "coding", "--status", "PASS", "--report", ".phase-evidence/report.md");
+  ok(record("Alpha"));
+  const evidence = path.join(root, ".phase-evidence/phase-Alpha-coding.json");
+  const before = fs.readFileSync(evidence);
+  fs.appendFileSync(phases, "### Phase alpha: Lower\n");
+  const collision = record("alpha");
+  assert.equal(collision.status, 2);
+  assert.match(collision.stderr, /duplicate Phase ID.*alpha.*Alpha/);
+  assert.deepEqual(fs.readFileSync(evidence), before);
+}));
+
+test("strict check and attest require both evidence flags", () => fixture(({ call, ok, record }) => {
+  const check = () => call("", "check", "1", "--require-strict-evidence");
+  const attest = () => call("", "attest", "1", "--require-strict-evidence");
+  ok(run(call, "", [], "console.log('legacy')"));
+  finish(record);
+  for (const result of [check(), attest()]) {
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /requires require_test_summary: true/);
+  }
+  ok(run(call, "", ["--require-test-summary"], passingSummary));
+  finish(record);
+  for (const result of [check(), attest()]) {
+    assert.equal(result.status, 2, result.stdout + result.stderr);
+    assert.match(result.stderr, /requires require_read_proof: true/);
+  }
+  ok(call("", "attest", "1"));
+  const replay = call("", "verify-attestation", "1", "--require-strict-evidence");
+  assert.equal(replay.status, 2);
+  assert.match(replay.stderr, /requires test summary and verify read proof flags/);
+}));
+
+test("required phases enforce strict settings without optional flags", () => fixture(({ root, call, ok, evidence }) => {
+  fs.mkdirSync(path.join(root, ".github"));
+  fs.writeFileSync(path.join(root, ".github/required-phases.json"), '["1"]\n');
+  assert.equal(run(call, "1,2", [], passingSummary).status, 2);
+  ok(run(call, "", [], passingSummary));
+  assert.equal(evidence().require_test_summary, true);
+  const verify = call("", "record", "1", "verify", "--status", "PASS", "--report", ".phase-evidence/report.md");
+  assert.equal(verify.status, 2);
+  assert.match(verify.stderr, /requires read-tracker.sh registration/);
+}));
+
 test("malformed and duplicate run/check flags are usage errors", () => fixture(({ root, call }) => {
   const marker = path.join(root, ".phase-evidence/invalid-executed");
   const command = ["--", process.execPath, "-e", `require('fs').writeFileSync(${JSON.stringify(marker)}, 'ran')`];

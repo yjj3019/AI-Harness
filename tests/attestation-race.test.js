@@ -27,6 +27,21 @@ function fixture(fn, unbound = false, evidenceTree = "unchanged") {
     fs.writeFileSync(preload, `
 const cp = require('node:child_process');
 const fs = require('node:fs');
+const path = require('node:path');
+const write = fs.writeFileSync;
+const rename = fs.renameSync;
+fs.writeFileSync = function(file, ...args) {
+  if (process.env.INJECT_MODE === 'json-write' && typeof file === 'number') {
+    write.call(this, file, '{');
+    throw new Error('injected partial JSON write');
+  }
+  return write.call(this, file, ...args);
+};
+fs.renameSync = function(from, to) {
+  if (process.env.INJECT_MODE === 'json-replace' && path.basename(from).startsWith('.phase-json-'))
+    throw new Error('injected JSON replacement failure');
+  return rename.call(this, from, to);
+};
 const original = cp.spawnSync;
 let calls = 0;
 let unavailable = false;
@@ -83,6 +98,28 @@ test("attest accepts the unchanged tree", () => {
     const att = JSON.parse(fs.readFileSync(path.join(root, "docs", "attestations", "phase-1.json"), "utf8"));
     const evidence = JSON.parse(fs.readFileSync(path.join(root, ".phase-evidence", "phase-1-test.json"), "utf8"));
     assert.equal(att.tree, evidence.tree);
+  });
+});
+
+test("failed JSON staging and replacement preserve published evidence and attestation", () => {
+  fixture(({ root, gate, pass }) => {
+    pass(gate("control", "attest", "1"));
+    const operations = [
+      { file: ".phase-evidence/phase-1-coding.json", args: ["record", "1", "coding", "--status", "PASS", "--report", ".phase-evidence/report.md"] },
+      { file: "docs/attestations/phase-1.json", args: ["attest", "1"] },
+    ];
+    for (const { file, args } of operations) {
+      const target = path.join(root, file);
+      const before = fs.readFileSync(target);
+      for (const [mode, reason] of [["json-write", /partial JSON write/], ["json-replace", /JSON replacement failure/]]) {
+        const result = gate(mode, ...args);
+        assert.equal(result.status, 2, result.stdout + result.stderr);
+        assert.match(result.stderr, reason);
+        assert.deepEqual(fs.readFileSync(target), before);
+        assert.ok(fs.readdirSync(path.dirname(target)).every(name => !name.startsWith(".phase-json-")));
+      }
+    }
+    pass(gate("control", "check", "1", "--require-bound-tree"));
   });
 });
 

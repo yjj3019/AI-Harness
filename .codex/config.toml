@@ -1,0 +1,4 @@
+[mcp_servers.harness_evidence]
+command = "node"
+args = ["-e", "require(require('node:path').join(require('node:child_process').execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim(),'.codex/hooks/phase-read.js')).main(process.argv[1])"]
+enabled_tools = ["read_phase_log"]

@@ -97,13 +97,33 @@ for (const op of ["lstat", "read", "readlink"]) {
   }
 }
 
-test("successful hash remains compatible and tracked deletion is stable", () => fixture(f => {
+test("successful hash binds executable permission and tracked deletion is stable", () => fixture(f => {
   const hash = data => crypto.createHash("sha256").update(data).digest("hex");
-  const expected = files => hash(files.map(file => `${file}\0${hash(fs.readFileSync(path.join(f.root, file)))}\n`).join(""));
+  const expected = files => hash(files.map(file => {
+    const p = path.join(f.root, file);
+    const executable = process.platform !== "win32" ? (fs.statSync(p).mode & 0o111).toString(8).padStart(3, "0") : "000";
+    return `${file}\0${executable}\0${hash(fs.readFileSync(p))}\n`;
+  }).join(""));
   f.ok(f.run());
   const evidence = () => JSON.parse(fs.readFileSync(path.join(f.root, ".phase-evidence/phase-1-test.json"), "utf8"));
   assert.equal(evidence().tree, expected(["docs/PHASES.md", "target.txt"]));
   fs.unlinkSync(path.join(f.root, "target.txt"));
   f.ok(f.run());
   assert.equal(evidence().tree, expected(["docs/PHASES.md"]));
+}));
+
+test("Windows index executable-mode changes invalidate the bound tree", { skip: process.platform !== "win32" ? "Windows index fallback only" : false }, () => fixture(f => {
+  f.ok(f.run());
+  for (const step of ["verify", "review", "compound"]) f.record(step);
+  const update = spawnSync("git", ["update-index", "--chmod=+x", "target.txt"], { cwd: f.root, encoding: "utf8" });
+  f.ok(update);
+  failure(f.gate(["check", "1", "--require-bound-tree"]), /code (?:tree|changed)|tree (?:changed|does not match)/i);
+}));
+
+test("executable-bit changes invalidate the bound tree", { skip: process.platform === "win32" ? "POSIX execute bits unavailable" : false }, () => fixture(f => {
+  f.ok(f.run());
+  for (const step of ["verify", "review", "compound"]) f.record(step);
+  const target = path.join(f.root, "target.txt");
+  fs.chmodSync(target, fs.statSync(target).mode ^ 0o111);
+  failure(f.gate(["check", "1", "--require-bound-tree"]), /code (?:tree|changed)|tree (?:changed|does not match)/i);
 }));
