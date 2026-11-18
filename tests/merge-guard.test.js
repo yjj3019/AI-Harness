@@ -5,7 +5,43 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const { evaluateChecks, parseChecks, requiredChecks, liveReadiness } = require("../scripts/merge-guard.js");
+const { evaluateChecks, parseChecks, requiredChecks, liveReadiness: realLiveReadiness } = require("../scripts/merge-guard.js");
+
+function ciRun(overrides = {}) {
+  const head = "b".repeat(40), base = "a".repeat(40);
+  return {
+    id: 70, run_number: 4, run_attempt: 1, check_suite_id: 7, head_sha: head,
+    path: ".github/workflows/ci.yml@refs/pull/33/merge", event: "pull_request",
+    status: "completed", conclusion: "success",
+    pull_requests: [{ number: 33, head: { sha: head }, base: { sha: base } }], ...overrides,
+  };
+}
+
+function liveReadiness(pr, run, { jobAttempt = 1 } = {}) {
+  let checks = [];
+  return realLiveReadiness(pr, (file, args, options) => {
+    if (args.at(-1).includes("/actions/workflows/ci.yml/runs?")) {
+      return { status: 0, stdout: JSON.stringify(ciRun()) };
+    }
+    if (args.some(arg => String(arg).includes("/attempts/1/jobs"))) {
+      return { status: 0, stdout: JSON.stringify(checks.map(item => ({
+        ...item, run_id: 70, run_attempt: jobAttempt,
+        check_run_url: new URL(`/repos/yjj3019/AI-Harness/check-runs/${item.id}`, "https://api.github.com").href,
+      }))) };
+    }
+    const result = run(file, args, options);
+    if (args[0] === "api" && result.stdout) {
+      checks = result.stdout.split("\n").filter(line => line.trim()).map((line, index) => {
+        const item = JSON.parse(line);
+        item.check_suite = { id: 7 };
+        item.id = index + 1;
+        return item;
+      });
+      result.stdout = checks.map(item => JSON.stringify(item)).join("\n");
+    }
+    return result;
+  });
+}
 
 const SCRIPT = path.resolve(__dirname, "../scripts/merge-guard.js");
 
@@ -20,10 +56,118 @@ const required = [
 ];
 const completeChecks = () => required.map(name => check(name, "pass"));
 
+test("live readiness rejects a same-named check from another workflow", () => {
+  const head = "b".repeat(40), base = "a".repeat(40);
+  const run = (_file, args) => {
+    if (args[0] === "pr") return { status: 0, stdout: JSON.stringify({ url: "https://github.com/yjj3019/AI-Harness/pull/33", baseRefName: "main", baseRefOid: base, headRefOid: head, headRepository: { nameWithOwner: "yjj3019/AI-Harness" }, state: "OPEN", isDraft: false }) };
+    if (args.at(-1).includes("/actions/workflows/ci.yml/runs?")) return { status: 0, stdout: JSON.stringify(ciRun()) };
+    return { status: 0, stdout: completeChecks().map(item => JSON.stringify({ ...item, head_sha: head, app: { slug: "github-actions" }, check_suite: { id: 9 }, status: "completed", conclusion: "success", pull_requests: [{ number: 33, head: { sha: head }, base: { sha: base } }] })).join("\n") };
+  };
+  assert.deepEqual(realLiveReadiness("33", run).checks, []);
+});
+
+test("live readiness uses only the latest CI run and ignores unrelated workflows", () => {
+  const head = "b".repeat(40), base = "a".repeat(40);
+  const prefix = new URL("/repos/yjj3019/AI-Harness/check-runs/", "https://api.github.com").href;
+  const candidates = [7, 9, 8].map(suite => ({
+    id: suite * 100, name: required[0], head_sha: head, app: { slug: "github-actions" },
+    check_suite: { id: suite }, status: "completed", conclusion: "success",
+    pull_requests: [{ number: 33, head: { sha: head }, base: { sha: base } }],
+  }));
+  const observed = [];
+  let newestConclusion = "success";
+  let listing = 0;
+  let queuedAt = Infinity;
+  const newest = ciRun({ id: 80, run_number: 5, check_suite_id: 8, run_attempt: 2 });
+  const queued = ciRun({ id: 90, run_number: 6, check_suite_id: 10, status: "queued", conclusion: null });
+  const run = (_file, args) => {
+    const send = value => ({ status: 0, stdout: JSON.stringify(value) });
+    if (args[0] === "pr") return send({ url: "https://github.com/yjj3019/AI-Harness/pull/33", baseRefName: "main", baseRefOid: base, headRefOid: head, headRepository: { nameWithOwner: "yjj3019/AI-Harness" }, state: "OPEN", isDraft: false });
+    const endpoint = args.at(-1);
+    if (endpoint.includes("/check-runs?")) return send(candidates);
+    if (endpoint.includes("/actions/workflows/ci.yml/runs?")) {
+      assert.ok(endpoint.includes(`head_sha=${head}&event=pull_request`));
+      const runs = [ciRun(), { ...newest, conclusion: newestConclusion }];
+      if (++listing >= queuedAt) runs.push(queued);
+      return send(runs);
+    }
+    observed.push(endpoint);
+    if (endpoint.includes("/attempts/")) return send([{
+      run_id: 80, run_attempt: 2, check_run_url: prefix + "800",
+      name: required[0], status: "completed", conclusion: "success",
+    }]);
+    throw new Error("unexpected API endpoint");
+  };
+  assert.deepEqual(realLiveReadiness("33", run).checks, [check(required[0], "pass", "success")]);
+  assert.ok(observed.every(endpoint => endpoint.includes("/runs/80")));
+  newestConclusion = "failure";
+  assert.match(realLiveReadiness("33", run).error, /did not complete successfully/);
+  assert.ok(observed.every(endpoint => endpoint.includes("/runs/80")));
+  newestConclusion = "success";
+  queuedAt = listing + 1;
+  assert.match(realLiveReadiness("33", run).error, /did not complete successfully/);
+  queuedAt = listing + 2;
+  assert.match(realLiveReadiness("33", run).error, /attempt changed/);
+});
+
 test("generic check evaluation accepts passing checks only when all required jobs are listed", () => {
   const verdict = evaluateChecks(completeChecks());
   assert.equal(verdict.ok, true);
   assert.equal(verdict.count, required.length);
+});
+
+test("fork checks use the selected run's bound PR context when association arrays are empty", () => {
+  const repository = "yjj3019/AI-Harness", headRepository = "fixture/AI-Harness";
+  const head = "b".repeat(40), base = "a".repeat(40), mergeSha = "c".repeat(40);
+  const names = [...required, "attestation discovery", "attestation summary", "attestation replay / evidence-baseline"];
+  const checks = names.map((name, index) => ({
+    id: index + 1, name, status: "completed", conclusion: "success", head_sha: head, check_suite: { id: 7 },
+    app: { slug: "github-actions" }, pull_requests: [],
+  }));
+  const jobs = checks.map(c => ({ ...c, id: c.id + 100, run_id: 70, run_attempt: 1,
+    check_run_url: new URL(`/repos/${repository}/check-runs/${c.id}`, "https://api.github.com").href }));
+  const discovery = jobs.find(job => job.name === "attestation discovery");
+  let workflow = ciRun({ pull_requests: [], head_repository: { full_name: headRepository } });
+  const step = name => ({ name, status: "completed", conclusion: "success" });
+  const correct = [step(`PR base 33 ${base}`), step(`PR merge ${mergeSha}`)];
+  const inspect = () => realLiveReadiness("33", (_command, args) => {
+    const send = value => ({ status: 0, stdout: JSON.stringify(value) });
+    const endpoint = args.at(-1);
+    if (args[0] === "pr") return send({ state: "OPEN", url: new URL(`/${repository}/pull/33`, "https://github.com").href,
+      isDraft: false, baseRefName: "main", baseRefOid: base, headRefOid: head, headRepository: { nameWithOwner: headRepository } });
+    if (endpoint.includes("/workflows/ci.yml/runs?")) return send(workflow);
+    if (endpoint.includes("/check-runs?")) return send(checks);
+    if (endpoint.includes("/attempts/1/jobs")) return send(jobs);
+    if (endpoint.endsWith("/git/ref/pull/33/merge")) return send({ ref: "refs/pull/33/merge", object: { type: "commit", sha: mergeSha } });
+    assert.fail("Unexpected endpoint " + endpoint);
+  });
+  discovery.steps = correct;
+  const result = inspect();
+  assert.equal(result.error, undefined);
+  assert.equal(evaluateChecks(result.checks, { requireAttestations: true, expectedPhases: result.expectedPhases }).ok, true);
+  for (const bad of [[], [...correct, correct[0]], [step(`PR base 33 ${head}`), correct[1]],
+    [correct[0], step(`PR merge ${base}`)], [step(`PR base 34 ${base}`), correct[1]],
+    [correct[0], { ...correct[1], conclusion: "skipped" }]]) {
+    discovery.steps = bad;
+    assert.match(inspect().error, /does not bind the run/);
+  }
+  workflow = { ...workflow, path: ".github/workflows/ci.yml@refs/pull/34/merge" };
+  assert.deepEqual(inspect().checks, []);
+  // A proven workflow association suffices for the exact suite's checks.
+  workflow = ciRun();
+  assert.equal(inspect().checks.length, names.length);
+});
+
+test("attestation jobs must exist and pass before live readiness", () => {
+  const auxiliary = [check("attestation discovery", "pass"), check("attestation summary", "pass"), check("attestation replay / a", "pass")];
+  const options = { requireAttestations: true };
+  assert.equal(evaluateChecks(completeChecks(), options).ok, false);
+  assert.equal(evaluateChecks([...completeChecks(), ...auxiliary], options).ok, true);
+  const pinned = { ...options, expectedPhases: ["evidence-baseline"] };
+  assert.deepEqual(evaluateChecks([...completeChecks(), ...auxiliary], pinned).missing, ["attestation replay / evidence-baseline"]);
+  assert.equal(evaluateChecks([...completeChecks(), ...auxiliary, check("attestation replay / evidence-baseline", "pass")], pinned).ok, true);
+  auxiliary[2].bucket = "fail";
+  assert.equal(evaluateChecks([...completeChecks(), ...auxiliary], options).ok, false);
 });
 
 test("missing and duplicate required job names fail closed", () => {
@@ -49,6 +193,7 @@ test("required check inventory must match the CI workflow and reviewed allowlist
   assert.deepEqual(actual.value, [...required].sort());
   assert.match(requiredChecks("jobs: {}\n").error, /jobs section unavailable/);
   assert.match(requiredChecks(workflow.replace("    name: self-qa / shellcheck", "    name: self-qa / modified")).error, /job-name set changed/);
+  assert.match(requiredChecks(workflow.replace("    needs: attestation-summary", "    needs: []")).error, /attestation dependencies/);
 });
 
 test("a single failing check refuses readiness and names it", () => {
@@ -116,6 +261,7 @@ test("live readiness binds unique complete checks to stable PR head/base/source"
   assert.ok(checkRead.some(arg => String(arg).includes(head)));
   assert.equal(evaluateChecks(result.checks, { expectedChecks: result.expectedChecks, expectedHeadSha: result.head, reportedHeadSha: result.head }).ok, true);
   assert.equal(result.headRepository, "yjj3019/AI-Harness");
+  assert.match(liveReadiness("33", run, { jobAttempt: 2 }).error, /differs from the PR check/);
 });
 
 test("live readiness rejects old-head check runs", () => {

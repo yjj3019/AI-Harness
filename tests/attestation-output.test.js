@@ -69,3 +69,12 @@ test("strict replay accepts over 16 MiB with real passing TAP counts", () => {
     assert.match(r.stdout, /attestation verified/);
   });
 });
+
+test("strict replay refuses output beyond the configured cap", () => {
+  fixture(({ gate }) => {
+    const result = gate(["verify-attestation", "1"], { PHASE_GATE_MAX_OUTPUT_BYTES: "64" });
+    assert.equal(result.status, 2, result.stderr);
+    assert.match(result.stderr, /output exceeded 64 bytes/);
+    assert.doesNotMatch(result.stdout, /attestation verified/);
+  });
+});

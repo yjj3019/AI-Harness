@@ -2,6 +2,36 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [3.0.0] - 2026-11-17 (작업 트리, 미병합)
+
+### 변경 (게이트 호환성)
+- Codex Phase 읽기 도구와 훅은 저장소 하위 폴더에서도 Git으로 작업 트리 루트를 찾는다. `doctor --host codex`가 프로젝트 등록과 읽기 도구 시작을 확인한다.
+- GitHub가 fork PR 연결 정보를 생략하면 merge ref와 실제 CI 시도의 PR 기록을 대조한다.
+- Merge guard는 체크가 생성되기 전에도 최신 워크플로 실행을 확인하고 판정 직전에 실행 목록을 다시 조회한다.
+- Phase 증거와 attestation JSON은 기록을 완료한 임시 파일로 교체한다. 대시보드도 필수 Phase의 엄격 검증 플래그를 확인한다.
+- ToolBroker 문서를 요청 수신과 공급자 HTTP 교환에 적용되는 절대 시간 제한에 맞췄다.
+- 필수 Phase 목록을 버전 관리하고 CI와 merge guard가 목록의 attestation 재실행을 확인한다. PR 후보는 base 정책의 필수 Phase를 유지해야 한다.
+- 대소문자만 다른 Phase ID를 거부한다. attestation 발급 뒤 갱신되는 생성본 `dashboard/status.json`은 트리 해시에서 제외한다.
+- 필수 Phase와 `--require-strict-evidence`를 지정한 검사는 테스트 요약과 verify 읽기 증명을 요구한다. attestation에 두 설정을 기록하고 재실행 전에 확인한다.
+- Merge guard는 같은 PR과 head에 해당하는 검토 대상 워크플로의 최신 실행 및 현재 시도에 속한 결과를 확인한다.
+- 트리 해시에 POSIX 실행 비트를 포함한다. 기존 증거·attestation과 호환되지 않으며 플랫폼별 새 증거가 필요하다.
+- 머지 검사는 GitHub check suite의 워크플로 경로와 head를 확인한다. 실제 PR #69에서 조회와 실패 거부를 확인했으며 fork 호환성은 미검증이다.
+- attestation별 CI 재실행을 독립 matrix 작업으로 나누고 모든 결과의 집계 통과를 기존 checks 작업의 선행 조건으로 둔다. 새 워크플로의 실제 GitHub 실행은 미검증이다.
+- 시간 초과 시 Windows 프로세스 트리 또는 POSIX 프로세스 그룹 종료를 요청한다. Windows의 일반 자식·손자 fixture는 통과했으나 그룹을 이탈한 프로세스와 비정상 게이트 종료는 보호하지 않는다. Codex 읽기 증명 및 현재 트리 attestation 재발급은 미해결이다.
+
+## [2.0.0] - 2026-11-16 (작업 트리, 미병합)
+
+### 변경 (게이트 호환성)
+- 기본 테스트·attestation 재실행 제한을 30분에서 150분으로 조정하고 유효한 `PHASE_GATE_TEST_TIMEOUT_MS` 범위를 1~86400000ms로 제한했다. Windows LF worktree 실제 전체 실행이 118.6분이어서 120분은 여유가 부족했다. inventory 검증의 바깥 제한은 실제 내부 제한보다 2분 길다. CI의 전체 실행 step은 150분, checks 잡은 기본 전체 실행 1회+재실행 1회를 고려해 360분, portability 잡은 설정 여유를 포함해 180분으로 조정했다. 여러 attestation은 전체 잡 예산을 초과할 수 있고 시간 초과 후 하위 프로세스 정리는 보장되지 않는다.
+- Claude `Read` 훅 기본 제한을 10초에서 60초로 조정했다. 실제 호스트에서 새 기본 설정으로 읽기 기록 1회 성공을 확인했지만 모든 자원 부족 상황을 보장하지는 않는다.
+- Windows FIFO 스킵 사유를 명시하고 Phase 체크리스트가 실시간 상태 표시가 아닌 요구조건임을 명확히 했다.
+- 트리 해시가 실제 줄바꿈 바이트를 포함하므로 LF CI용 attestation은 별도 LF worktree에서 준비하도록 절차를 명시했다. 사용자 파일을 제자리에서 정규화하지 않는다.
+- Phase 트리 스냅샷은 인덱스·저장소·설정 경로를 바꿀 수 있는 상속된 `GIT_*` 환경변수를 값 출력 없이 거부한다. 예외는 `GIT_PAGER`, `GIT_CONFIG_NOSYSTEM=1`, 플랫폼 null 장치를 가리키는 `GIT_CONFIG_GLOBAL`이다. 기존에 거부 대상 환경변수로 실행하던 호출은 신뢰할 수 있는 환경에서 해당 변수를 제거해야 한다.
+- 이 검사는 Git 설정 파일이나 동시 변경을 격리하지 않으며 과거 증거의 환경을 소급 검증하지 않는다. Codex 읽기 신호와 실제 Phase 완료는 별도 미해결이다.
+- HANDOFF의 현재 작업 트리 상태와 기존 시점 기록을 구분했다.
+- 설정 격리 예외 추가 전 로컬 Windows / Node v26.13.0: strict-bound-tree·tree-enumeration-failure·attestation-race·attestation-tree-replay 테스트 33개 통과, 실패·skip 0. 전체 회귀와 CI는 미실행.
+- 설정 격리 예외 수정 후 Windows 대상 검증: strict-bound-tree·verify-attestation-inventory 22개 통과, 실패·skip 0 (이후 빈 환경변수 테스트 추가).
+
 ## [1.9.0] - 2026-11-15
 
 ### 변경 (호환성 — 중복 JSON 키 거부)

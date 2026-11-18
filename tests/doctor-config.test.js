@@ -34,6 +34,27 @@ test("doctor accepts exact wiring in a project path with spaces", { skip: JQ_SKI
   assert.equal(result.status, 0, result.stderr);
 });
 
+test("Codex doctor checks the project hook and starts the reader from a subdirectory", t => {
+  const { root } = fixture(t);
+  assert.equal(spawnSync("git", ["init", "-q"], { cwd: root }).status, 0);
+  for (const file of [".codex/config.toml", ".codex/hooks.json", ".codex/hooks/phase-read.js", "scripts/phase-definition.js"]) {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.copyFileSync(path.join(source, file), path.join(root, file));
+  }
+  const run = () => spawnSync(process.execPath, [path.join(source, ".claude/workflows/phase-gate.js"), "doctor", "--host", "codex"],
+    { env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8" });
+  const result = run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /MCP reader starts from a repository subdirectory/);
+  const config = path.join(root, ".codex/config.toml");
+  fs.writeFileSync(config, fs.readFileSync(config, "utf8").replace('enabled_tools = ["read_phase_log"]', "enabled_tools = []"));
+  assert.match(run().stderr, /MCP reader configuration does not match/);
+  fs.unlinkSync(path.join(root, ".codex/hooks.json"));
+  const invalid = run();
+  assert.equal(invalid.status, 2);
+  assert.match(invalid.stderr, /reader hook is missing/);
+});
+
 for (const value of [null, false, 0, "", [], "settings"]) {
   test("doctor rejects settings root " + JSON.stringify(value), t => {
     const { run } = fixture(t);

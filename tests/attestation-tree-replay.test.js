@@ -77,3 +77,23 @@ for (const strict of [false, true]) {
     });
   });
 }
+
+test("publishing then regenerating the dashboard preserves the tested tree", () => {
+  withAttestation(true, ({ root, gate, passes }) => {
+    const attestation = path.join(root, "docs/attestations/phase-1.json");
+    const saved = path.join(root, ".phase-evidence/saved.json");
+    const status = path.join(root, "dashboard/status.json");
+    const regenerate = () => {
+      const script = path.resolve(__dirname, "../scripts/dashboard-status.js");
+      passes(spawnSync(process.execPath, [script], { cwd: root, encoding: "utf8" }));
+      return JSON.parse(fs.readFileSync(status, "utf8"))[0].attestation;
+    };
+    fs.renameSync(attestation, saved);
+    assert.equal(regenerate(), "missing");
+    passes(gate("check", "1", "--require-bound-tree"));
+    fs.renameSync(saved, attestation);
+    assert.equal(regenerate(), "unverified");
+    passes(gate("check", "1", "--require-bound-tree"));
+    passes(gate("verify-attestation", "1"));
+  });
+});

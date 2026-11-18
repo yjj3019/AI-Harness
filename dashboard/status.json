@@ -1,20 +1,7 @@
 [
   {
-    "id": "1",
-    "title": "UI Scaffolding",
-    "evidence": 0,
-    "total": 5
-  },
-  {
-    "id": "2",
-    "title": "Log Ingestion",
-    "evidence": 0,
-    "total": 5
-  },
-  {
     "id": "evidence-baseline",
     "title": "Evidence chain verification baseline",
-    "evidence": 0,
-    "total": 5
+    "attestation": "unverified"
   }
 ]

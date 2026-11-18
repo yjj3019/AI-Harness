@@ -144,7 +144,7 @@ test('bounds each candidate by bytes and rejects non-regular inputs', t => {
   assert.throws(() => generate(args));
   assert.equal(fs.existsSync(paths[2]), false);
 });
-test('FIFO input is rejected without waiting for a writer', { skip: process.platform === 'win32' }, t => {
+test('FIFO input is rejected without waiting for a writer', { skip: process.platform === 'win32' ? 'POSIX FIFO is unavailable on Windows' : false }, t => {
   const { spawnSync } = require('node:child_process');
   const { paths, args } = fixture(t);
   fs.unlinkSync(paths[0]);
