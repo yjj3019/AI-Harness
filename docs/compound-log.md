@@ -317,6 +317,32 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: (1) DSH 빌드의 브라우저만 비기본 경로에 설치되고 ffmpeg 헬퍼는 기본 경로로만 지연 설치됨; (2) 원격 모드에서는 video의 원본 경로를 의도적으로 감추고 `saveAs()`만 지원하는 API 설계; (3) vm 컨텍스트에 CJS require도 ESM dynamic import 콜백도 없다.
 - **Resolution/Pattern**: (1) MCP 서버와 **같은 npx 캐치의 playwright-core** `cli.js install ffmpeg` 실행 (playwright-core 버전 == 빌드 리비전 일치 보장) 후 `ffmpeg -version`으로 검증. (2) `path()` 없이 `saveAs(final)` 호출 + recordVideo dir에 쓰인 원본을 외부에서(size+sha256) 대조 후 원본 제거 — 동일성 검증 없이 rename 금지. (3) 파일시스템 작업은 vm 밖(호스트 셸)에서 수행, MCP 코드는 브라우저 오케스트레이션만. 영상 메타(길이/해상도/fps)는 설치된 ffmpeg 바이너리로 실측, API 추측 금지. (참고: html 편집 후 렌더/녹화 최종본을 반드시 재확정 — C1에서 sha 체인 불일치 1회 교훈 재확인.)
 
+### [2026-11-16] Tree binding - inherited Git routing and practical environment compatibility
+
+- **Issue/Risk**: Git environment overrides can redirect snapshot enumeration. Rejecting every `GIT_*` variable also rejected the ordinary `GIT_PAGER` inherited by this host, causing 29 regression test failures in the first targeted run.
+- **Root Cause**: Git subprocesses inherited routing and configuration overrides, while the initial blanket rejection did not distinguish the pager variable from tree-affecting overrides.
+- **Resolution/Pattern**: Fail closed on inherited `GIT_*` variables with narrowly scoped pager and config-disabling exceptions; test alternate index, repository and configuration environment overrides before test execution. Independent review also identified the real multi-phase fixture's config isolation variables, so that fixture uses the platform null device rather than an arbitrary global config path. This does not isolate Git configuration files, concurrent mutation or validate old evidence. Actual Codex read-signal integration remains unverified.
+- **Windows detail**: Git for Windows rejected Node's `os.devNull` spelling as a configuration file; the `NUL` spelling was verified locally and the real multi-phase fixture passed after the platform-specific correction. POSIX hosts remain unverified locally.
+
+### [2026-11-16] Claude read signal - test real host before Phase rerun
+
+- **Issue/Risk**: Codex shell reads cannot satisfy the existing verify read tracker, while a registered hook alone does not show that a host emits the required event.
+- **Root Cause**: The hook requires a `Read` event attributed to the `verify` subagent; host-specific tool events cannot be inferred from configuration.
+- **Resolution/Pattern**: In a disposable Git fixture, Claude Code 2.1.325 used a real verify subagent Read on a gate-generated test log. The hook produced a matching signal, and the fixture gate recorded verify PASS with `require_read_proof: true`. This verifies that fixture's Claude path, not Codex integration, host isolation, or review comprehension.
+
+### [2026-11-16] Phase run - passing tests with changed tree are not Phase PASS
+
+- **Issue/Risk**: The full Windows suite reported 415 passed, 6 skipped and 0 failed, but the Phase gate recorded FAIL because its initial and final tree snapshots differed. Five tracked practice binaries appeared modified after the run; their timestamps were old and the responsible actor was not established.
+- **Root Cause**: Unverified. The aggregate tree hash does not identify changed files or when they changed. Git status before and after provides a candidate set, not proof of causation.
+- **Resolution/Pattern**: Preserve changed binaries and failed evidence, do not equate test exit 0 with Phase success, and compare snapshots when rerunning. Do not restore or overwrite user files to force a matching hash.
+
+### [2026-11-16] Read hooks - fixture success can fail on the real host under resource pressure
+
+- **Issue/Risk**: A real Claude verify subagent read the successful test log, but strict verify could not record PASS because no read signal was generated.
+- **Root Cause**: Claude hook event output showed the actual `PostToolUse:Read` hooks were cancelled; one reported Git Bash `fork: Resource temporarily unavailable`. The specific resource exhaustion mechanism was not established.
+- **Resolution/Pattern**: Keep the valid bound test evidence and the Phase incomplete. Do not synthesize hook events. A failed strict record rotates the read token, so a later attempt needs a fresh real verify Read. Fixture success alone does not prove the production invocation will succeed under different load.
+- **Follow-up**: A fresh actual verify-subagent Read with a per-invocation 60-second hook setting produced successful hook events and a matching phase/token/log-hash signal. Strict verify was recorded with `require_read_proof: true`. This shows a successful configured invocation, not a controlled proof that the 10-second timeout caused earlier cancellations or a permanent repair of the default host configuration.
+
 ## Template for New Entries
 
 ### [YYYY-MM-DD] Phase X - [Category]
@@ -324,3 +350,55 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Issue/Risk**: Description of problem or mistake encountered.
 - **Root Cause**: Why it happened.
 - **Resolution/Pattern**: Effective fix or rule to avoid repeating it.
+
+
+## 2026-11-16: Portable evidence and replay limits
+
+- Compare staged Git blobs with raw checkout bytes before binding evidence; Windows checkout conversion can invalidate an otherwise equivalent snapshot. Preserve user-modified artifacts separately.
+- The isolated LF snapshot passed the strict full test and genuine default-hook read proof; the inventory replay exit and output were lost during session transition and must not be reported as a pass. Capture long-running replay output and exit status durably in future.
+- A single GitHub Actions job has a finite budget; sequential replay of multiple individually bounded attestations can still exceed it. The current CI arrangement fails closed but does not solve this scaling limitation. A default hook success does not prove reliability under process exhaustion.
+
+## 2026-11-17: Workflow provenance and tree modes
+
+- A GitHub Actions app identity and a required job name do not establish which workflow produced a check. Resolve its check suite to the reviewed workflow and head, and reject missing or ambiguous provenance. Actual PR and fork compatibility remains unverified.
+- Binding POSIX executable bits changes the tree hash format and makes earlier attestations stale. Windows now uses tracked Git index modes to allow matching ordinary POSIX checkouts, but cannot observe actual POSIX permission changes. Regenerate evidence with genuine required read proof. Cross-platform matching and mode-only POSIX behavior remain unverified on this Windows host.
+- Descendant cleanup, multi-attestation CI scaling, Codex read-proof integration, and current-tree attestation replay remain unresolved. Do not infer completion from passing fixture tests.
+- Live read-only PR #69 check (2026-11-17): the new provenance lookup returned all nine required jobs and correctly refused the failed Node 22 job. GitHub job metadata identifies `Verify phase attestations` as the failing step; log download timed out, so the underlying cause and fork compatibility remain unverified.
+- Attestation replay now uses separate CI matrix jobs and an aggregate dependency; local fixtures verify discovery, replay failure and skipped/failing aggregate rejection. The revised workflow has not run on GitHub. The gate requests Windows tree or POSIX group termination on timeout; a local Windows child/grandchild fixture passed, but escaping processes and gate death remain outside the mechanism.
+- The first Windows full regression exposed an unregistered example repository URL in a new test. The source-adoption checker reproduced it; the fixture now uses this repository's own identity. The first run was stopped after the failure, so it is not a completed regression result.
+- After correcting the fixture, Windows full regression exited 0: 430 tests, 423 passed, 7 skipped, 0 failed; hooks 306/306 (`.phase-evidence/full-test-final-20261117.log`). This does not prove Phase read-proof, POSIX behavior or the revised GitHub workflow. Linux Node was unavailable and TLS validation of the official download endpoint failed; no insecure workaround was used.
+
+## 2026-11-18: Source audit remediation
+
+- Keep attestation presence separate from verification. Generate reports from the current complete input list so deletions invalidate stale output. Use the same Phase ID parser for the gate, inventory, and dashboard.
+- Bind CI evidence to the jobs for one workflow run attempt. Serialize operations on the same Phase, cap child output before it reaches disk, and preserve stdout/stderr ordering so test counters retain their context.
+- The isolated LF candidate passed the strict Linux test step with 430 of 433 Node tests passing, zero failures, and 306 of 306 hooks passing. ToolBroker passed 27 of 27 on Windows and on Linux with loopback excluded from proxying. The Linux bound check stopped at the missing verify record. The previous attestation remains stale and must not be reused for the candidate.
+- When the bound runner lacks a native Read event, use a real verifier on an isolated checkout with the same bound tree, raw test log, test record and active read token. Transfer the unchanged hook output and run strict verify on the original evidence. The bound check then identifies the first remaining Phase step.
+
+## 2026-11-18: Priority evidence enforcement and portability
+
+- A discovered-file inventory can omit a required Phase. Require the versioned inventory in CI and merge readiness, and compare PR candidates with the base policy.
+- Compare Phase IDs case-insensitively before using them as filenames. Exclude only the generated dashboard status that depends on later evidence. Retain the dashboard code and Phase definitions in the tested tree.
+- Enforce strict test summaries and Read-proof flags through the gate. Preserve the legacy attest validation path and challenge the final tree before publication. The first Linux run caught four legacy diagnostic regressions and an unregistered test fixture reference. The full rerun passed after both causes were corrected.
+- A Windows Git archive used with the host's CRLF settings produced 213 blob mismatches after re-indexing in Linux. Transferring Git objects and checking out on the target host yielded 379 of 379 raw file and executable-mode matches.
+- The current Phase passed all five strict checks with a genuine Claude Read, and the required attestation replay passed in a separate clean checkout. Linux run and replay each recorded 436 of 439 tests passing, zero failures, and 306 of 306 hooks passing. All three Linux-skipped cases passed on Windows in addition to the 59 focused cases. The candidate still needs an actual GitHub workflow run to validate hosted and fork behavior.
+
+## 2026-11-18: Workflow freshness and JSON publication
+
+- Query the target workflow's run list before trusting job checks. A queued run may be visible before its jobs exist. Recheck the same workflow list before issuing readiness.
+- Write, flush and close sibling temporary files before replacing stored JSON. Inject failures during writing and replacement to verify that the previous evidence and attestation bytes survive. Keep Phase chain advancement separate from per-file replacement.
+- Share strict attestation flag requirements with the dashboard. Verify deadline descriptions against both ToolBroker transport paths.
+- All five strict Phase checks passed with a genuine Claude Read. A separate clean checkout replayed the required attestation, with 438 of 441 tests and all 306 hooks passing. All three Linux skips passed on Windows. Hosted GitHub behavior remains unverified.
+
+## 2026-11-18: Effective hosted rules and Codex read permissions
+
+- The classic branch protection endpoint returned 404 while an active ruleset enforced nine GitHub Actions checks and PRs on `main`. Check effective branch rules and the PR merge state before judging server-side enforcement.
+- The hosted Node 22 job for PR #69 passed its test step and reported an attestation tree mismatch. The current merge guard rejected the failed run. Positive hosted evidence for the refreshed candidate requires a run on its own PR head.
+- Codex native subagent lifecycle events established the `verify` role. The initial shell and MCP attempts returned no read result because of their respective policy denials. A role lifecycle event alone does not establish a successful read.
+- A local read-only MCP tool with truthful readOnlyHint metadata produced an actual Codex PostToolUse event carrying the verify role. Bind the recorder to that tool, its agent and tool IDs, current epoch hash and original test bytes. A separate budget keeps the final summary visible for long logs. The full Phase and clean replay passed.
+
+## 2026-11-18: Nested Codex startup and fork run metadata
+
+- Check native tool startup from the affected working directory. Resolve the Git worktree for both the MCP reader and hook, then require the event cwd to remain inside it. Add a doctor probe and real nested verify run.
+- When GitHub omits PR associations, bind checks to their selected suite and attempt. Read the PR base and merge SHA from successful GitHub step metadata and check the current merge ref. This uses the jobs API and keeps the unavailable-log path out of merge readiness.
+- All strict Phase steps and independent replay passed. The actual current same-repository GitHub PR still points to the prior failing run. Hosted validation of the new candidate and a real fork remains pending.

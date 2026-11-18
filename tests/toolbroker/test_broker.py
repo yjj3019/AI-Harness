@@ -16,10 +16,10 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from toolbroker import Broker, BrokerError, digest
-from toolbroker.broker import canon
+from toolbroker.broker import ProviderReader, canon
 from toolbroker.server import serve
 
 SECRET = bytes.fromhex("2d" * 32)  # deterministic test-only secret
@@ -92,6 +92,21 @@ class Provider(BaseHTTPRequestHandler):
 
 
 class BrokerTests(unittest.TestCase):
+    def test_provider_reader_shares_one_deadline_across_reads(self):
+        sock = Mock()
+        raw = sock.makefile.return_value
+        raw.readinto.return_value = 1
+        with ProviderReader(sock, 5.0) as reader, patch(
+            "toolbroker.broker.time.monotonic", side_effect=[1.0, 4.0, 5.0]
+        ):
+            self.assertEqual(reader.readinto(bytearray(1)), 1)
+            sock.settimeout.assert_called_with(4.0)
+            self.assertEqual(reader.readinto(bytearray(1)), 1)
+            sock.settimeout.assert_called_with(1.0)
+            with self.assertRaises(TimeoutError):
+                reader.readinto(bytearray(1))
+        self.assertEqual(raw.readinto.call_count, 2)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.db = Path(self.tmp.name) / "broker.sqlite"

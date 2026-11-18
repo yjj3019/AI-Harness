@@ -33,7 +33,7 @@
  *
  * PHASE_GATE_ROOT overrides the project root (used by tests).
  * PHASE_GATE_TEST_TIMEOUT_MS bounds each test command and attestation replay
- *   (default 30 min); a killed command is recorded as FAIL, never a hang.
+ *   (default 150 min, maximum 24 h); a killed command is recorded as FAIL.
  *   PHASE_GATE_DOCTOR_TIMEOUT_MS bounds each doctor tool probe (default 60 s).
  */
 
@@ -41,9 +41,10 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
-const { spawnSync } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const { inspectTestSummary } = require("./test-summary.js");
 const { verifyPhaseContext } = require("../../scripts/context-contract.js");
+const { parsePhases, REQUIRED_PHASES, parseRequiredPhases, hasStrictAttestationFlags } = require("../../scripts/phase-definition.js");
 
 const ROOT = path.resolve(process.env.PHASE_GATE_ROOT || path.join(__dirname, "..", ".."));
 const PHASES_FILE = path.join(ROOT, "docs", "PHASES.md");
@@ -51,12 +52,106 @@ const EVIDENCE_DIR = path.join(ROOT, ".phase-evidence");
 const STEPS = ["coding", "test", "verify", "review", "compound"];
 const RECORD_STEPS = ["coding", "verify", "review", "compound"];
 const SCHEMA = 1;
-const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/; // no leading dot, max 128
 const ATTEST_DIR = path.join(ROOT, "docs", "attestations");
 // Bound every child test command so a hung test cannot block the gate (or CI) forever.
 // Overridable for very heavy suites; a killed child is a FAIL, never a hang.
-const TEST_TIMEOUT_MS = Number(process.env.PHASE_GATE_TEST_TIMEOUT_MS) || 30 * 60 * 1000;
+const TIMEOUT_RAW = process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+const TEST_TIMEOUT_MS = TIMEOUT_RAW === undefined ? 150 * 60 * 1000 : Number(TIMEOUT_RAW);
+if (!Number.isSafeInteger(TEST_TIMEOUT_MS) || TEST_TIMEOUT_MS < 1 || TEST_TIMEOUT_MS > 24 * 60 * 60 * 1000) {
+  console.error("ERROR: PHASE_GATE_TEST_TIMEOUT_MS must be an integer from 1 to 86400000");
+  process.exit(1);
+}
 const DOCTOR_TIMEOUT_MS = Number(process.env.PHASE_GATE_DOCTOR_TIMEOUT_MS) || 60 * 1000;
+const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
+const outputLimit = Number(process.env.PHASE_GATE_MAX_OUTPUT_BYTES ?? MAX_OUTPUT_BYTES);
+if (!Number.isSafeInteger(outputLimit) || outputLimit < 1 || outputLimit > MAX_OUTPUT_BYTES) {
+  die(1, "ERROR: PHASE_GATE_MAX_OUTPUT_BYTES must be a positive integer up to 67108864");
+}
+
+// Share one pipe for both streams so a summary cannot be reconstructed from
+// counters that were separated by diagnostics on stderr.
+const CAPTURE_CHILD = `
+  const { spawn } = require('node:child_process');
+  const [command, ...args] = process.argv.slice(1);
+  const reportError = error => { process.send({ message: error.message, code: error.code }); process.exitCode = 1; };
+  try {
+    const child = spawn(command, args, { stdio: ['inherit', 1, 1], windowsHide: true });
+    child.once('error', reportError);
+    child.once('close', (status, signal) => {
+      if (signal) process.send({ signal });
+      process.exitCode = status ?? 1;
+    });
+  } catch (error) { reportError(error); }
+`;
+
+// Terminate the ordinary child process tree on timeout. This is operational
+// cleanup, not isolation: descendants that escape a POSIX group or Windows
+// process tree are outside this mechanism.
+function runBounded(command, args, stdio) {
+  return new Promise((resolve) => {
+    let child;
+    const capture = Array.isArray(stdio);
+    try {
+      child = spawn(capture ? process.execPath : command, capture ? ["-e", CAPTURE_CHILD, "--", command, ...args] : args, {
+        cwd: ROOT, stdio: capture ? [stdio[0], "pipe", "ignore", "ipc"] : stdio,
+        detached: process.platform !== "win32", windowsHide: true,
+      });
+    } catch (error) { resolve({ error, status: null }); return; }
+    let done = false, stopError, launchError, childSignal, grace, bytes = 0;
+    const finish = (result) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      if (grace) clearTimeout(grace);
+      resolve(result);
+    };
+    const failure = error => ({ error, status: null });
+    const stop = error => {
+      if (stopError || done) return;
+      stopError = error;
+      if (child.pid) {
+        if (process.platform === "win32") {
+          const systemRoot = process.env.SystemRoot || "C:\\Windows";
+          const killed = spawnSync(path.join(systemRoot, "System32", "taskkill.exe"), ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 10000 });
+          if (killed.error || killed.status !== 0) { try { child.kill("SIGKILL"); } catch {} }
+        } else {
+          try { process.kill(-child.pid, "SIGKILL"); } catch { try { child.kill("SIGKILL"); } catch {} }
+        }
+      }
+      child.stdout?.destroy();
+      if (child.connected) child.disconnect();
+      grace = setTimeout(() => { child.unref(); finish(failure(error)); }, 10000);
+    };
+    const timer = setTimeout(() => stop(Object.assign(new Error("test command timed out; escaped descendants are not covered"), { code: "ETIMEDOUT" })), TEST_TIMEOUT_MS);
+    if (capture) {
+      child.on("message", message => {
+        if (message.signal) childSignal = message.signal;
+        else launchError = Object.assign(new Error(message.message), { code: message.code });
+      });
+      child.stdout.on("error", stop);
+      child.stdout.on("data", chunk => {
+        if (stopError) return;
+        try {
+          const keep = Math.min(chunk.length, outputLimit - bytes);
+          let offset = 0;
+          while (offset < keep) {
+            const position = stdio[1] === 1 ? null : bytes + offset;
+            const written = fs.writeSync(stdio[1], chunk, offset, keep - offset, position);
+            if (!written) throw new Error("short write to test log");
+            offset += written;
+          }
+          bytes += keep;
+          if (keep < chunk.length) stop(Object.assign(new Error(`test output exceeded ${outputLimit} bytes`), { code: "EOUTPUTLIMIT" }));
+        } catch (error) { stop(error); }
+      });
+    }
+    child.once("error", error => finish(failure(stopError || error)));
+    child.once("close", (status, signal) => {
+      const error = stopError || launchError;
+      finish(error ? failure(error) : { status: childSignal ? null : status, signal: childSignal || signal });
+    });
+  });
+}
 // Files that legitimately change after the test step (or are environment state) are not part of the tree hash.
 // Intentional exclusions. Adding entries narrows the integrity check; review before extending.
 const TREE_EXCLUDE = [
@@ -64,6 +159,7 @@ const TREE_EXCLUDE = [
   /^\.claude\/\.verification\//,
   /^docs\/(compound-log|HANDOFF)\.md$/,
   /^docs\/attestations\//,
+  /^dashboard\/status\.json$/,
 ];
 
 // Canonical path for containment comparisons. The native variant expands Windows 8.3 short names (for example
@@ -73,8 +169,26 @@ function canonicalPath(p) {
 }
 
 function die(code, msg) {
-  console.error(msg);
-  process.exit(code);
+  throw Object.assign(new Error(msg), { gateExitCode: code });
+}
+
+async function withPhaseLock(phase, action) {
+  requirePhase(phase);
+  fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
+  const lock = path.join(EVIDENCE_DIR, `phase-${phase.toLowerCase()}.lock`);
+  try { fs.mkdirSync(lock); }
+  catch (error) {
+    if (error.code === "EEXIST") die(2, `ERROR: Phase ${phase} is already in use (lock: ${toRel(lock)})`);
+    throw error;
+  }
+  try {
+    fs.writeFileSync(path.join(lock, "owner.json"), JSON.stringify({ pid: process.pid, host: os.hostname() }), { flag: "wx" });
+    return await action();
+  } finally {
+    const owner = path.join(lock, "owner.json");
+    if (fs.existsSync(owner)) fs.unlinkSync(owner);
+    fs.rmdirSync(lock);
+  }
 }
 
 function usage() {
@@ -85,10 +199,10 @@ function usage() {
       "  node phase-gate.js list",
       "  node phase-gate.js run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>",
       "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>] [--meta key=value ...] [--require-read-proof]",
-      "  node phase-gate.js check <phase> [--require-bound-tree]",
-      "  node phase-gate.js doctor",
-      "  node phase-gate.js attest <phase>",
-      "  node phase-gate.js verify-attestation <phase> [-- <expected command...>]",
+      "  node phase-gate.js check <phase> [--require-bound-tree] [--require-strict-evidence]",
+      "  node phase-gate.js doctor [--host claude|codex]",
+      "  node phase-gate.js attest <phase> [--require-strict-evidence]",
+      "  node phase-gate.js verify-attestation <phase> [--require-strict-evidence] [-- <expected command...>]",
       `Steps: ${STEPS.join(", ")}`,
     ].join("\n")
   );
@@ -102,6 +216,18 @@ function sha256(buf) {
 // A failed discovery probe remains ambiguous: Git may be unavailable, outside a
 // worktree, or the probe itself may have failed. Preserve legacy null in those cases.
 function treeHash() {
+  // Git's environment can redirect the index, repository, worktree, config, or
+  // object store. Refuse it rather than silently binding a different tree.
+  const routing = Object.keys(process.env).filter((key) => {
+    const name = key.toUpperCase();
+    if (!name.startsWith("GIT_")) return false;
+    if (name === "GIT_PAGER") return false;
+    if (name === "GIT_CONFIG_NOSYSTEM" && process.env[key] === "1") return false;
+    // Git for Windows does not accept Node's \\.\nul spelling as a config path.
+    if (name === "GIT_CONFIG_GLOBAL" && process.env[key] === (process.platform === "win32" ? "NUL" : "/dev/null")) return false;
+    return true;
+  }).sort();
+  if (routing.length) return { error: `Git environment overrides are not supported: ${routing.join(", ")}` };
   const r = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
     cwd: ROOT,
     encoding: "buffer",
@@ -116,6 +242,19 @@ function treeHash() {
   const files = [...new Set(r.stdout.toString("utf8").split("\0").filter(Boolean))]
     .filter((f) => !TREE_EXCLUDE.some((re) => re.test(f)))
     .sort();
+  // Windows does not expose Git's executable mode via lstat. Use the index
+  // for tracked paths there so a normal checkout hashes like its POSIX peer.
+  const windowsModes = new Map();
+  if (process.platform === "win32") {
+    const index = spawnSync("git", ["--no-optional-locks", "ls-files", "--stage", "-z"], { cwd: ROOT, encoding: "buffer" });
+    if (index.error || index.status !== 0) return { error: `git index mode enumeration failed: ${index.error ? (index.error.code || index.error.message) : `exit ${index.status}`}` };
+    for (const entry of index.stdout.toString("utf8").split("\0").filter(Boolean)) {
+      const tab = entry.indexOf("\t");
+      const header = tab < 0 ? null : /^(\d{6}) [a-f0-9]+ ([0-3])$/.exec(entry.slice(0, tab));
+      if (!header || header[2] !== "0") return { error: "git index contains invalid or unmerged entries" };
+      windowsModes.set(entry.slice(tab + 1), header[1]);
+    }
+  }
   const h = crypto.createHash("sha256");
   for (const f of files) {
     const abs = path.join(ROOT, f);
@@ -134,22 +273,19 @@ function treeHash() {
     } catch (err) {
       return { error: `read ${f}: ${err.code || err.message}` };
     }
-    h.update(`${f}\0${sha256(content)}\n`);
+    // An untracked Windows file has no executable mode; tracked mode comes
+    // from Git. POSIX binds the actual worktree permission bits.
+    const executable = !st.isFile() ? "-" : process.platform === "win32"
+      ? (windowsModes.get(f) === "100755" ? "111" : "000")
+      : (st.mode & 0o111).toString(8).padStart(3, "0");
+    h.update(`${f}\0${executable}\0${sha256(content)}\n`);
   }
   return h.digest("hex");
 }
 
 function loadValidPhases() {
   if (!fs.existsSync(PHASES_FILE)) die(1, `ERROR: ${PHASES_FILE} not found`);
-  // Code fences hold templates and examples, not real phases.
-  const content = fs.readFileSync(PHASES_FILE, "utf8").replace(/```[\s\S]*?```/g, "");
-  const phases = [];
-  const re = /^###\s+Phase\s+([^\s:]+)/gim;
-  let m;
-  while ((m = re.exec(content)) !== null) {
-    if (ID_RE.test(m[1]) && !phases.includes(m[1])) phases.push(m[1]);
-  }
-  return phases;
+  return [...parsePhases(fs.readFileSync(PHASES_FILE, "utf8")).keys()];
 }
 
 function requirePhase(phase) {
@@ -158,6 +294,17 @@ function requirePhase(phase) {
   if (!valid.includes(phase)) {
     die(1, `ERROR: invalid phase '${phase}'. Valid phases: ${valid.join(", ") || "(none)"}`);
   }
+}
+
+function isRequiredPhase(phase) {
+  let manifest;
+  try {
+    manifest = fs.readFileSync(path.join(ROOT, REQUIRED_PHASES));
+  } catch (error) {
+    if (error.code === "ENOENT") return false; // legacy projects
+    throw error;
+  }
+  return parseRequiredPhases(manifest).includes(phase);
 }
 
 function evidenceFile(phase, step) {
@@ -218,6 +365,33 @@ function prevLink(phase, step) {
   return { step: prevStep, sha256: r.sha };
 }
 
+function writeJsonAtomically(file, value) {
+  const temp = path.join(path.dirname(file), `.phase-json-${crypto.randomBytes(16).toString("hex")}.tmp`);
+  let mode;
+  try {
+    const existing = fs.lstatSync(file);
+    if (existing.isFile()) mode = existing.mode & 0o777;
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  let ownsTemp = false;
+  try {
+    const fd = fs.openSync(temp, "wx", mode ?? 0o666);
+    ownsTemp = true;
+    try {
+      fs.writeFileSync(fd, JSON.stringify(value, null, 2) + "\n");
+      if (mode !== undefined && process.platform !== "win32") fs.fchmodSync(fd, mode);
+      fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+    fs.renameSync(temp, file);
+    ownsTemp = false;
+  } finally {
+    if (ownsTemp) fs.unlinkSync(temp);
+  }
+}
+
 function writeEvidence(phase, step, fields) {
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   const ev = {
@@ -236,7 +410,7 @@ function writeEvidence(phase, step, fields) {
     ...(fields.meta && Object.keys(fields.meta).length ? { meta: fields.meta } : {}),
     prev: fields.prev,
   };
-  fs.writeFileSync(evidenceFile(phase, step), JSON.stringify(ev, null, 2) + "\n");
+  writeJsonAtomically(evidenceFile(phase, step), ev);
   // A changed step invalidates everything after it.
   for (const later of STEPS.slice(STEPS.indexOf(step) + 1)) {
     const f = evidenceFile(phase, later);
@@ -285,6 +459,21 @@ function readTokenFile(phase) {
   return path.join(EVIDENCE_DIR, `phase-${phase}-read-token`);
 }
 
+const CODEX_BOOTSTRAP = "require(require('node:path').join(require('node:child_process').execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim(),'.codex/hooks/phase-read.js')).main(process.argv[1])";
+const CODEX_READER_ARGS = ["-e", CODEX_BOOTSTRAP];
+const CODEX_RECORD_COMMAND = `node -e "${CODEX_BOOTSTRAP}" -- record`;
+
+function codexReadTrackingArmed() {
+  try {
+    const st = JSON.parse(fs.readFileSync(path.join(ROOT, ".codex", "hooks.json"), "utf8"));
+    return fs.lstatSync(path.join(ROOT, ".codex", "hooks", "phase-read.js")).isFile() &&
+      st.hooks.PostToolUse.some(group => group.matcher === "mcp__harness_evidence__read_phase_log" &&
+        group.hooks.some(h => h.type === "command" && h.command === CODEX_RECORD_COMMAND));
+  } catch {
+    return false;
+  }
+}
+
 // Epochs distinguish identical logs across test runs and verify attempts. This is
 // an operational guardrail, not protection from evidence tampering or concurrent runs.
 function rotateReadToken(phase) {
@@ -293,8 +482,9 @@ function rotateReadToken(phase) {
 
 function requireEvidenceRead(phase, required = false) {
   const armed = readTrackingArmed(required);
-  if (!armed && required) die(2, "ERROR: --require-read-proof requires read-tracker.sh registration in valid .claude/settings.json");
-  if (!armed) return;
+  const codexArmed = codexReadTrackingArmed();
+  if (!armed && !codexArmed && required) die(2, "ERROR: --require-read-proof requires read-tracker.sh registration in valid .claude/settings.json or the Codex Phase reader hook");
+  if (!armed && !codexArmed) return;
   const t = loadEvidence(phase, "test");
   let token;
   try { token = fs.readFileSync(readTokenFile(phase), "utf8").trim(); } catch { token = ""; }
@@ -310,7 +500,10 @@ function requireEvidenceRead(phase, required = false) {
   } catch {
     // no log, or a damaged line: treated as no proof
   }
-  const missing = wanted.filter((w) => !reads.some((r) => r && r.phase === phase && r.token === token && r.agent_type === "verify" && r.path === w.path && r.sha256 === w.sha256));
+  const missing = wanted.filter((w) => !reads.some((r) => r && r.phase === phase && r.token === token &&
+    r.agent_type === "verify" && r.path === w.path && r.sha256 === w.sha256 &&
+    (r.host === "codex" ? codexArmed && typeof r.agent_id === "string" && r.agent_id &&
+      typeof r.tool_use_id === "string" && r.tool_use_id : armed && !r.host)));
   if (wanted.length === 0 || missing.length > 0) {
     rotateReadToken(phase);
     die(
@@ -350,6 +543,7 @@ function cmdRecord(args) {
   const status = (opts.status || "").toUpperCase();
   if (status !== "PASS" && status !== "FAIL") die(1, "ERROR: --status must be PASS or FAIL");
   if (requireReadProof && (step !== "verify" || status !== "PASS")) die(1, "ERROR: --require-read-proof requires verify PASS");
+  if (step === "verify" && status === "PASS" && isRequiredPhase(phase)) requireReadProof = true;
   if (status === "PASS" && !opts.report) die(1, "ERROR: PASS requires --report <file under .phase-evidence/>");
   const artifacts = opts.report ? [artifactFor(opts.report, false)] : [];
   const prev = prevLink(phase, step);
@@ -360,7 +554,7 @@ function cmdRecord(args) {
   console.log(`Recorded phase ${phase} ${step}: ${status}`);
 }
 
-function cmdRun(args) {
+async function cmdRun(args) {
   const sep = args.indexOf("--");
   if (sep < 0 || sep === args.length - 1) usage();
   const head = args.slice(0, sep);
@@ -369,10 +563,11 @@ function cmdRun(args) {
   if (head.length < 2 || head[1] !== "test" ||
       flags.some((flag) => !["--require-test-summary", "--require-bound-tree"].includes(flag)) ||
       new Set(flags).size !== flags.length) usage();
-  let strict = flags.includes("--require-test-summary");
-  const requireBoundTree = flags.includes("--require-bound-tree");
   const phase = head[0];
   requirePhase(phase);
+  const required = isRequiredPhase(phase);
+  let strict = required || flags.includes("--require-test-summary");
+  const requireBoundTree = required || flags.includes("--require-bound-tree");
   // Even a rejected rerun invalidates prior test and verify evidence.
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   rotateReadToken(phase);
@@ -408,8 +603,7 @@ function cmdRun(args) {
   let fd;
   let ownsTempLog = false;
   let result, exitCode, summary, treeAfter, status, operationError, cleanupError;
-  // The child can seek the shared descriptor. Append at the current file size,
-  // not its shared offset, and handle partial writes.
+  // Append gate metadata after the captured output and handle partial writes.
   const appendLog = (text) => {
     const data = Buffer.from(text);
     let pos = fs.fstatSync(fd).size;
@@ -424,17 +618,14 @@ function cmdRun(args) {
   try {
     fd = fs.openSync(tempLog, "wx+", 0o600);
     ownsTempLog = true;
-    result = spawnSync(cmd[0], cmd.slice(1), {
-      cwd: ROOT,
-      stdio: ["ignore", fd, fd],
-      timeout: TEST_TIMEOUT_MS,
-    });
+    result = await runBounded(cmd[0], cmd.slice(1), ["ignore", fd, fd]);
     if (result.error) {
-      if (result.error.code === "ETIMEDOUT" || result.error.killed) appendLog(`\n[phase-gate] status: TIMEOUT after ${TEST_TIMEOUT_MS}ms; the test command was terminated\n`);
+      if (result.error.code === "ETIMEDOUT" || result.error.killed) appendLog(`\n[phase-gate] status: TIMEOUT after ${TEST_TIMEOUT_MS}ms; process-tree termination requested, escaped descendants may remain\n`);
+      else if (result.error.code === "EOUTPUTLIMIT") appendLog(`\n[phase-gate] status: OUTPUT LIMIT: ${result.error.message}\n`);
       else appendLog(`\n[phase-gate] failed to start: ${result.error.message}\n`);
     }
     exitCode = typeof result.status === "number" ? result.status : -1;
-    // Read using explicit offsets: the child shares the descriptor's file position.
+    // Read the capped capture and gate diagnostic using explicit offsets.
     const content = Buffer.alloc(fs.fstatSync(fd).size);
     let offset = 0;
     while (offset < content.length) {
@@ -442,7 +633,9 @@ function cmdRun(args) {
       if (!n) throw new Error("short read of test log");
       offset += n;
     }
-    summary = inspectTestSummary(content.toString("utf8"), strict);
+    summary = result.error?.code === "EOUTPUTLIMIT"
+      ? { ok: false, reason: result.error.message }
+      : inspectTestSummary(content.toString("utf8"), strict);
     treeAfter = treeHash();
     if (treeAfter && typeof treeAfter === "object") {
       const err = new Error(`cannot snapshot code tree after test: ${treeAfter.error}`);
@@ -506,17 +699,18 @@ function cmdRun(args) {
   const tail = fs.readFileSync(logAbs, "utf8").split("\n").slice(-21).join("\n");
   console.log(tail);
   console.log(`Recorded phase ${phase} test: ${status} (exit_code=${exitCode}, log=${toRel(logAbs)}, summary=${summary.reason || summary.kind})`);
-  process.exit(status === "PASS" ? 0 : 2);
+  process.exitCode = status === "PASS" ? 0 : 2;
 }
 
 // Walks the five steps. Returns { passed: [...], fail: { step, why } | null, testEv, warnings: [...] }.
-function validateChain(phase, requireBoundTree = false) {
+function validateChain(phase, { requireBoundTree = false, strict = false } = {}) {
   const passed = [];
   const warnings = [];
   let prevSha = null;
   let prevStep = null;
   let prevTime = null;
   let testEv = null;
+  let readProof = false;
   const context = verifyPhaseContext(ROOT, phase);
   if (!context.ok) return { passed, fail: { step: "context", why: context.reason }, testEv, warnings };
 
@@ -539,6 +733,7 @@ function validateChain(phase, requireBoundTree = false) {
       if (ev.exit_code !== 0 || !ev.command || !Array.isArray(ev.argv) || ev.argv.length === 0) {
         return fail("test evidence needs a command, argv and exit_code 0");
       }
+      if (strict && ev.require_test_summary !== true) return fail("strict evidence requires require_test_summary: true");
       if (ev.require_test_summary) {
         const log = ev.artifacts.find((a) => a && typeof a.path === "string" && a.path.endsWith("-test.log"));
         if (!log) return fail("strict test summary has no test log");
@@ -569,6 +764,10 @@ function validateChain(phase, requireBoundTree = false) {
       }
       testEv = ev;
     }
+    if (step === "verify") {
+      readProof = ev.require_read_proof === true;
+      if (strict && !readProof) return fail("strict evidence requires require_read_proof: true");
+    }
 
     if (prevStep === null) {
       if (ev.prev !== null) return fail("first step must not link to a previous step");
@@ -585,34 +784,31 @@ function validateChain(phase, requireBoundTree = false) {
     prevStep = step;
     prevTime = t;
   }
-  return { passed, fail: null, testEv, warnings };
+  return { passed, fail: null, testEv, readProof, warnings };
 }
 
 function cmdCheck(args) {
-  if (args.length < 1 || args.length > 2 || (args.length === 2 && args[1] !== "--require-bound-tree")) usage();
-  const phase = args[0];
+  const [phase, ...flags] = args;
+  if (flags.some(flag => !["--require-bound-tree", "--require-strict-evidence"].includes(flag)) ||
+      new Set(flags).size !== flags.length) usage();
   requirePhase(phase);
-  const res = validateChain(phase, args[1] === "--require-bound-tree");
+  const strict = flags.includes("--require-strict-evidence") || isRequiredPhase(phase);
+  const res = validateChain(phase, { strict, requireBoundTree: strict || flags.includes("--require-bound-tree") });
   for (const step of res.passed) console.log(`[PASS]    ${step}`);
   for (const w of res.warnings) console.log(`[WARN]    ${w}`);
   if (res.fail) {
     console.error(`[FAIL]    ${res.fail.step}: ${res.fail.why}`);
     console.error(`\nPhase ${phase} is NOT complete.`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   console.log(`\nPhase ${phase} COMPLETED under the evidence checks; historical tree-read completeness is not established.`);
   console.log("Next: update docs/HANDOFF.md and start a fresh session for the next Phase.");
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 // Guards fail open when a tool they need is missing, so a missing tool must be visible before work starts.
-function cmdDoctor() {
-  const problems = [];
-  const ok = (m) => console.log(`[OK]      ${m}`);
-  const bad = (m) => {
-    problems.push(m);
-    console.error(`[PROBLEM] ${m}`);
-  };
+function checkClaudeDoctor(ok, bad) {
   // The hooks are bash scripts, so a tool must exist where bash finds it, not only on the Node PATH
   // (on Windows jq and git usually live on the Git Bash PATH). One probe answers all of them, run
   // through the shell Claude Code uses: HARNESS_BASH, then Git Bash on Windows, then bash.
@@ -688,6 +884,52 @@ function cmdDoctor() {
     }
   }
   if (/\s/.test(ROOT)) ok("project path contains a space (hook commands are quoted)");
+}
+
+function checkCodexDoctor(ok, bad) {
+  if (!codexReadTrackingArmed()) bad("Codex Phase reader hook is missing or does not match .codex/hooks.json");
+  else ok("Codex Phase reader hook registered");
+  let registered = false;
+  try {
+    const lines = fs.readFileSync(path.join(ROOT, ".codex", "config.toml"), "utf8")
+      .split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith("#"));
+    const name = "[mcp_servers.harness_evidence]";
+    const start = lines.indexOf(name);
+    if (start >= 0 && start === lines.lastIndexOf(name)) {
+      const rest = lines.slice(start + 1);
+      const end = rest.findIndex(line => line.startsWith("["));
+      const entries = rest.slice(0, end < 0 ? undefined : end).sort();
+      const expected = ['command = "node"', 'enabled_tools = ["read_phase_log"]',
+        `args = ["-e", ${JSON.stringify(CODEX_BOOTSTRAP)}]`].sort();
+      registered = JSON.stringify(entries) === JSON.stringify(expected);
+    }
+  } catch { /* missing or unreadable config */ }
+  if (!registered) return bad("Codex MCP reader configuration does not match the project harness_evidence registration");
+  const r = spawnSync(process.execPath, CODEX_READER_ARGS, {
+    cwd: path.join(ROOT, ".codex"), encoding: "utf8", timeout: DOCTOR_TIMEOUT_MS,
+    input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) + "\n",
+  });
+  try {
+    if (r.error || r.status !== 0 || !JSON.parse(r.stdout).result.tools.some(tool => tool.name === "read_phase_log" &&
+        tool.annotations?.readOnlyHint === true)) throw new Error("reader unavailable");
+    ok("Codex MCP reader starts from a repository subdirectory and advertises read_phase_log");
+  } catch {
+    bad("Codex MCP reader could not start or list the read-only tool; check Node and Git");
+  }
+}
+
+function cmdDoctor(args) {
+  const host = args[1];
+  if (args.length && (args.length !== 2 || args[0] !== "--host" || !["claude", "codex"].includes(host))) usage();
+  const problems = [];
+  const ok = (m) => console.log(`[OK]      ${m}`);
+  const bad = (m) => {
+    problems.push(m);
+    console.error(`[PROBLEM] ${m}`);
+  };
+  if (host !== "codex") checkClaudeDoctor(ok, bad);
+  if (host === "codex" || (!host && [".codex/config.toml", ".codex/hooks/phase-read.js"]
+      .some(file => fs.existsSync(path.join(ROOT, file))))) checkCodexDoctor(ok, bad);
   if (problems.length) {
     console.error(`\n${problems.length} problem(s). Fix them before relying on the evidence gate.`);
     process.exit(2);
@@ -700,9 +942,11 @@ function attestationFile(phase) {
 }
 
 function cmdAttest(args) {
-  const phase = args[0];
+  const [phase, ...flags] = args;
+  if (flags.length > 1 || (flags.length === 1 && flags[0] !== "--require-strict-evidence")) usage();
   requirePhase(phase);
-  const res = validateChain(phase);
+  const strict = flags.length === 1 || isRequiredPhase(phase);
+  const res = validateChain(phase, { strict, requireBoundTree: strict });
   if (res.fail) die(2, `ERROR: cannot attest. ${res.fail.step}: ${res.fail.why}`);
   const tree = treeHash();
   if (tree && typeof tree === "object") die(2, `ERROR: cannot snapshot code tree for attestation: ${tree.error}`);
@@ -717,9 +961,10 @@ function cmdAttest(args) {
     tree,
     argv: res.testEv.argv,
     ...(res.testEv.require_test_summary ? { require_test_summary: true } : {}),
+    ...(res.readProof ? { require_read_proof: true } : {}),
     attested_at: new Date().toISOString(),
   };
-  fs.writeFileSync(attestationFile(phase), JSON.stringify(att, null, 2) + "\n");
+  writeJsonAtomically(attestationFile(phase), att);
   console.log(`Wrote ${toRel(attestationFile(phase))}. Commit it; CI re-runs the test command and compares the tree.`);
 }
 
@@ -740,11 +985,12 @@ function loadPinnedCommand(bad) {
   return v;
 }
 
-function cmdVerifyAttestation(args) {
+async function cmdVerifyAttestation(args) {
   const sep = args.indexOf("--");
   const head = sep < 0 ? args : args.slice(0, sep);
   const expected = sep < 0 ? null : args.slice(sep + 1);
-  if (head.length !== 1 || (expected !== null && expected.length === 0)) usage();
+  if (head.length < 1 || head.length > 2 || (head.length === 2 && head[1] !== "--require-strict-evidence") ||
+      (expected !== null && expected.length === 0)) usage();
   const phase = head[0];
   requirePhase(phase);
   const file = attestationFile(phase);
@@ -757,6 +1003,10 @@ function cmdVerifyAttestation(args) {
     bad("invalid JSON");
   }
   if (!att || att.schema !== SCHEMA || String(att.phase) !== phase) bad("schema or phase mismatch");
+  const strict = head.length === 2 || isRequiredPhase(phase);
+  if (strict && !hasStrictAttestationFlags(att)) {
+    bad("strict evidence requires test summary and verify read proof flags");
+  }
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
   // The required command comes from the command line, else from the committed pin file.
@@ -787,11 +1037,10 @@ function cmdVerifyAttestation(args) {
       }
       dir = fs.mkdtempSync(path.join(tempRoot, "phase-gate-replay-"));
       fd = fs.openSync(path.join(dir, "output.log"), "wx", 0o600);
-      r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: ["ignore", fd, fd], timeout: TEST_TIMEOUT_MS });
+      r = await runBounded(att.argv[0], att.argv.slice(1), ["ignore", fd, fd]);
       fs.closeSync(fd);
       fd = undefined;
-      if (r.error) throw new Error(`test command failed to start: ${r.error.message}`);
-      // Like run, this uses unbounded disk space and reads the complete output into memory.
+      if (r.error) throw new Error(["ETIMEDOUT", "EOUTPUTLIMIT"].includes(r.error.code) ? r.error.message : `test command failed to start: ${r.error.message}`);
       output = fs.readFileSync(path.join(dir, "output.log"), "utf8");
     } catch (err) {
       r = { error: err };
@@ -802,9 +1051,9 @@ function cmdVerifyAttestation(args) {
     if (r.error) bad(`replay output or start error: ${r.error.message}`);
     process.stdout.write(output);
   } else {
-    r = spawnSync(att.argv[0], att.argv.slice(1), { cwd: ROOT, stdio: "inherit", timeout: TEST_TIMEOUT_MS });
+    r = await runBounded(att.argv[0], att.argv.slice(1), ["inherit", 1, 1]);
   }
-  if (r.error) bad(`test command failed to start: ${r.error.message}`);
+  if (r.error) bad(r.error.code === "ETIMEDOUT" ? r.error.message : `test command failed to start: ${r.error.message}`);
   if (r.status !== 0) bad(`test command exited with ${r.status}`);
   if (strictReplay) {
     const summary = inspectTestSummary(output, true);
@@ -819,21 +1068,21 @@ function cmdVerifyAttestation(args) {
   console.log(`Phase ${phase} attestation verified: tree matches and the test command passes.`);
 }
 
-function main() {
+async function main() {
   const [cmd, ...args] = process.argv.slice(2);
   switch (cmd) {
     case "list":
       return cmdList();
     case "run":
-      return cmdRun(args);
+      return withPhaseLock(args[0], () => cmdRun(args));
     case "record":
-      return cmdRecord(args);
+      return withPhaseLock(args[0], () => cmdRecord(args));
     case "check":
-      return cmdCheck(args);
+      return withPhaseLock(args[0], () => cmdCheck(args));
     case "doctor":
-      return cmdDoctor();
+      return cmdDoctor(args);
     case "attest":
-      return cmdAttest(args);
+      return withPhaseLock(args[0], () => cmdAttest(args));
     case "verify-attestation":
       return cmdVerifyAttestation(args);
     default:
@@ -841,4 +1090,7 @@ function main() {
   }
 }
 
-main();
+main().catch(error => {
+  console.error(error.gateExitCode ? error.message : `ERROR: ${error.message}`);
+  process.exitCode = error.gateExitCode || 2;
+});

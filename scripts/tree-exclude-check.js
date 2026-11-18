@@ -26,7 +26,7 @@ for (let i = 0; i < m[1].length; i++) {
     }
   }
 }
-const MAX = 4;
+const MAX = 5;
 if (entries > MAX) {
   console.error(`TREE_EXCLUDE has ${entries} entries (max ${MAX}). Review before extending.`);
   process.exit(1);

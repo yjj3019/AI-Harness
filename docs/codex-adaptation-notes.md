@@ -38,12 +38,11 @@ User-level skills go in `$HOME/.agents/skills`.
 
 ## Phase evidence and gates
 
-The existing `.claude/workflows/phase-gate.js`, hooks, and attestation flow are Claude Code-oriented. On Codex:
+The shared `.claude/workflows/phase-gate.js` accepts Codex proof from `.codex/hooks.json` and the local `harness_evidence` MCP reader in `.codex/config.toml`. Review and trust the project and hook through the Codex host. The verify subagent calls `read_phase_log` for the Phase, evaluates the result and returns its verdict. On a successful tool event, the hook checks the verify role, current log hash and read epoch. Record the verdict through `phase-gate.js` with `--require-read-proof`.
 
-- Still require observable evidence (test logs, artifacts, PASS/FAIL).
-- Record results in the same spirit (or via an equivalent procedure you maintain).
-- Do not claim a Phase is complete without an independent check.
-- Treat the gate scripts as a reference implementation; re-validate on the actual host.
+The reader gives the verifier log excerpts and test diagnostics. Shell reads do not trigger this proof path. If the host omits role attribution, suppresses the hook or denies the tool, strict verify remains blocked.
+
+The MCP process and recording hook resolve their checkout with Git, so they can start from a subdirectory of the same worktree. Run `node .claude/workflows/phase-gate.js doctor --host codex` from the repository root to check the project configuration and start the read-only tool from a subdirectory. Codex project trust and actual verify-role attribution are checked in a real Codex invocation.
 
 ## Super-agent pattern
 

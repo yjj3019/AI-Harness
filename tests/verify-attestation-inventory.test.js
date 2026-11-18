@@ -47,7 +47,7 @@ test("preflight checks presence without spawning or verifying attestation conten
       assert.match(output.join("\n"), /Phase 2:.*present.*unverified[\s\S]*Phase 1:.*present.*unverified/i);
       assert.match(output.join("\n"), /not verified and no commands were run/i);
       assert.doesNotMatch(output.join("\n"), /Verified \d+ required/);
-      for (const input of ["[]", "{}", "null", "[", '["1","1"]', '["../2"]', '["1",2]', '["fake"]', '["unknown"]', Buffer.from([0xff])]) {
+      for (const input of ["[]", "{}", "null", "[", '["1","1"]', '["../2"]', '[".draft"]', '["1",2]', '["fake"]', '["unknown"]', Buffer.from([0xff])]) {
         fs.writeFileSync(manifest, input);
         assert.throws(() => verifyInventory(manifest, { root, preflight: true }), /manifest|unknown phase/i);
       }
@@ -124,6 +124,37 @@ test("reports a replay timeout as a timeout", () => {
   });
 });
 
+test("inventory timeout exceeds the gate timeout and rejects invalid values before replay", () => {
+  const child = require("node:child_process");
+  const originalSpawn = child.spawnSync;
+  const previous = process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+  const observed = [];
+  child.spawnSync = (_program, _args, options) => { observed.push(options.timeout); return { status: 0 }; };
+  delete require.cache[checker];
+  const { verifyInventory } = require(checker);
+  child.spawnSync = originalSpawn;
+  delete require.cache[checker];
+  try {
+    fixture(({ root, manifest, att }) => {
+      att("1");
+      fs.writeFileSync(manifest, '["1"]');
+      delete process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+      verifyInventory(manifest, { root });
+      process.env.PHASE_GATE_TEST_TIMEOUT_MS = "2500";
+      verifyInventory(manifest, { root });
+      assert.deepEqual(observed, [9_120_000, 122_500]);
+      for (const invalid of ["", "0", "-1", "1.5", "86400001", "NaN"]) {
+        process.env.PHASE_GATE_TEST_TIMEOUT_MS = invalid;
+        assert.throws(() => verifyInventory(manifest, { root }), /PHASE_GATE_TEST_TIMEOUT_MS must be an integer/);
+      }
+      assert.equal(observed.length, 2, "invalid configuration must not spawn a replay");
+    });
+  } finally {
+    if (previous === undefined) delete process.env.PHASE_GATE_TEST_TIMEOUT_MS;
+    else process.env.PHASE_GATE_TEST_TIMEOUT_MS = previous;
+  }
+});
+
 test("real gate rejects a malformed attestation in a fixture root", () => {
   fixture(({ root, manifest, att }) => {
     att("1");
@@ -145,7 +176,7 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
   // Do not let inherited Git routing/config redirect fixture operations elsewhere.
   for (const name of Object.keys(env)) if (/^GIT_/i.test(name)) delete env[name];
   env.GIT_CONFIG_NOSYSTEM = "1";
-  env.GIT_CONFIG_GLOBAL = path.join(root, "absent-git-config");
+  env.GIT_CONFIG_GLOBAL = process.platform === "win32" ? "NUL" : "/dev/null";
   delete env.NODE_TEST_CONTEXT; // Permit the fixture's independent Node test runner.
   const run = (program, args) => spawnSync(program, args, { cwd: root, env, encoding: "utf8" });
   const ok = (result, label) => assert.equal(result.status, 0, `${label}: ${result.error || ""}\n${result.stdout}\n${result.stderr}`);
@@ -159,6 +190,7 @@ test("real gate verifies a complete multi-phase inventory and rejects missing or
     fs.copyFileSync(path.resolve(__dirname, "../scripts/context-contract.js"), path.join(root, "scripts", "context-contract.js"));
     fs.copyFileSync(gate, path.join(root, ".claude", "workflows", "phase-gate.js"));
     fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/test-summary.js"), path.join(root, ".claude", "workflows", "test-summary.js"));
+    fs.copyFileSync(path.resolve(__dirname, "../scripts/phase-definition.js"), path.join(root, "scripts", "phase-definition.js"));
     fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: One\n### Phase 2: Two\n");
     const manifest = path.join(root, "manifest.json");
     fs.writeFileSync(manifest, '["1","2"]');
@@ -214,6 +246,7 @@ test("CLI preflight reports fixture presence without running the gate", () => {
     fs.mkdirSync(path.join(root, "scripts"));
     const localChecker = path.join(root, "scripts", "verify-attestation-inventory.js");
     fs.copyFileSync(checker, localChecker);
+    fs.copyFileSync(path.join(path.dirname(checker), "phase-definition.js"), path.join(root, "scripts", "phase-definition.js"));
     const r = spawnSync(process.execPath, [localChecker, "--preflight", manifest], { cwd: root, encoding: "utf8" });
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /present \(unverified\)/);

@@ -26,7 +26,10 @@
 
 ## 현재 버전
 
-- 현재 버전: **1.9.0** (2026-11-15) — task-graph·context-contract 중복 JSON 키 거부 (호환성 변경, fail-closed).
+- 작업 트리 버전: **3.0.0** (2026-11-17, 미병합) — 실행 비트가 트리 해시에 추가되어 기존 증거 및 attestation과 호환되지 않음. 실제 증거 재생성 필요.
+
+- 작업 트리 버전: **2.0.0** (2026-11-16, 미병합) — Phase 트리 스냅샷에서 상속된 `GIT_*` 환경변수 거부 (제한된 예외는 `PHASES.md` 참조; 게이트 호환성 변경).
+- 1.9.0 (2026-11-15) — task-graph·context-contract 중복 JSON 키 거부 (호환성 변경, fail-closed).
 - 1.8.1 (2026-11-15) — VERSIONING 이력 동기화 (1.3.0~1.8.0 누락분 보강) + task-contracts 중복 JSON 키 주의 문구. 코드·게이트 변경 없음.
 - 1.8.0 (2026-11-15) — 공개 저장소 민감도 감사 (D13) + 영상 채널 실험화 (D12, `render-video.js` 비게이트).
 - 1.7.0 (2026-11-15) — 하네스 보강 P2 (design-omniskill 운영 확정 D11 · 인계 스키마 제안 · 영상 PoC · scorecard 강화 · darwin 탐침 `/etc/hosts`).
