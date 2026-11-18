@@ -26,6 +26,7 @@ function installPhaseGate(root) {
   fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/phase-gate.js"), path.join(workflow, "phase-gate.js"));
   fs.copyFileSync(path.resolve(__dirname, "../.claude/workflows/test-summary.js"), path.join(workflow, "test-summary.js"));
   fs.copyFileSync(path.resolve(__dirname, "../scripts/context-contract.js"), path.join(root, "scripts/context-contract.js"));
+  fs.copyFileSync(path.resolve(__dirname, "../scripts/phase-definition.js"), path.join(root, "scripts/phase-definition.js"));
 }
 function evidenceRoot(t) {
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "tg-ev-"));

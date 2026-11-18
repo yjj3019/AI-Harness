@@ -11,13 +11,13 @@ import base64
 import hashlib
 import hmac
 import http.client
+import io
 import json
+import math
 import re
 import sqlite3
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -54,6 +54,35 @@ class BrokerError(Exception):
         return self.code
 
 
+def remaining_time(deadline: float) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("provider request deadline exceeded")
+    return remaining
+
+
+class ProviderReader(io.RawIOBase):
+    """Own a socket file and reapply the remaining deadline before each read."""
+
+    def __init__(self, sock, deadline):
+        self.sock = sock
+        self.raw = sock.makefile("rb", buffering=0)
+        self.deadline = deadline
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        self.sock.settimeout(remaining_time(self.deadline))
+        return self.raw.readinto(buffer)
+
+    def close(self):
+        try:
+            self.raw.close()
+        finally:
+            super().close()
+
+
 class Broker:
     def __init__(self, database: str | Path, secret: bytes, *,
                  allowed: set[str] | frozenset[str] = frozenset(),
@@ -62,7 +91,7 @@ class Broker:
             raise ValueError("broker approval secret must be >=32 bytes")
         if not set(allowed).issubset(ACTIONS):
             raise ValueError("unknown privileged operation")
-        if timeout <= 0 or timeout > 10:
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not 0 < timeout <= 10:
             raise ValueError("invalid timeout")
         self.database = str(database)
         self.secret = secret
@@ -214,16 +243,30 @@ class Broker:
         return {"state": "COMPLETED", "replay": False, "result": result}
 
     def _send_http(self, payload: dict, request_id: str) -> dict | None:
-        request = urllib.request.Request(
-            self.destination, data=canon(payload),
-            headers={"Content-Type": "application/json", "Idempotency-Key": request_id},
-            method="POST")
-        class NoRedirect(urllib.request.HTTPRedirectHandler):
-            def redirect_request(self, req, fp, code, msg, headers, newurl):
-                return None
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
+        url = urllib.parse.urlsplit(self.destination)
+        deadline = time.monotonic() + self.timeout
+        connection = http.client.HTTPConnection(url.hostname, url.port, timeout=self.timeout)
+
+        def response_with_deadline(sock, **kwargs):
+            response = http.client.HTTPResponse(sock, **kwargs)
+            try:
+                response.fp.close()
+                response.fp = io.BufferedReader(ProviderReader(sock, deadline))
+            except BaseException:
+                response.close()
+                raise
+            return response
+
+        connection.response_class = response_with_deadline
         try:
-            with opener.open(request, timeout=self.timeout) as response:
+            connection.timeout = remaining_time(deadline)
+            connection.connect()
+            connection.sock.settimeout(remaining_time(deadline))
+            connection.request("POST", url.path, body=canon(payload),
+                               headers={"Content-Type": "application/json", "Idempotency-Key": request_id})
+            with connection.getresponse() as response:
+                if response.status != 200:
+                    return None
                 # A bounded read does not itself reject premature EOF for a fixed
                 # Content-Length. Preserve the declaration before read mutates it.
                 declared_length = response.length
@@ -232,7 +275,7 @@ class Broker:
                 raw = response.read(MAX_BODY + 1)
                 if declared_length is not None and len(raw) != declared_length:
                     raise ValueError("incomplete fixed-length provider response")
-                if response.status != 200 or len(raw) > MAX_BODY:
+                if len(raw) > MAX_BODY:
                     return None
                 def reject_nonfinite(value):
                     raise ValueError("non-finite provider JSON constant: " + value)
@@ -240,11 +283,13 @@ class Broker:
                 # Also reject finite-looking numbers that overflow during parsing
                 # (e.g. 1e400), and any other value not safely persistable as JSON.
                 canon(result)
+                remaining_time(deadline)
                 return result
-        except (urllib.error.HTTPError, urllib.error.URLError,
-                http.client.HTTPException, TimeoutError, OSError,
+        except (http.client.HTTPException, TimeoutError, OSError,
                 ValueError, TypeError, OverflowError, RecursionError):
             return None
+        finally:
+            connection.close()
 
     def get_counter(self) -> int:
         with self._connect() as db:

@@ -2,6 +2,23 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## [3.0.0] - 2026-11-17 (작업 트리, 미병합)
+
+### 변경 (게이트 호환성)
+- Codex Phase 읽기 도구와 훅은 저장소 하위 폴더에서도 Git으로 작업 트리 루트를 찾는다. `doctor --host codex`가 프로젝트 등록과 읽기 도구 시작을 확인한다.
+- GitHub가 fork PR 연결 정보를 생략하면 merge ref와 실제 CI 시도의 PR 기록을 대조한다.
+- Merge guard는 체크가 생성되기 전에도 최신 워크플로 실행을 확인하고 판정 직전에 실행 목록을 다시 조회한다.
+- Phase 증거와 attestation JSON은 기록을 완료한 임시 파일로 교체한다. 대시보드도 필수 Phase의 엄격 검증 플래그를 확인한다.
+- ToolBroker 문서를 요청 수신과 공급자 HTTP 교환에 적용되는 절대 시간 제한에 맞췄다.
+- 필수 Phase 목록을 버전 관리하고 CI와 merge guard가 목록의 attestation 재실행을 확인한다. PR 후보는 base 정책의 필수 Phase를 유지해야 한다.
+- 대소문자만 다른 Phase ID를 거부한다. attestation 발급 뒤 갱신되는 생성본 `dashboard/status.json`은 트리 해시에서 제외한다.
+- 필수 Phase와 `--require-strict-evidence`를 지정한 검사는 테스트 요약과 verify 읽기 증명을 요구한다. attestation에 두 설정을 기록하고 재실행 전에 확인한다.
+- Merge guard는 같은 PR과 head에 해당하는 검토 대상 워크플로의 최신 실행 및 현재 시도에 속한 결과를 확인한다.
+- 트리 해시에 POSIX 실행 비트를 포함한다. 기존 증거·attestation과 호환되지 않으며 플랫폼별 새 증거가 필요하다.
+- 머지 검사는 GitHub check suite의 워크플로 경로와 head를 확인한다. 실제 PR #69에서 조회와 실패 거부를 확인했으며 fork 호환성은 미검증이다.
+- attestation별 CI 재실행을 독립 matrix 작업으로 나누고 모든 결과의 집계 통과를 기존 checks 작업의 선행 조건으로 둔다. 새 워크플로의 실제 GitHub 실행은 미검증이다.
+- 시간 초과 시 Windows 프로세스 트리 또는 POSIX 프로세스 그룹 종료를 요청한다. Windows의 일반 자식·손자 fixture는 통과했으나 그룹을 이탈한 프로세스와 비정상 게이트 종료는 보호하지 않는다. Codex 읽기 증명 및 현재 트리 attestation 재발급은 미해결이다.
+
 ## [2.0.0] - 2026-11-16 (작업 트리, 미병합)
 
 ### 변경 (게이트 호환성)

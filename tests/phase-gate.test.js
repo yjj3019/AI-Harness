@@ -376,6 +376,53 @@ test("strict read proof cannot be skipped by missing, invalid, or unregistered s
     assert.equal(actualConfig.status, 0, actualConfig.stderr);
   }));
 
+test("Codex Phase reader binds verify tool output to the active epoch", () => withRoot(root => {
+  const toolName = "mcp__harness_evidence__read_phase_log";
+  const hook = ".codex/hooks/phase-read.js";
+  for (const file of [hook, ".codex/hooks.json", ".codex/config.toml", "scripts/phase-definition.js"]) {
+    fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+    fs.copyFileSync(path.resolve(__dirname, "..", file), path.join(root, file));
+  }
+  assert.equal(spawnSync("git", ["init", "-q"], { cwd: root }).status, 0);
+  const nested = path.join(root, "docs");
+  const config = fs.readFileSync(path.join(root, ".codex/config.toml"), "utf8");
+  const readerArgs = JSON.parse(/^args = (.+)$/m.exec(config)[1]);
+  recordPass(root, "1", "coding");
+  const noisy = () => gate(root, "run", "1", "test", "--", NODE, "-e",
+    "console.log('suite\\n' + ('x'.repeat(399) + '\\n').repeat(220) + 'last-summary-marker')");
+  assert.equal(noisy().status, 0);
+  const read = () => {
+    const r = spawnSync(NODE, readerArgs, { cwd: nested, encoding: "utf8", input: JSON.stringify({
+      jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "read_phase_log", arguments: { phase: "1" } },
+    }) + "\n" });
+    assert.equal(r.status, 0, r.stderr);
+    const { result } = JSON.parse(r.stdout);
+    assert.match(result.content[1].text, /suite/);
+    assert.match(result.content[1].text, /last-summary-marker/);
+    return result;
+  };
+  const emit = (agent_type, tool_response, cwd = nested) => {
+    // Script-level fixture. The real-host probe supplies native events separately.
+    const event = { hook_event_name: "PostToolUse", tool_name: toolName, tool_use_id: "fixture-call",
+      agent_type, agent_id: "fixture-agent", cwd, tool_input: { phase: "1" }, tool_response };
+    assert.equal(spawnSync(NODE, [...readerArgs, "--", "record"], { cwd: nested, input: JSON.stringify(event) }).status, 0);
+  };
+  const evidence = path.join(root, ".phase-evidence", ".reads.jsonl");
+  const prior = read();
+  emit("verify", prior, path.dirname(root));
+  emit("coding", prior);
+  assert.equal(fs.existsSync(evidence), false);
+  assert.equal(noisy().status, 0);
+  emit("verify", prior);
+  assert.equal(fs.existsSync(evidence), false);
+  emit("verify", read());
+  assert.equal(JSON.parse(fs.readFileSync(evidence, "utf8")).host, "codex");
+  const verdict = report(root, "codex-verify.md");
+  const result = gate(root, "record", "1", "verify", "--status", "PASS", "--report", verdict, "--require-read-proof");
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, ".phase-evidence/phase-1-verify.json"), "utf8")).require_read_proof, true);
+}));
+
 test("strict read proof flag is limited to verify PASS and cannot be repeated", () =>
   withRoot((root) => {
     const verdict = report(root, "invalid-proof.md");

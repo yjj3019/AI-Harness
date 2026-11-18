@@ -1,11 +1,12 @@
 {
   "schema": 1,
   "phase": "evidence-baseline",
-  "tree": "a051069bf13d0add733bca98b7f5d88ab46c45257a6ec4fd75537cc1747b6f22",
+  "tree": "ad73bb7f296ba66ccfba5b54021edc472ecbe36c17e5132e2474aa75ad4b0a88",
   "argv": [
     "bash",
     "tests/run-all.sh"
   ],
   "require_test_summary": true,
-  "attested_at": "2026-11-16T09:30:56.252Z"
+  "require_read_proof": true,
+  "attested_at": "2026-11-18T07:30:47.726Z"
 }

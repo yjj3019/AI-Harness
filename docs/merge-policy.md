@@ -6,9 +6,13 @@
 
 `main`에는 모든 CI 검사가 `pass`인 PR만 병합합니다. 검사가 없음(no checks), 대기 중(pending), 건너뜀(skipping)은 통과로 간주하지 않습니다.
 
-## 강제 여부: 강제되지 않음 (2026-11-01 확인)
+## 서버 측 강제 현황
 
-이 저장소는 **비공개 저장소**이며, 소유자 권한(ADMIN)으로도 브랜치 보호와 ruleset API가 모두 거부됩니다.
+2026-11-18 확인 기준, 공개 저장소의 활성 ruleset `main-required-ci`(26772795)가 `main`에 적용됩니다. GitHub Actions의 필수 검사 9개가 모두 통과하고 PR의 기준 브랜치가 최신이어야 합니다. 직접 변경에는 PR이 필요하며 우회 계정은 없습니다. 검사 실패 상태의 PR #69는 GitHub에서 `BLOCKED`로 표시됩니다.
+
+### 2026-11-01 기록
+
+당시 저장소는 비공개였으며, 소유자 권한으로도 클래식 브랜치 보호와 ruleset API가 거부됐습니다.
 
 ```
 $ gh api repos/yjj3019/AI-Harness/branches/main/protection
@@ -17,11 +21,19 @@ $ gh api repos/yjj3019/AI-Harness/rulesets
 gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)
 ```
 
-따라서 현재 서버 측 병합 차단은 없습니다. 실패한 검사가 있는 PR도 병합될 수 있으며, 실제로 2026-11-01 PR #26은 Windows 검사 실패 상태로 병합됐습니다.
+서버 측 정책을 적용하기 전인 2026-11-01에는 PR #26이 Windows 검사 실패 상태로 병합됐습니다.
 
 ## 사용 가능한 대체 수단
 
 `scripts/merge-guard.js <PR번호>`는 GitHub API에서 opened PR의 exact URL/number, head/base/source repo, boolean draft state를 조회하고 base repository의 exact head check-runs를 읽습니다. It accepts only `github-actions` runs associated with the exact PR number, head SHA, and base SHA and a complete set of unique required job names. Draft/unknown state, changed PR identity, missing/duplicate jobs, skipped/pending jobs, unavailable data and caller-supplied snapshots return NOT VERIFIED (exit 2).
+
+먼저 `.github/workflows/ci.yml`의 실행 목록에서 현재 PR의 최신 실행을 찾습니다. 체크가 만들어지기 전의 대기 상태도 확인합니다. 최신 실행이 성공하면 현재 시도의 작업과 check suite를 대조하고, 판정 전에 실행 목록을 다시 읽어 도중에 새 실행이나 재시도가 시작됐는지 확인합니다.
+
+GitHub가 workflow 실행의 PR 연결을 비워 반환하면, 정확한 PR merge ref와 원본 저장소를 가진 실행만 선택합니다. 해당 실행과 시도에 속한 `attestation discovery` 작업의 성공 단계에서 PR 번호와 base SHA를 확인하고, 실행의 merge SHA를 GitHub의 현재 merge ref와 대조합니다. 연결이 확인된 실행의 체크는 정확한 check suite와 작업 ID로 대조합니다.
+
+`.github/required-phases.json`에 필수 Phase를 명시합니다. CI는 비어 있거나 필수 attestation이 누락된 목록을 거부하며, PR의 base 커밋이 요구하는 Phase를 후보에서 제거할 수 없습니다. Merge guard는 신뢰할 수 있는 로컬 체크아웃의 같은 목록을 기준으로 실제 Phase별 재실행 작업을 확인합니다. 원격에서 이 검사를 강제하려면 워크플로와 정책 파일도 서버 측의 검토 대상에 포함해야 합니다.
+
+머지 검사는 단일 CI 실행의 현재 시도에서 성공한 작업만 인정합니다. 이전 시도의 작업과 합산하지 않으므로 실패 작업만 재실행해 필수 작업 목록이 불완전하면 전체 CI 작업을 다시 실행해야 합니다.
 
 ```bash
 node scripts/merge-guard.js <PR번호>
@@ -33,16 +45,11 @@ PR #26/#27 results below are historic validation of the prior guard version, not
 
 ## 한계
 
-- **권고 절차일 뿐 차단이 아닙니다.** 가드를 실행하지 않고 `gh pr merge`를 직접 호출하면 그대로 병합됩니다.
-- required job-name allowlist는 코드에 pin되어 있으며 CI workflow 추출 결과와 정확히 일치하지 않으면 NOT VERIFIED로 거부합니다. 새로운 job/이름 변경 시 별도 검토 후 allowlist도 함께 갱신해야 합니다.
-- check-runs는 base repository endpoint와 PR number/head/base association/GitHub Actions app을 확인하고 query 전후 PR head/base/source repository/draft 변경을 거부합니다. Fork PR association semantics still need a live compatibility test; command 이후 새 push와 별도 manual merge 사이 TOCTOU도 남습니다.
-- 가드는 검사 내용의 정당성(테스트가 실제 요구사항을 검증하는지)을 판단하지 않고 server-side merge enforcement도 아닙니다. branch protection이 설정되지 않은 현재 상태에서는 다른 merge 경로를 차단할 수 없습니다.
+- 로컬 merge guard는 준비 상태를 검사합니다. 실제 병합은 GitHub ruleset이 검사하고 차단합니다.
+- required job-name allowlist는 코드에 고정되어 있으며 CI workflow 추출 결과와 정확히 일치하지 않으면 NOT VERIFIED로 거부합니다. 새로운 필수 job이나 이름 변경 시 allowlist도 함께 갱신합니다.
+- 조회 전후 PR의 head, base, 원본 저장소, draft 상태를 비교합니다. 빈 연결 정보는 CI 시도의 단계 메타데이터로 확인하므로 워크플로도 검토 대상입니다. 실제 fork PR에서는 새 단계가 포함된 워크플로를 실행해 호환성을 확인합니다.
+- 검사 내용이 요구사항을 충족하는지는 테스트와 리뷰에서 확인합니다. GitHub ruleset의 적용 범위는 유효 브랜치 규칙과 PR의 병합 상태로 확인합니다.
 - `--checks-file`은 parsing/diagnostics에만 남아 있으며 caller-supplied JSON은 readiness 결과로 인정하지 않습니다.
 - 가드 자체의 단위 테스트는 `tests/merge-guard.test.js`이며 CI에서 실행됩니다.
 
-## 소유자가 선택할 수 있는 강화
-
-1. GitHub Pro 업그레이드 또는 저장소 공개 → ruleset으로 9개 검사(`checks / node 22`, `checks / node 24`, `portability / macos-latest`, `portability / windows-latest`, `isolation / linux namespace`, `toolbroker / ubuntu-latest`, `toolbroker / macos-latest`, `toolbroker / windows-latest`, `self-qa / shellcheck`)를 필수 상태 검사로 지정.
-2. 위 변경 전까지는 병합 전 `node scripts/merge-guard.js <PR번호>` 실행을 절차로 삼습니다.
-
-두 조치 모두 소유자 승인이 필요한 결정이며, 이 저장소는 아직 어느 쪽도 적용하지 않았습니다.
+현재 필수 검사 이름은 `checks / node 22`, `checks / node 24`, `portability / macos-latest`, `portability / windows-latest`, `isolation / linux namespace`, `toolbroker / ubuntu-latest`, `toolbroker / macos-latest`, `toolbroker / windows-latest`, `self-qa / shellcheck`입니다.

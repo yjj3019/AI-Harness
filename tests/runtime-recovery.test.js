@@ -88,6 +88,12 @@ test("actual worker termination leaves FAIL; a new Phase gate process can recove
     if (spawnError) throw spawnError;
     assert.equal(child.exitCode, null, "gate exited before termination request");
     assert.equal(child.signalCode, null, "gate was signalled before termination request");
+    const competing = gate(root, "run", "1", "test", "--", NODE, "-e", "");
+    assert.equal(competing.status, 2, resultMessage(competing));
+    assert.match(competing.stderr, /already in use/);
+    const racingRecord = gate(root, "record", "1", "coding", "--status", "PASS", "--report", ".phase-evidence/coding.md");
+    assert.equal(racingRecord.status, 2, resultMessage(racingRecord));
+    assert.match(racingRecord.stderr, /already in use/);
     // Ask the live worker to terminate itself; no stale external PID can be signalled.
     fs.writeFileSync(path.join(root, ".phase-evidence", "terminate-worker"), "terminate\n");
     await waitChild(child);
@@ -167,6 +173,29 @@ test("a hung test command is bounded by PHASE_GATE_TEST_TIMEOUT_MS and recorded 
   if (failure) throw failure;
 });
 
+test("timeout stops an ordinary child and its grandchild", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "harness-tree-timeout-"));
+  try {
+    fs.mkdirSync(path.join(root, "docs"));
+    fs.mkdirSync(path.join(root, ".phase-evidence"));
+    fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Timeout probe\n");
+    report(root, "coding");
+    const ready = path.join(root, ".phase-evidence", "ready");
+    const grandchildReady = path.join(root, ".phase-evidence", "grandchild-ready");
+    const marker = path.join(root, ".phase-evidence", "grandchild-survived");
+    const grandchild = `require('fs').writeFileSync(${JSON.stringify(grandchildReady)}, 'ready'); setTimeout(() => require('fs').writeFileSync(${JSON.stringify(marker)}, 'alive'), 12000)`;
+    const parent = `const cp=require('child_process'); cp.spawn(process.execPath,['-e',${JSON.stringify(grandchild)}],{stdio:'ignore'}).unref(); require('fs').writeFileSync(${JSON.stringify(ready)},'ready'); setTimeout(()=>{},30000)`;
+    const env = { ...process.env, PHASE_GATE_ROOT: root, PHASE_GATE_TEST_TIMEOUT_MS: "6000" };
+    const result = spawnSync(NODE, [GATE, "run", "1", "test", "--", NODE, "-e", parent], { cwd: root, env, encoding: "utf8", timeout: 90000 });
+    assert.equal(result.status, 2, resultMessage(result));
+    assert.match(result.stdout + result.stderr, /TIMEOUT after 6000ms/);
+    assert.equal(fs.existsSync(ready), true, "the child must actually create the grandchild");
+    assert.equal(fs.existsSync(grandchildReady), true, "the grandchild must actually start before timeout");
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 8000);
+    assert.equal(fs.existsSync(marker), false, "ordinary grandchild must not survive the timeout");
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test("invalid test timeout settings fail before gate execution", () => {
   for (const value of ["", "0", "-1", "1.5", "86400001", "NaN"]) {
     const result = spawnSync(NODE, [GATE, "list"], {
@@ -175,4 +204,22 @@ test("invalid test timeout settings fail before gate execution", () => {
     assert.equal(result.status, 1, resultMessage(result));
     assert.match(result.stderr, /PHASE_GATE_TEST_TIMEOUT_MS must be an integer/);
   }
+});
+
+test("oversized output yields a bounded FAIL record and releases the phase lock", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "harness-output-limit-"));
+  t.after(() => removeFixture(root));
+  fs.mkdirSync(path.join(root, "docs"));
+  fs.mkdirSync(path.join(root, ".phase-evidence"));
+  fs.writeFileSync(path.join(root, "docs/PHASES.md"), "### Phase 1: Output limit\n");
+  report(root, "coding");
+  const result = spawnSync(NODE, [GATE, "run", "1", "test", "--", NODE, "-e", "process.stdout.write('x'.repeat(32768))"], {
+    cwd: root, encoding: "utf8", env: { ...environment(root), PHASE_GATE_MAX_OUTPUT_BYTES: "1024" }, timeout: 90000,
+  });
+  assert.equal(result.status, 2, resultMessage(result));
+  assert.match(readEvidence(root, "test").test_summary.reason, /exceeded 1024 bytes/);
+  assert.equal(readEvidence(root, "test").status, "FAIL");
+  const log = fs.readFileSync(path.join(root, ".phase-evidence/phase-1-test.log"), "utf8");
+  assert.match(log, /^x{1024}\n\[phase-gate\] status: OUTPUT LIMIT/);
+  assert.equal(fs.existsSync(path.join(root, ".phase-evidence/phase-1.lock")), false);
 });

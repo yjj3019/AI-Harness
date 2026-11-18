@@ -24,12 +24,12 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Read",
+        "matcher": "mcp__harness_evidence__read_phase_log",
         "hooks": [
           {
             "type": "command",
-            "command": "\"$(git rev-parse --show-toplevel)/.codex/hooks/read-tracker.sh\"",
-            "timeout": 10
+            "command": "node -e \"require(require('node:path').join(require('node:child_process').execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim(),'.codex/hooks/phase-read.js')).main(process.argv[1])\" -- record",
+            "timeout": 60
           }
         ]
       }

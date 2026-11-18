@@ -42,24 +42,31 @@
   <script>
     const root = document.getElementById('phases');
     function render(phases) {
-      root.innerHTML = '';
-      if (!phases.length) {
-        root.innerHTML = '<p style="color:#8a8680">No status.json. Run: node scripts/dashboard-status.js</p>';
+      root.replaceChildren();
+      if (!Array.isArray(phases) || !phases.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No phase status available. Run: node scripts/dashboard-status.js';
+        root.appendChild(empty);
         return;
       }
       phases.forEach(p => {
-      const div = document.createElement('div');
-      div.className = 'phase';
-      const dots = Array.from({length: p.total}, (_, i) =>
-        `<span class="dot ${i < p.evidence ? 'ok' : 'empty'}"></span>`
-      ).join('');
-      div.innerHTML = `
-        <div class="phase-header">
-          <span class="phase-id">${p.id} · ${p.title}</span>
-          <span class="evidence">${dots} ${p.evidence}/${p.total}</span>
-        </div>
-      `;
-      root.appendChild(div);
+        const div = document.createElement('div');
+        div.className = 'phase';
+        const header = document.createElement('div');
+        header.className = 'phase-header';
+        const title = document.createElement('span');
+        title.className = 'phase-id';
+        title.textContent = p.title ? `${p.id} · ${p.title}` : p.id;
+        const status = document.createElement('span');
+        status.className = 'evidence';
+        status.textContent = {
+          missing: 'No attestation',
+          invalid: 'Invalid attestation',
+          unverified: 'Attestation present · verification pending',
+        }[p.attestation] || 'Verification unknown';
+        header.append(title, status);
+        div.appendChild(header);
+        root.appendChild(div);
       });
     }
     fetch('status.json').then(r => r.ok ? r.json() : []).then(render).catch(() => render([]));
