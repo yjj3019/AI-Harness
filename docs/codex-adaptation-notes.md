@@ -42,7 +42,7 @@ The shared `.claude/workflows/phase-gate.js` accepts Codex proof from `.codex/ho
 
 The reader gives the verifier log excerpts and test diagnostics. Shell reads do not trigger this proof path. If the host omits role attribution, suppresses the hook or denies the tool, strict verify remains blocked.
 
-The MCP process and recording hook resolve their checkout with Git, so they can start from a subdirectory of the same worktree. Run `node .claude/workflows/phase-gate.js doctor --host codex` from the repository root to check the project configuration and start the read-only tool from a subdirectory. Codex project trust and actual verify-role attribution are checked in a real Codex invocation.
+The MCP process and recording hook resolve their checkout with Git, so they can start from a subdirectory of the same worktree. Run `node .claude/workflows/phase-gate.js doctor --host codex` from the repository root to check the project configuration and start the read-only tool from a subdirectory. A successful doctor does not check hook trust: in Codex, use `/hooks` to confirm the Phase reader's PostToolUse hook is enabled and trusted. Project trust alone is insufficient. Verify actual role attribution and read proof in a real Codex invocation.
 
 ## Super-agent pattern
 
