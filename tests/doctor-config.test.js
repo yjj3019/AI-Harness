@@ -46,6 +46,8 @@ test("Codex doctor checks the project hook and starts the reader from a subdirec
   const result = run();
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /MCP reader starts from a repository subdirectory/);
+  assert.match(result.stdout, /hook trust and live verify-role events were not checked/);
+  assert.doesNotMatch(result.stdout, /Guards can run here/);
   const config = path.join(root, ".codex/config.toml");
   fs.writeFileSync(config, fs.readFileSync(config, "utf8").replace('enabled_tools = ["read_phase_log"]', "enabled_tools = []"));
   assert.match(run().stderr, /MCP reader configuration does not match/);

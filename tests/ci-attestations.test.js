@@ -9,15 +9,23 @@ const { spawnSync } = require("node:child_process");
 const workflow = fs.readFileSync(path.join(__dirname, "../.github/workflows/ci.yml"), "utf8");
 const source = path.resolve(__dirname, "..");
 const bash = process.platform === "win32" && fs.existsSync("C:/Program Files/Git/bin/bash.exe") ? "C:/Program Files/Git/bin/bash.exe" : "bash";
-function scriptAfter(marker) {
-  const start = workflow.indexOf(marker);
+function scriptAfter(marker, text = workflow) {
+  const start = text.indexOf(marker);
   assert.notEqual(start, -1, marker);
-  const match = workflow.slice(start).match(/\n        run: \|\r?\n((?:          .*\r?\n)+)/);
+  const match = text.slice(start).match(/\n        run: \|\r?\n((?:          .*\r?\n)+)/);
   assert.ok(match, marker);
-  return match[1].replace(/^          /gm, "");
+  return match[1].replace(/\r\n/g, "\n").replace(/^          /gm, "");
 }
 const discovery = scriptAfter("      - id: phases");
 const replay = scriptAfter("      - name: Verify phase attestation");
+
+test("workflow script extraction normalizes CRLF", () => {
+  const lf = workflow.replace(/\r\n/g, "\n");
+  const crlf = lf.replace(/\n/g, "\r\n");
+  for (const marker of ["      - id: phases", "      - name: Verify phase attestation"]) {
+    assert.equal(scriptAfter(marker, crlf), scriptAfter(marker, lf));
+  }
+});
 
 function fixture(fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "ci-attestations-"));
