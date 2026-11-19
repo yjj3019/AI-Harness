@@ -916,6 +916,7 @@ function checkCodexDoctor(ok, bad) {
   } catch {
     bad("Codex MCP reader could not start or list the read-only tool; check Node and Git");
   }
+  console.log("[WARNING] Codex hook trust and live verify-role events were not checked; inspect /hooks and run a real verify read.");
 }
 
 function cmdDoctor(args) {
@@ -934,7 +935,7 @@ function cmdDoctor(args) {
     console.error(`\n${problems.length} problem(s). Fix them before relying on the evidence gate.`);
     process.exit(2);
   }
-  console.log("\nGuards can run here.");
+  console.log("\nConfigured guard checks passed; host enforcement is not verified.");
 }
 
 function attestationFile(phase) {
