@@ -402,3 +402,9 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - Check native tool startup from the affected working directory. Resolve the Git worktree for both the MCP reader and hook, then require the event cwd to remain inside it. Add a doctor probe and real nested verify run.
 - When GitHub omits PR associations, bind checks to their selected suite and attempt. Read the PR base and merge SHA from successful GitHub step metadata and check the current merge ref. This uses the jobs API and keeps the unavailable-log path out of merge readiness.
 - All strict Phase steps and independent replay passed. The actual current same-repository GitHub PR still points to the prior failing run. Hosted validation of the new candidate and a real fork remains pending.
+
+## 2026-11-20: Hook trust and cross-platform test fixtures
+
+- Project trust and individual hook trust are separate. Check `/hooks` and require a genuine verify-agent MCP read before recording strict proof; doctor configuration success alone does not establish trust or host event delivery.
+- A Windows-created archive can carry CRLF workflow YAML into a Linux fixture. Normalize extracted shell script line endings and compare forced CRLF against an explicit LF baseline; a mutation without normalization must fail the regression test.
+- Candidate `237b68c` passed strict bound testing and independent replay with 443 of 446 tests and all 306 hooks passing; the three Linux skips passed in focused Windows runs. Hosted PR checks remain a separate requirement.
