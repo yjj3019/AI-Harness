@@ -408,3 +408,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - Project trust and individual hook trust are separate. Check `/hooks` and require a genuine verify-agent MCP read before recording strict proof; doctor configuration success alone does not establish trust or host event delivery.
 - A Windows-created archive can carry CRLF workflow YAML into a Linux fixture. Normalize extracted shell script line endings and compare forced CRLF against an explicit LF baseline; a mutation without normalization must fail the regression test.
 - Candidate `237b68c` passed strict bound testing and independent replay with 443 of 446 tests and all 306 hooks passing; the three Linux skips passed in focused Windows runs. Hosted PR checks remain a separate requirement.
+
+## 2026-11-21: Canary and evaluation oracle controls
+
+- A denied stderr redirect prevented the target write from being attempted, producing a false denial claim. Put diagnostics in a verified writable location, inspect the actual target error, and check both allowed and denied fixture states. One `bwrap` result does not validate native agent tools or network egress.
+- A coding evaluation with only mixed-input and empty-input examples accepted a constant-for-nonempty counterexample. Challenge each oracle with plausible wrong implementations and retain independent positive-only, negative-only and multiple-value checks. A public holdout is not sequestered; hashes written after a run cannot prove preregistration.
+- Adding pinned eval inputs also changes what a reduced test-inventory fixture must copy. Run its real completion branch after changing the manifest; a manifest-only check can pass while that fixture fails.
+- A Windows Git archive can transform many baseline files to CRLF, even if changed-file hashes match. Prepare an LF candidate from a Git bundle and compare all unchanged tracked blobs and modes as well as changed clean blobs before treating a Linux run as CI-representative.
+- A blocked shell process and an unchanged canary file do not establish write denial if no write was attempted; another MCP tool may still access the fixture. Check actual tool events, policy denials and effects independently, and do not equate a permission rule with an active OS sandbox.
+- A cross-host synthetic model response obtained outside the repository does not show that its project rules were loaded. Test discovery and permissions separately; challenge revised shared instructions for newly introduced assumptions and keep unvalidated rules out of the shared core.
