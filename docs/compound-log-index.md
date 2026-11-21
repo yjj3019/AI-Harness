@@ -1,0 +1,69 @@
+# Compound log navigation index (trial)
+
+Navigation only: read the full `docs/compound-log.md` as required. Titles can miss relevant lessons; search and read the original entries. Regenerate or review this list when entries change.
+
+- [2026-10-23] Setup - System Setup
+- [2026-10-25] Harness - Platform Paths
+- [2026-10-27] Quality closure - Challenge aggregate evidence
+- [2026-10-27] Report editing - Preserve evidence before style
+- [2026-10-27] Document jobs - Do not aggregate partial conversion as success
+- [2026-10-27] Test evidence - Detect persistent mutation during the first run
+- [2026-10-28] Evaluation baselines - Separate scorer changes from improvements
+- [2026-10-28] Fixture broker - Preserve uncertain outcomes after adapter exceptions
+- [2026-10-28] Attestation - Compare the final snapshot with tested evidence
+- [2026-10-30] Verify reads - Limit reuse of previously logged signals
+- [2026-10-28] Package readiness - Validate definitions and exact hook wiring
+- [2026-10-30] Fixture timeout - Synchronize on the effect, not sleep durations
+- [2026-10-30] Tree snapshots - Do not equate read errors with deletion
+- [2026-10-30] Test summaries - Recognize standalone expected outcomes
+- [2026-10-30] Test summaries - Quiet output and deselection
+- [2026-10-30] Bound evidence - Do not silently downgrade comparison
+- [2026-10-30] Broker fixture - Verify transaction and actual resend boundaries
+- [2026-10-30] Replay output - Preserve observed stream order
+- [2026-11-01] Offline review - Reject lossy input decoding
+- [2026-11-01] Tree enumeration - Distinguish confirmed worktree failures
+- [2026-11-01] Tree policy - Require binding at verification too
+- [2026-11-02] Attestation inventory - Zero is not verified
+- [2026-10-31] Blind comparison - Record reproducible allocation privately
+- [2026-11-01] Gate mutation PoC - Attribute failures to targeted assertions
+- [2026-11-01] Security review - Bound reads and preserve write ownership
+- [2026-11-02] Cross-platform fixtures - Compare filesystem identity
+- [2026-11-02] Offline planning - Preserve unresolved dependencies and attempts
+- [2026-11-02] Multi-agent planning - Keep coordination separate from evidence
+- [2026-11-02] Benchmark comparisons - Count matched declarations, not claimed gains
+- [2026-11-08] Session handoff - A clean tree is not a synced tree
+- [2026-11-08] Documentation edits - Verify the anchor text before replacing
+- [2026-11-08] Test invocation - A directory argument is not a suite
+- [2026-11-08] Codex port - A renamed hook is not a ported hook
+- [2026-11-08] Guardrail parsing - A dead branch hid a Windows deletion bypass
+- [2026-11-11] 외부 조사 반영 - README 실측 후 패턴만 반영
+- [2026-11-11] 외부 소스 도입 - 라이선스 안전 규율
+- [2026-11-11] 신규 스킬 반영 - 라우터 등록·점수 수식·기록 구조 점검
+- [2026-11-11] Harness·Loop 조사 반영 - 보유 규율 대조 후 기록만
+- [2026-11-11] 라이선스 제로 허용 강화 - 결정 사다리(채택 → 완전 재구현 → 제거)
+- [2026-11-11] 문서 파싱 정밀도 반영 - 구조 보존 + 부분 성공 보고 (kordoc 실측, MIT → 아이디어만)
+- [2026-11-11] 4종 저장소 실측 반영 - 독자 라이선스·신뢰 라벨·credit 유지
+- [2026-11-12] Craft gate - 미적 감각·문장은 외재화·강제 대상이다 (모델 능력 아님)
+- [2026-11-12] 바이너리 검증 - '손상' 판정 전 탐침 자체를 검증하라 (양성 대조)
+- [2026-11-12] Git 운영 - 머지 커밋에서의 `reset --hard HEAD~1`은 1-parent 회귀
+- [2026-11-12] 파일 정합성 - 온디스크 사본과 커밋 바이트는 별개 (재생성 후 즉시 재검증)
+- [2026-11-12] CI 운영 - 플랫폼 디스패치 장애와 코드 실패는 다르게 판정
+- [2026-11-14] External review - Verify licenses by API, adopt ideas-only, probe positive controls
+- [2026-11-14] Simulation - 10x determinism runs expose a probe-shape blind spot and a latent CI fixture gap
+- [2026-11-15] P1 build - probe() note param clobbered measured stdout; assert.match needs RegExp; merge-guard checks-file argv has no PR number
+- [2026-11-15] Local run-all on Windows - hooks gate takes 35+ min under concurrent load; log stays silent until gates flush
+- [2026-11-15] CI triage - toolbroker/windows single-test flake (WinError 10053); darwin read probe "denied" is a missing-file artifact
+- [2026-11-15] P2 build - Playwright MCP video pipeline: ffmpeg helper, remote video.path(), no fs in vm sandbox
+- [2026-11-16] Tree binding - inherited Git routing and practical environment compatibility
+- [2026-11-16] Claude read signal - test real host before Phase rerun
+- [2026-11-16] Phase run - passing tests with changed tree are not Phase PASS
+- [2026-11-16] Read hooks - fixture success can fail on the real host under resource pressure
+- 2026-11-16: Portable evidence and replay limits
+- 2026-11-17: Workflow provenance and tree modes
+- 2026-11-18: Source audit remediation
+- 2026-11-18: Priority evidence enforcement and portability
+- 2026-11-18: Workflow freshness and JSON publication
+- 2026-11-18: Effective hosted rules and Codex read permissions
+- 2026-11-18: Nested Codex startup and fork run metadata
+- 2026-11-20: Hook trust and cross-platform test fixtures
+- 2026-11-21: Canary and evaluation oracle controls
