@@ -417,3 +417,9 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - A Windows Git archive can transform many baseline files to CRLF, even if changed-file hashes match. Prepare an LF candidate from a Git bundle and compare all unchanged tracked blobs and modes as well as changed clean blobs before treating a Linux run as CI-representative.
 - A blocked shell process and an unchanged canary file do not establish write denial if no write was attempted; another MCP tool may still access the fixture. Check actual tool events, policy denials and effects independently, and do not equate a permission rule with an active OS sandbox.
 - A cross-host synthetic model response obtained outside the repository does not show that its project rules were loaded. Test discovery and permissions separately; challenge revised shared instructions for newly introduced assumptions and keep unvalidated rules out of the shared core.
+
+## 2026-11-21: PR merge candidate attestation recovery
+
+- Prepare a clean checkout of the exact PR merge candidate. Check the raw tracked bytes against Git blobs and run the verifier's HEAD, index, worktree and untracked-file checks separately. If Git for Windows reports dubious ownership under the verification identity, scope the safe-directory argument to that exact checkout and command. Pass Git index data to the digest process when nested Git spawning is blocked.
+- Check project trust and hook execution separately. A successful MCP log read can occur without the recorder running. Check the genuine verify-role event against the exact test log SHA-256 and active epoch before recording strict verification. The gate rotates the epoch when recording the verdict.
+- On PR #71 the Windows bound run passed 439 of 446 tests, with zero failures and all 306 hooks passing. All five strict gate steps passed. The fresh attestation binds the tested tree. Hosted CI separately evaluates the current PR merge candidate.
