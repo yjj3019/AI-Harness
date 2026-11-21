@@ -6,6 +6,26 @@
       "path": "../report-editing-cases.json",
       "sha256": "1a784d0f511c1403ea2b77561c8d6091fee0a62e509664eae338984f7bf4ee5a",
       "purpose": "문서 편집 평가 케이스 9건 (required_claims·protected_spans) — 평가 기준 입력"
+    },
+    {
+      "path": "harness-pilot-dev.json",
+      "sha256": "d745e3be6dbce70cb9c45ed75abe25eca44253cc50e8be0360869c98b32a662e",
+      "purpose": "Synthetic development cases for task quality and safety; no execution results implied"
+    },
+    {
+      "path": "harness-pilot-holdout.json",
+      "sha256": "275f6f11af4cbbc2ed6bc28d030e986969e840895599ed2905a3cef9acbe648d",
+      "purpose": "Synthetic holdout candidates; public and not independently sequestered"
+    },
+    {
+      "path": "harness-pilot-protocol.md",
+      "sha256": "690f50ef20f08077a7afa8aec04e400ad20b390a7aaba14d53e0d4d8ed224432",
+      "purpose": "Narrow D02 text-only pilot protocol; pinning does not prove preregistration"
+    },
+    {
+      "path": "three-host-remediation-protocol.md",
+      "sha256": "e4f92c7ed7b02e2c3ae7373fb44c6ba06e4bd897253cd12aee3e99788f933e88",
+      "purpose": "Exploratory three-host remediation protocol; pinning does not prove preregistration"
     }
   ]
 }
