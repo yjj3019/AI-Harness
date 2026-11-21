@@ -89,6 +89,8 @@ Refer to these detailed documents in `docs/` rather than bloating this top-level
 
 ## 3. Verify Loop Subagents
 
+The loop and three-iteration limit below apply to Phase work. For read-only research, report sources, observations and uncertainty; for ordinary changes outside a Phase, use verification proportionate to the change and report what ran. Neither path weakens approval, evidence or execution-safety rules. A Phase must not be relabeled to bypass its gates.
+
 The system uses 5 independent Subagents located in `.claude/agents/`:
 
 - `coding.md`: Implementation of phase requirements.
@@ -111,4 +113,6 @@ Always check `docs/compound-log.md` before starting any task.
 
 For a new Phase, record verify PASS with `--require-read-proof` and independently confirm `require_read_proof: true` in its verify record. If the host cannot supply a valid read signal, stop rather than fabricate one. This signal is not authentication or proof of host isolation.
 
-After a Phase fully passes, update `docs/HANDOFF.md` and prefer a new session for the next Phase.
+After a Phase fully passes, update `docs/HANDOFF.md` and start a new session before the next Phase.
+
+For optional task scoping and the unvalidated index experiment, see `docs/prompt-guidance-evaluation.md`.

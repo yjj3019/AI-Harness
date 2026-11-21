@@ -44,6 +44,10 @@ The reader gives the verifier log excerpts and test diagnostics. Shell reads do 
 
 The MCP process and recording hook resolve their checkout with Git, so they can start from a subdirectory of the same worktree. Run `node .claude/workflows/phase-gate.js doctor --host codex` from the repository root to check the project configuration and start the read-only tool from a subdirectory. A successful doctor does not check hook trust: in Codex, use `/hooks` to confirm the Phase reader's PostToolUse hook is enabled and trusted. Project trust alone is insufficient. Verify actual role attribution and read proof in a real Codex invocation.
 
+### Windows restricted-token diagnostic
+
+In a Windows Codex CLI 0.171.0 test, the default sandbox helper failed to start. The documented per-invocation `windows.sandbox="unelevated"` fallback allowed a disposable `codex sandbox -P :read-only` test to read a synthetic file while a `Set-Content` write failed with `UnauthorizedAccessException`; a separate `:workspace` invocation wrote to its disposable workspace. An earlier command-file probe had a misleading zero exit despite a denied redirection, so it is not a positive result. This is a bounded observation for those CLI profiles and fixture, not proof of the default sandbox, other users or MCP enforcement. A separate `node_repl` MCP read succeeded when shell startup failed. Keep the default configuration unchanged unless the owner chooses otherwise; verify the effective host and tool boundaries for the real task. Official guidance: https://learn.chatgpt.com/docs/windows/windows-sandbox
+
 ## Super-agent pattern
 
 The Router / Worker notes in `docs/super-agent-architecture-notes.md` are host-agnostic. Codex can approximate them with:
