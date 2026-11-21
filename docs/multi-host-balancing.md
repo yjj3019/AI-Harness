@@ -33,7 +33,11 @@ The Ralph-style loop (implement → test → verify → review → compound) and
 
 - **Claude Code**: Use `.claude/agents/` + `phase-gate.js` + hooks as the reference implementation.
 - **Codex / others**: Approximate with separate sessions or explicit role prompts + the same evidence requirements. Record results in `docs/HANDOFF.md` or structured reports; do not claim completion without observable evidence.
-- Never hand-write `.phase-evidence/*` files. Prefer the gate when available; otherwise document the equivalent check.
+- Never hand-write Phase evidence JSON. The orchestrator may write report inputs under `.phase-evidence/`; only the gate writes Phase records. Prefer the gate when available; otherwise document the equivalent check without claiming strict Phase completion.
+
+## Grok Build discovery and trust
+
+Grok Build 1.0.92 on one Windows machine reported that the repository root was not owned by the process user and did not load its project hooks or discover project instructions. An independently created user-owned synthetic Git repository had a discoverable root, but was not trusted and exposed no project instructions in that inspection. This isolates a candidate ownership condition, not the full trust/discovery behavior. Do not change ownership or bypass folder trust automatically; use a user-owned isolated checkout and verify its instructions and each hook with the actual host. The same Windows build warned that its requested read-only sandbox was not enforced. An explicit Edit permission rule denied one synthetic tool call, but this does not establish OS or network containment or cover other tools. See https://docs.x.ai/build/features/permissions and https://docs.x.ai/build/features/sandbox.
 
 ## Skills balancing
 
