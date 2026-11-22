@@ -67,9 +67,11 @@ function inventory(manifestPath, root, includeOptional = false, baseSha = "") {
 }
 
 // root and gatePath are dependency injection for callers/tests, not CLI options.
-function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight = false } = {}) {
+function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight = false, ciParity = false } = {}) {
   root = path.resolve(root);
-  const phases = inventory(manifestPath, root);
+  // ciParity selects the same phases as CI matrix discovery (required plus every committed attestation) and
+  // replays them the way CI does (--require-pinned-command), so a local pass predicts the CI replay.
+  const phases = inventory(manifestPath, root, ciParity);
   if (preflight) {
     for (const id of phases) console.log(`Phase ${id}: attestation file present (unverified).`);
     console.log(`Preflight: ${phases.length} required attestation file(s) present; attestations were not verified and no commands were run.`);
@@ -79,7 +81,7 @@ function verifyInventory(manifestPath, { root = ROOT, gatePath = GATE, preflight
   for (const id of phases) {
     console.log(`Verifying attestation for phase ${id}...`);
     // Leave time for the gate's own bounded replay, snapshots and cleanup.
-    const result = spawnSync(process.execPath, [gatePath, "verify-attestation", id], {
+    const result = spawnSync(process.execPath, [gatePath, "verify-attestation", id, ...(ciParity ? ["--require-pinned-command"] : [])], {
       cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, stdio: "inherit", shell: false,
       timeout: replayTimeoutMs,
     });
@@ -98,11 +100,12 @@ if (require.main === module) {
       console.log(`phases=${JSON.stringify(phases)}`);
     } else {
       const preflight = args[0] === "--preflight";
-      if (args.length !== (preflight ? 2 : 1)) throw new Error("provide exactly one manifest path");
-      verifyInventory(args[preflight ? 1 : 0], { preflight });
+      const ciParity = args[0] === "--ci-parity";
+      if (args.length !== (preflight || ciParity ? 2 : 1)) throw new Error("provide exactly one manifest path");
+      verifyInventory(args[preflight || ciParity ? 1 : 0], { preflight, ciParity });
     }
   } catch (err) {
-    console.error(`ERROR: ${err.message}\nUsage: node scripts/verify-attestation-inventory.js --matrix [<base-sha>] | [--preflight] <manifest.json>`);
+    console.error(`ERROR: ${err.message}\nUsage: node scripts/verify-attestation-inventory.js --matrix [<base-sha>] | [--preflight | --ci-parity] <manifest.json>`);
     process.exitCode = 1;
   }
 }

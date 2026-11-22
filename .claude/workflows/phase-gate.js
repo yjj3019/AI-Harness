@@ -191,6 +191,33 @@ async function withPhaseLock(phase, action) {
   }
 }
 
+// A crash or SIGKILL leaves .phase-evidence/phase-<id>.lock behind, after which run, record, check and attest all
+// refuse to start. unlock removes it only when its owner is provably gone: same host, process no longer running.
+// A reused PID can still look alive, in which case unlock refuses and the lock must be removed by hand.
+function cmdUnlock(args) {
+  if (args.length !== 1) usage();
+  const phase = args[0];
+  requirePhase(phase);
+  const lock = path.join(EVIDENCE_DIR, `phase-${phase.toLowerCase()}.lock`);
+  if (!fs.existsSync(lock)) {
+    console.log(`Phase ${phase} is not locked.`);
+    return;
+  }
+  let owner = null;
+  try { owner = JSON.parse(fs.readFileSync(path.join(lock, "owner.json"), "utf8")); } catch { /* unreadable */ }
+  if (!owner || !Number.isInteger(owner.pid) || typeof owner.host !== "string") {
+    die(2, `ERROR: ${toRel(lock)} has no readable owner (owner.json). Confirm that no gate process runs, then remove it by hand`);
+  }
+  if (owner.host !== os.hostname()) {
+    die(2, `ERROR: the lock belongs to host ${owner.host}, not this host; refusing to remove it`);
+  }
+  let alive = true;
+  try { process.kill(owner.pid, 0); } catch (error) { alive = error.code === "EPERM"; }
+  if (alive) die(2, `ERROR: process ${owner.pid} that holds the lock is still running; refusing to remove it`);
+  fs.rmSync(lock, { recursive: true, force: true });
+  console.log(`Removed the stale lock of Phase ${phase} (owner process ${owner.pid} is gone).`);
+}
+
 function usage() {
   die(
     1,
@@ -200,9 +227,10 @@ function usage() {
       "  node phase-gate.js run <phase> test [--require-test-summary] [--require-bound-tree] -- <command...>",
       "  node phase-gate.js record <phase> <step> --status PASS|FAIL [--report <file under .phase-evidence/>] [--meta key=value ...] [--require-read-proof]",
       "  node phase-gate.js check <phase> [--require-bound-tree] [--require-strict-evidence]",
+      "  node phase-gate.js unlock <phase>   (remove a lock whose owner process is gone)",
       "  node phase-gate.js doctor [--host claude|codex]",
       "  node phase-gate.js attest <phase> [--require-strict-evidence]",
-      "  node phase-gate.js verify-attestation <phase> [--require-strict-evidence] [-- <expected command...>]",
+      "  node phase-gate.js verify-attestation <phase> [--require-strict-evidence] [--require-pinned-command] [-- <expected command...>]",
       `Steps: ${STEPS.join(", ")}`,
     ].join("\n")
   );
@@ -239,19 +267,38 @@ function treeHash() {
     }
     return null;
   }
-  const files = [...new Set(r.stdout.toString("utf8").split("\0").filter(Boolean))]
+  // Split the raw bytes first: a path that does not survive a UTF-8 round trip would be looked up under a
+  // different name, hit ENOENT and silently drop out of the hash.
+  const rawPaths = [];
+  let from = 0;
+  for (let i = 0; i < r.stdout.length; i++) {
+    if (r.stdout[i] === 0) {
+      if (i > from) rawPaths.push(r.stdout.subarray(from, i));
+      from = i + 1;
+    }
+  }
+  if (from < r.stdout.length) rawPaths.push(r.stdout.subarray(from));
+  const decoded = [];
+  for (const seg of rawPaths) {
+    const text = seg.toString("utf8");
+    if (!Buffer.from(text, "utf8").equals(seg)) return { error: "a listed path is not valid UTF-8, so the tree hash cannot bind it faithfully" };
+    decoded.push(text);
+  }
+  const files = [...new Set(decoded)]
     .filter((f) => !TREE_EXCLUDE.some((re) => re.test(f)))
     .sort();
-  // Windows does not expose Git's executable mode via lstat. Use the index
-  // for tracked paths there so a normal checkout hashes like its POSIX peer.
+  // Windows does not expose Git's executable mode via lstat, so tracked modes come from the index there.
+  // The index is read on every platform: a gitlink (mode 160000, a submodule) would otherwise contribute
+  // nothing to the hash, so a changed submodule pointer would leave the tree hash unchanged.
   const windowsModes = new Map();
-  if (process.platform === "win32") {
+  {
     const index = spawnSync("git", ["--no-optional-locks", "ls-files", "--stage", "-z"], { cwd: ROOT, encoding: "buffer" });
     if (index.error || index.status !== 0) return { error: `git index mode enumeration failed: ${index.error ? (index.error.code || index.error.message) : `exit ${index.status}`}` };
     for (const entry of index.stdout.toString("utf8").split("\0").filter(Boolean)) {
       const tab = entry.indexOf("\t");
       const header = tab < 0 ? null : /^(\d{6}) [a-f0-9]+ ([0-3])$/.exec(entry.slice(0, tab));
       if (!header || header[2] !== "0") return { error: "git index contains invalid or unmerged entries" };
+      if (header[1] === "160000") return { error: "the git index contains a submodule (gitlink) entry; the tree hash cannot bind its revision. Remove it or bind it explicitly" };
       windowsModes.set(entry.slice(tab + 1), header[1]);
     }
   }
@@ -273,11 +320,11 @@ function treeHash() {
     } catch (err) {
       return { error: `read ${f}: ${err.code || err.message}` };
     }
-    // An untracked Windows file has no executable mode; tracked mode comes
-    // from Git. POSIX binds the actual worktree permission bits.
+    // An untracked Windows file has no executable mode; tracked mode comes from Git. POSIX binds whether any
+    // execute bit is set, the same single bit Git records, so 0700 and 0755 hash alike and match Windows.
     const executable = !st.isFile() ? "-" : process.platform === "win32"
       ? (windowsModes.get(f) === "100755" ? "111" : "000")
-      : (st.mode & 0o111).toString(8).padStart(3, "0");
+      : (st.mode & 0o111) ? "111" : "000";
     h.update(`${f}\0${executable}\0${sha256(content)}\n`);
   }
   return h.digest("hex");
@@ -784,7 +831,7 @@ function validateChain(phase, { requireBoundTree = false, strict = false } = {})
     prevStep = step;
     prevTime = t;
   }
-  return { passed, fail: null, testEv, readProof, warnings };
+  return { passed, fail: null, testEv, readProof, warnings, chainSha: prevSha };
 }
 
 function cmdCheck(args) {
@@ -857,7 +904,7 @@ function checkClaudeDoctor(ok, bad) {
   }
   if (st) {
     const required = [
-      ["PreToolUse", "Write|Edit|MultiEdit|NotebookEdit|Bash", "evidence-guard.sh", " auto"],
+      ["PreToolUse", "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell|mcp__.*", "evidence-guard.sh", " auto"],
       ["PreToolUse", "Bash|PowerShell", "block-destructive.sh", ""],
       ["PostToolUse", "Read", "read-tracker.sh", ""],
     ];
@@ -881,6 +928,25 @@ function checkClaudeDoctor(ok, bad) {
       } catch {
         bad(`${toRel(f)} is missing or not executable, or not a repository file`);
       }
+    }
+  }
+  // Local and user settings are outside the tree hash and the committed file, yet the host merges them. One
+  // of them can switch every guard off without any tracked change, so the doctor must look at them too.
+  for (const [label, file] of [
+    [".claude/settings.local.json", path.join(ROOT, ".claude", "settings.local.json")],
+    ["~/.claude/settings.json", path.join(os.homedir(), ".claude", "settings.json")],
+  ]) {
+    let raw;
+    try { raw = fs.readFileSync(file, "utf8"); } catch { continue; }
+    let other;
+    try { other = JSON.parse(raw); } catch {
+      console.log(`[WARNING] ${label} is not valid JSON; the host may ignore it, so its hook settings were not checked.`);
+      continue;
+    }
+    if (other && typeof other === "object" && other.disableAllHooks === true) {
+      bad(`${label} sets disableAllHooks: true, which switches off every guard`);
+    } else {
+      ok(`${label} does not disable hooks`);
     }
   }
   if (/\s/.test(ROOT)) ok("project path contains a space (hook commands are quoted)");
@@ -963,6 +1029,10 @@ function cmdAttest(args) {
     argv: res.testEv.argv,
     ...(res.testEv.require_test_summary ? { require_test_summary: true } : {}),
     ...(res.readProof ? { require_read_proof: true } : {}),
+    // Digest of the final evidence record; each record links the previous one, so this identifies the
+    // exact chain (coding, test, verify, review, compound) that was attested. The records themselves stay
+    // local (.phase-evidence is not committed); keep a copy if the chain must be re-checked later.
+    evidence_chain_sha256: res.chainSha,
     attested_at: new Date().toISOString(),
   };
   writeJsonAtomically(attestationFile(phase), att);
@@ -990,8 +1060,11 @@ async function cmdVerifyAttestation(args) {
   const sep = args.indexOf("--");
   const head = sep < 0 ? args : args.slice(0, sep);
   const expected = sep < 0 ? null : args.slice(sep + 1);
-  if (head.length < 1 || head.length > 2 || (head.length === 2 && head[1] !== "--require-strict-evidence") ||
+  const OPTIONS = ["--require-strict-evidence", "--require-pinned-command"];
+  const options = head.slice(1);
+  if (head.length < 1 || options.some((o) => !OPTIONS.includes(o)) || new Set(options).size !== options.length ||
       (expected !== null && expected.length === 0)) usage();
+  const requirePin = options.includes("--require-pinned-command");
   const phase = head[0];
   requirePhase(phase);
   const file = attestationFile(phase);
@@ -1004,18 +1077,32 @@ async function cmdVerifyAttestation(args) {
     bad("invalid JSON");
   }
   if (!att || att.schema !== SCHEMA || String(att.phase) !== phase) bad("schema or phase mismatch");
-  const strict = head.length === 2 || isRequiredPhase(phase);
+  const strict = options.includes("--require-strict-evidence") || isRequiredPhase(phase);
   if (strict && !hasStrictAttestationFlags(att)) {
     bad("strict evidence requires test summary and verify read proof flags");
   }
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
-  // The required command comes from the command line, else from the committed pin file.
+  // The required command comes from the command line, else from the committed pin file. Replay never
+  // runs an argv that nothing independent of the attestation names: a missing pin is a failure.
   const pinned = loadPinnedCommand(bad);
   const required = expected || pinned;
+  // CI passes --require-pinned-command: replay must not execute an argv that only the attestation names.
+  if (requirePin && !pinned) bad("no pinned test command: --require-pinned-command needs a valid .claude/required-test-command.json");
+  if (strict && !/^[0-9a-f]{64}$/.test(att.evidence_chain_sha256 || "")) {
+    bad("strict evidence requires evidence_chain_sha256 (the digest of the final evidence record)");
+  }
+  if (att.evidence_chain_sha256 !== undefined && !/^[0-9a-f]{64}$/.test(String(att.evidence_chain_sha256))) bad("evidence_chain_sha256 is malformed");
   if ((required && JSON.stringify(required) !== JSON.stringify(att.argv)) ||
       (pinned && JSON.stringify(pinned) !== JSON.stringify(att.argv))) {
     bad(`attested command differs from the required one: ${att.argv.join(" ")}`);
+  }
+  // On the machine that holds the evidence, the local chain must be the one that was attested.
+  if (att.evidence_chain_sha256) {
+    const local = loadEvidence(phase, STEPS[STEPS.length - 1]);
+    if (!local.error && local.sha && local.sha !== att.evidence_chain_sha256) {
+      bad("the local evidence chain differs from the attested one (evidence_chain_sha256). Re-attest or restore the attested chain");
+    }
   }
   // An attestation cannot disable count checks when a trusted command pin exists.
   const strictReplay = att.require_test_summary === true || Boolean(pinned);
@@ -1080,6 +1167,8 @@ async function main() {
       return withPhaseLock(args[0], () => cmdRecord(args));
     case "check":
       return withPhaseLock(args[0], () => cmdCheck(args));
+    case "unlock":
+      return cmdUnlock(args);
     case "doctor":
       return cmdDoctor(args);
     case "attest":

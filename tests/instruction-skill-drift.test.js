@@ -46,3 +46,16 @@ test("the drift check detects a missing and a dangling reference", () => {
   assert.deepEqual(referencedSkills(text).filter((n) => !shipped.has(n)), ["ghost-skill"]);
   assert.deepEqual([...shipped].filter((n) => !referencedSkills("nothing here").includes(n)), ["real-skill"]);
 });
+
+test('every documented gate test command carries --require-bound-tree (agents, commands, constitutions)', () => {
+  const files = ['CLAUDE.md', 'AGENTS.md', '.claude/agents/test.md', '.codex/agents/test.toml', '.claude/commands/phase-harness.md'];
+  let seen = 0;
+  for (const rel of files) {
+    const text = fs.readFileSync(path.join(root, rel), 'utf8');
+    for (const m of text.matchAll(/run <[a-z-]+> test[^\n`]*/g)) {
+      seen++;
+      assert.match(m[0], /--require-bound-tree/, rel + ' documents a gate test command without --require-bound-tree: ' + m[0]);
+    }
+  }
+  assert.ok(seen >= 4, 'the check must see the documented commands (saw ' + seen + ')');
+});

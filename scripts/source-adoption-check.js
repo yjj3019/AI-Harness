@@ -9,7 +9,7 @@ const LIVE_TIMEOUT_MS = 15000;
 const LICENSES = new Set(['MIT', 'Apache-2.0', 'CUSTOM-ATTRIBUTION', 'UNVERIFIED']);
 const METHODS = new Set(['ideas-only', 'fresh-implementation', 'reference-only']);
 const KEYS = ['id', 'source_url', 'license_url', 'license_commit', 'license_sha256', 'license_label', 'verified_spdx', 'checked_at', 'method', 'copied_files', 'credit_url', 'concept'];
-const CODE_DIRS = ['scripts', 'tests', '.claude', '.codex', '.agents'];
+const CODE_DIRS = ['scripts', 'tests', '.claude', '.codex', '.agents', 'skills', 'toolbroker', 'dashboard'];
 // 테스트 픽스처 전용 허용 참조: 실재하지 않는 가짜 저장소 경로이며 기존 네거티브 테스트에서만
 // 참조 문자열로 쓰인다. 미등록 탐지 테스트용 URL은 테스트 파일에서 동적 조합해 리터럴로 존재하지 않는다.
 const FIXTURE_REFS = new Set(['github.com/a/b', 'github.com/unrelated/thing']);
@@ -24,7 +24,7 @@ function scanCodeReferences(manifest, root) {
   allowed.add('github.com/yjj3019/');
   for (const item of manifest.entries) {
     allowed.add(item.source_url.replace(/^https:\/\//, ''));
-    allowed.add(item.license_url.replace(/^https:\/\//, ''));
+    if (item.license_url !== null) allowed.add(item.license_url.replace(/^https:\/\//, ''));
     if (item.credit_url !== null) allowed.add(item.credit_url.replace(/^https:\/\//, ''));
   }
   const violations = [];
@@ -79,13 +79,19 @@ function validate(manifest) {
     const source = httpsUrl(item.source_url);
     if (!/^\/[^/]+\/[^/]+$/.test(source.pathname) || urls.has(item.source_url)) fail();
     urls.add(item.source_url);
-    const license = httpsUrl(item.license_url);
-    // A license link must name an immutable commit, not a branch, and carry the hash of the text read there.
-    if (typeof item.license_commit !== 'string' || !/^[0-9a-f]{40}$/.test(item.license_commit) ||
-        typeof item.license_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(item.license_sha256)) fail();
-    if (!license.pathname.startsWith(source.pathname + '/blob/' + item.license_commit + '/') ||
-        license.pathname.split('/').length < 6) fail();
     if (!LICENSES.has(item.license_label) || !METHODS.has(item.method)) fail();
+    if (item.license_label === 'UNVERIFIED') {
+      // No license text exists to pin. Such a source may only be referenced, never copied or adapted.
+      if (item.license_url !== null || item.license_commit !== null || item.license_sha256 !== null) fail();
+      if (item.method === 'fresh-implementation') fail();
+    } else {
+      const license = httpsUrl(item.license_url);
+      // A license link must name an immutable commit, not a branch, and carry the hash of the text read there.
+      if (typeof item.license_commit !== 'string' || !/^[0-9a-f]{40}$/.test(item.license_commit) ||
+          typeof item.license_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(item.license_sha256)) fail();
+      if (!license.pathname.startsWith(source.pathname + '/blob/' + item.license_commit + '/') ||
+          license.pathname.split('/').length < 6) fail();
+    }
     if (!LICENSES.has(item.verified_spdx) || item.verified_spdx !== item.license_label) fail();
     checkedDate(item.checked_at);
     if (!Array.isArray(item.copied_files) || item.copied_files.length !== 0) fail();
@@ -126,6 +132,7 @@ async function verifyLive(manifest, fetchImpl = fetch) {
   const results = [];
   for (const item of manifest.entries) {
     let status;
+    if (item.license_url === null) { results.push({ id: item.id, status: 'no-license' }); continue; }
     try {
       const res = await fetchImpl(rawLicenseUrl(item), { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS) });
       if (!res.ok) status = 'unreachable';
@@ -144,7 +151,7 @@ async function runLive(manifest, fetchImpl = fetch) {
   for (const r of results) process.stdout.write('source-adoption-check: live ' + r.status + ' ' + r.id + '\n');
   // A mismatch is a finding (exit 1); an unreachable source is unverified, not a pass (exit 2).
   if (results.some(r => r.status === 'mismatch')) return 1;
-  if (results.some(r => r.status !== 'match')) return 2;
+  if (results.some(r => r.status !== 'match' && r.status !== 'no-license')) return 2;
   return 0;
 }
 function main(filename, live = false) {

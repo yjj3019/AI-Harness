@@ -2,6 +2,19 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — 3모델 리뷰(Opus·Codex·Grok) 개선 (미병합, 브랜치 `fix/three-model-review-20261122`)
+
+- 훅 `evidence-guard.sh`(Claude·Codex) 재작성: 허용/거부 판정이 bash 내장(`[[ =~ ]]`, `case`)만 쓰므로 PATH에 grep·sed가 없어도 거부가 허용으로 바뀌지 않는다. 직접 입력으로 확인한 우회를 모두 막았다: `.phase-ev*` 같은 글롭(Write 경로와 Bash 명령), 끝의 점·공백(`.phase-evidence.`, `.phase-evidence `), 8.3 짧은 이름, `.js` 없는 `phase-gate` 호출, PowerShell 도구, MCP 도구(`mcp__*`). 경로가 비었거나 realpath가 실패하면 차단한다.
+- 게이트 신뢰 집합(`phase-gate.js`와 보조 모듈, 훅, `settings*.json`, 명령 고정 파일, `tests/run-all.sh`, `.github/workflows`, `required-phases.json`, `CODEOWNERS`, 병합·재실행 스크립트)을 서브에이전트가 고칠 수 없게 했다(메인 세션은 허용). `.github/CODEOWNERS`가 같은 집합을 나열한다. 서버의 코드 오너 리뷰 강제는 관리자 설정이다.
+- `block-destructive.sh`(두 벌): `git -C dir reset --hard`가 push 파서를 거치지 않아 통과하던 것을 막았고, push·reset·curl|sh·디스크 쓰기 판정을 외부 grep 대신 bash 정규식으로 바꿨다. Codex `hooks.json`은 `GIT_DIR` 등을 비우고 `git rev-parse`를 실행하며 실패하면 `exit 2`.
+- `.claude/settings.json`·`.codex/hooks.json` matcher와 doctor 기대값에 `PowerShell`과 `mcp__.*` 추가. doctor는 `.claude/settings.local.json`과 `~/.claude/settings.json`의 `disableAllHooks: true`를 실패로 보고한다.
+- `phase-gate.js`: attestation이 최종 증거 레코드의 다이제스트(`evidence_chain_sha256`)를 담고, strict 검증은 이 필드를 요구하며 증거가 있는 머신에서는 로컬 체인이 attest한 체인과 같아야 한다. `verify-attestation --require-pinned-command`(CI가 사용)는 `.claude/required-test-command.json`이 없으면 실패한다. 트리 해시는 gitlink(서브모듈) 항목과 UTF-8이 아닌 경로에서 실패하고, 실행 권한은 한 비트(0700과 0755 동일, Windows와 동일)로 본다. 새 명령 `unlock <phase>`는 소유 프로세스가 사라진 잠금만 지운다.
+- CI(`ci.yml`): replay에 `--require-pinned-command`; `checks`와 `portability`는 `if: always()`로 항상 실행되고 `attestation summary`가 성공이 아니면 건너뛰지 않고 실패한다; toolbroker 잡은 실행 20건 이상·건너뜀 제외 20건 이상을 요구한다; `self-qa`에 타임아웃과 `hooks.test.sh` shellcheck를 추가했다. `scripts/verify-attestation-inventory.js --ci-parity`는 CI와 같은 phase 선택과 replay를 로컬에서 한다.
+- 테스트 품질: `tests/run-all.sh`는 테스트 파일 48개 이상(정확한 인벤토리 하한)을 요구하고, `node --test` 출력을 `scripts/test-summary-gate.js`로 검사해 실행 400건 이상·건너뜀 20건 이하를 요구한다(빈 테스트 파일이나 스스로 건너뛰는 스위트는 더 이상 통과하지 못한다). `scripts/tree-exclude-check.js`는 `TREE_EXCLUDE`의 개수가 아니라 정확한 패턴 5개를 고정한다. 새 테스트: `tests/gate-hardening.test.js`(11), 훅 테스트 447건(Linux 기준), 드리프트 테스트에 게이트 test 명령의 `--require-bound-tree` 검사.
+- 훅(리뷰 반영): 8.3 짧은 이름 컴포넌트(`WORKFL~1`, `SETTIN~1.JSO` 등)를 쓰는 서브에이전트 쓰기를 모두 거부하고, 신뢰 집합에 `test-summary-gate.js`·`secret-scan.js`·`source-adoption-check.js`를 넣었으며, Bash·PowerShell 명령이 신뢰 집합 경로를 이름으로 지목하면서 쓰기 연산(리다이렉트, `sed -i`, `tee`, `cp`, `mv`, `rm`, `git apply/checkout`, `Set-Content` 등)을 하면 거부한다(읽기·실행·diff는 허용). 이것은 어휘 검사라 변수·간접 쓰기는 못 막는다. `fresh-implementation` 방식은 UNVERIFIED 출처에 금지된다(CLAUDE.md의 사다리보다 엄격한 의도된 제한).
+- 라이선스·비밀: `source-adoption-check.js`가 `skills/`·`toolbroker`·`dashboard`도 스캔하고, 장부는 `skills/`가 인용하는 외부 저장소 19곳을 reference-only로 추가했다(총 25건, 커밋 고정·LICENSE sha256, 무라이선스 `adityaarakeri/senior-agent-skills`는 UNVERIFIED로 라이선스 항목 없이 등록하고 설치 명령을 `coding-master`에서 뺐다). UNVERIFIED는 복사·fresh-implementation이 불가하다. `secret-scan.js`는 `.env`, `.pem`, `.toml`, `id_rsa` 등도 읽고 SKIP을 경로 단위로 적용한다.
+- 문서: 아키텍처 명세에 "What an attestation proves" 표, CLAUDE.md·README의 "서브에이전트는 쓸 수 없다/수기 JSON은 거부된다" 표현을 사실에 맞게 고쳤고, compound 에이전트의 로그 로테이션을 Phase 밖(오케스트레이터가 attest 후 별도 변경)으로 옮겼으며, test 에이전트 명령에 `--require-bound-tree`를 넣었다. `docs/merge-policy.md`에 2026-11-22 ruleset 조회 결과와 남은 관리자 설정을 적었다.
+
 ## 작업 트리 — 평가 파일럿 (미병합)
 
 - 기존 고정 평가 목록에 합성 개발 사례 6건, 공개 holdout 후보 4건과 파일럿 프로토콜 2건을 추가했다. 해시는 LF 정규화된 입력을 고정하며 사전등록 시점, 실행 결과, 독립성 또는 보호 경계의 증거가 아니다.
