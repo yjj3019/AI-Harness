@@ -229,8 +229,9 @@ function usage() {
       "  node phase-gate.js check <phase> [--require-bound-tree] [--require-strict-evidence]",
       "  node phase-gate.js unlock <phase>   (remove a lock whose owner process is gone)",
       "  node phase-gate.js doctor [--host claude|codex]",
-      "  node phase-gate.js attest <phase> [--require-strict-evidence]",
-      "  node phase-gate.js verify-attestation <phase> [--require-strict-evidence] [--require-pinned-command] [-- <expected command...>]",
+      "  node phase-gate.js attest <phase> [--require-strict-evidence] [--sign [<private-key-file>]]",
+      "  node phase-gate.js attest-keygen [<private-key-file>]   (writes the private key outside the repo and the public key to .claude/attestation-public-key.pem)",
+      "  node phase-gate.js verify-attestation <phase> [--require-strict-evidence] [--require-pinned-command] [--require-signature] [-- <expected command...>]",
       `Steps: ${STEPS.join(", ")}`,
     ].join("\n")
   );
@@ -1008,9 +1009,113 @@ function attestationFile(phase) {
   return path.join(ATTEST_DIR, `phase-${phase}.json`);
 }
 
+// ---- Attestation signatures (Ed25519) -------------------------------------------------------------------
+// The signature covers the canonical JSON of the attestation without its "signature" field, so changing the tree,
+// the command, the flags or the evidence-chain digest invalidates it. The private key stays outside the repository
+// (default ~/.harness/attest-ed25519.pem); the public key is committed at .claude/attestation-public-key.pem and is
+// part of the gate's trust set. CI reads the public key from the PR base commit (ATTEST_KEY_BASE_SHA), so a pull
+// request cannot swap the key it is verified against. A signature proves that the holder of the private key attested
+// this exact payload; it does not prove that the verify and review steps were independent.
+const ATTEST_PUBKEY_REL = ".claude/attestation-public-key.pem";
+const DEFAULT_ATTEST_KEY = path.join(os.homedir(), ".harness", "attest-ed25519.pem");
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return "[" + value.map(canonicalJson).join(",") + "]";
+  if (value && typeof value === "object") {
+    return "{" + Object.keys(value).sort().map((k) => JSON.stringify(k) + ":" + canonicalJson(value[k])).join(",") + "}";
+  }
+  return JSON.stringify(value);
+}
+
+function publicKeyId(publicPem) {
+  return sha256(crypto.createPublicKey(publicPem).export({ type: "spki", format: "der" }));
+}
+
+function signAttestation(att, privatePem) {
+  const key = crypto.createPrivateKey(privatePem);
+  if (key.asymmetricKeyType !== "ed25519") throw new Error("the attestation signing key must be an Ed25519 key");
+  const { signature: _ignored, ...payload } = att;
+  const publicPem = crypto.createPublicKey(key).export({ type: "spki", format: "pem" });
+  const value = crypto.sign(null, Buffer.from(canonicalJson(payload)), key).toString("base64");
+  return { alg: "ed25519", key_id: publicKeyId(publicPem), value };
+}
+
+// Returns null when the signature is valid, else the reason.
+function checkAttestationSignature(att, publicPem) {
+  const sig = att.signature;
+  if (!sig || typeof sig !== "object" || sig.alg !== "ed25519" || typeof sig.value !== "string" || typeof sig.key_id !== "string") {
+    return "the attestation has no valid signature object";
+  }
+  let key;
+  try { key = crypto.createPublicKey(publicPem); } catch { return "the trusted public key is not a valid public key"; }
+  if (key.asymmetricKeyType !== "ed25519") return "the trusted public key is not an Ed25519 key";
+  if (publicKeyId(publicPem) !== sig.key_id) return "the signature names a different key than the trusted public key";
+  const { signature: _ignored, ...payload } = att;
+  let ok = false;
+  try { ok = crypto.verify(null, Buffer.from(canonicalJson(payload)), key, Buffer.from(sig.value, "base64")); } catch { ok = false; }
+  return ok ? null : "the signature does not match the attestation (it was changed after signing, or signed with another key)";
+}
+
+// The trusted public key: from the PR base commit when ATTEST_KEY_BASE_SHA is set (a pull request cannot swap it),
+// else from the working tree. A base without the key file is the one-time introduction of the key: the key of the
+// change itself is used and a warning says so.
+function loadTrustedPublicKey(bad) {
+  const baseSha = process.env.ATTEST_KEY_BASE_SHA;
+  const local = () => {
+    try { return fs.readFileSync(path.join(ROOT, ATTEST_PUBKEY_REL), "utf8"); } catch { return null; }
+  };
+  if (baseSha) {
+    if (!/^[0-9a-f]{40}$/i.test(baseSha)) bad("ATTEST_KEY_BASE_SHA must be a 40-character commit id");
+    const show = spawnSync("git", ["show", `${baseSha}:${ATTEST_PUBKEY_REL}`], { cwd: ROOT, encoding: "utf8" });
+    if (!show.error && show.status === 0) {
+      // The file exists at the base: it is the trusted key, even when it is empty or garbage (that fails the check
+      // later). Only a missing file is the introduction case; an empty file must not fall through to it.
+      if (!show.stdout.trim()) bad("the public key file at the base commit is empty");
+      return show.stdout;
+    }
+    const probe = spawnSync("git", ["cat-file", "-e", `${baseSha}^{commit}`], { cwd: ROOT });
+    if (probe.error || probe.status !== 0) bad("the base commit named by ATTEST_KEY_BASE_SHA is not available; fetch it before verifying");
+    // Only a path that is really absent at the base is the introduction case; a key that exists but could not be
+    // read is a failure, not a reason to trust the change's own key.
+    const present = spawnSync("git", ["cat-file", "-e", `${baseSha}:${ATTEST_PUBKEY_REL}`], { cwd: ROOT });
+    if (!present.error && present.status === 0) bad("the public key exists at the base commit but could not be read");
+    const pem = local();
+    if (!pem) bad("no trusted public key: the base commit has none and the change does not add " + ATTEST_PUBKEY_REL);
+    console.log("[WARNING] the base commit has no attestation public key; this change introduces it, so it is trusted this once.");
+    return pem;
+  }
+  const pem = local();
+  if (!pem) bad("no trusted public key: " + ATTEST_PUBKEY_REL + " is missing");
+  return pem;
+}
+
+function cmdAttestKeygen(args) {
+  const privatePath = path.resolve(args[0] || DEFAULT_ATTEST_KEY);
+  if (args.length > 1) usage();
+  const publicPath = path.join(ROOT, ATTEST_PUBKEY_REL);
+  if (fs.existsSync(privatePath)) die(2, `ERROR: ${privatePath} already exists; refusing to overwrite a signing key`);
+  if (fs.existsSync(publicPath)) die(2, `ERROR: ${ATTEST_PUBKEY_REL} already exists; rotating the trusted key is a reviewed change, not a command`);
+  const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
+  fs.mkdirSync(path.dirname(privatePath), { recursive: true });
+  fs.writeFileSync(privatePath, privateKey.export({ type: "pkcs8", format: "pem" }), { mode: 0o600, flag: "wx" });
+  const publicPem = publicKey.export({ type: "spki", format: "pem" });
+  fs.mkdirSync(path.dirname(publicPath), { recursive: true });
+  fs.writeFileSync(publicPath, publicPem, { flag: "wx" });
+  console.log(`Wrote the private key to ${privatePath} (keep it outside the repository; on Windows the file mode is not enforced, so protect the directory).`);
+  console.log(`Wrote the public key to ${ATTEST_PUBKEY_REL}, key_id ${publicKeyId(publicPem)}. Commit the public key through a reviewed change.`);
+}
+
 function cmdAttest(args) {
-  const [phase, ...flags] = args;
-  if (flags.length > 1 || (flags.length === 1 && flags[0] !== "--require-strict-evidence")) usage();
+  const [phase, ...rest] = args;
+  const flags = [];
+  let keyFile = null;
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === "--require-strict-evidence") flags.push(rest[i]);
+    else if (rest[i] === "--sign") {
+      keyFile = rest[i + 1] && !rest[i + 1].startsWith("--") ? rest[++i] : (process.env.HARNESS_ATTEST_KEY || DEFAULT_ATTEST_KEY);
+    } else usage();
+  }
+  if (flags.length > 1) usage();
   requirePhase(phase);
   const strict = flags.length === 1 || isRequiredPhase(phase);
   const res = validateChain(phase, { strict, requireBoundTree: strict });
@@ -1035,8 +1140,18 @@ function cmdAttest(args) {
     evidence_chain_sha256: res.chainSha,
     attested_at: new Date().toISOString(),
   };
+  if (keyFile) {
+    let privatePem;
+    try { privatePem = fs.readFileSync(keyFile, "utf8"); } catch (error) { die(2, `ERROR: cannot read the signing key ${keyFile}: ${error.code || error.message}`); }
+    try { att.signature = signAttestation(att, privatePem); } catch (error) { die(2, `ERROR: cannot sign: ${error.message}`); }
+    // Fail now, not in CI: the committed public key must be the one that verifies this signature.
+    let trusted = null;
+    try { trusted = fs.readFileSync(path.join(ROOT, ATTEST_PUBKEY_REL), "utf8"); } catch { /* reported below */ }
+    const problem = trusted === null ? `${ATTEST_PUBKEY_REL} is missing` : checkAttestationSignature(att, trusted);
+    if (problem) die(2, `ERROR: the signature would not verify against the committed public key: ${problem}`);
+  }
   writeJsonAtomically(attestationFile(phase), att);
-  console.log(`Wrote ${toRel(attestationFile(phase))}. Commit it; CI re-runs the test command and compares the tree.`);
+  console.log(`Wrote ${toRel(attestationFile(phase))}${att.signature ? " (signed)" : ""}. Commit it; CI re-runs the test command and compares the tree.`);
 }
 
 // .claude/required-test-command.json: a JSON array of strings, committed and reviewed with the code.
@@ -1060,11 +1175,12 @@ async function cmdVerifyAttestation(args) {
   const sep = args.indexOf("--");
   const head = sep < 0 ? args : args.slice(0, sep);
   const expected = sep < 0 ? null : args.slice(sep + 1);
-  const OPTIONS = ["--require-strict-evidence", "--require-pinned-command"];
+  const OPTIONS = ["--require-strict-evidence", "--require-pinned-command", "--require-signature"];
   const options = head.slice(1);
   if (head.length < 1 || options.some((o) => !OPTIONS.includes(o)) || new Set(options).size !== options.length ||
       (expected !== null && expected.length === 0)) usage();
   const requirePin = options.includes("--require-pinned-command");
+  const requireSignature = options.includes("--require-signature");
   const phase = head[0];
   requirePhase(phase);
   const file = attestationFile(phase);
@@ -1083,6 +1199,16 @@ async function cmdVerifyAttestation(args) {
   }
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
+  // CI passes --require-signature: an unsigned attestation, or one that does not verify against the trusted
+  // public key, is refused before anything is executed.
+  if (requireSignature) {
+    const problem = checkAttestationSignature(att, loadTrustedPublicKey(bad));
+    if (problem) bad(problem);
+  } else if (att.signature !== undefined) {
+    const pem = (() => { try { return fs.readFileSync(path.join(ROOT, ATTEST_PUBKEY_REL), "utf8"); } catch { return null; } })();
+    const problem = pem ? checkAttestationSignature(att, pem) : "a signature is present but no public key is committed";
+    if (problem) bad(problem);
+  }
   // The required command comes from the command line, else from the committed pin file. Replay never
   // runs an argv that nothing independent of the attestation names: a missing pin is a failure.
   const pinned = loadPinnedCommand(bad);
@@ -1173,6 +1299,8 @@ async function main() {
       return cmdDoctor(args);
     case "attest":
       return withPhaseLock(args[0], () => cmdAttest(args));
+    case "attest-keygen":
+      return cmdAttestKeygen(args);
     case "verify-attestation":
       return cmdVerifyAttestation(args);
     default:

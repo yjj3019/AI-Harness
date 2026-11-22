@@ -2,7 +2,13 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
-## 작업 트리 — ruleset 갱신 (미병합)
+## 작업 트리 — 서명된 attestation (미병합, 브랜치 `feat/signed-attestations-20261123`)
+
+- `phase-gate.js attest-keygen [<개인키 파일>]`(Ed25519 키 쌍 생성, 기존 키 덮어쓰기 거부, 공개 키는 `.claude/attestation-public-key.pem`), `attest <phase> --sign [<개인키>]`(캐노니컬 JSON 서명, 커밋될 공개 키로 즉시 검증), `verify-attestation ... --require-signature`(서명 없음·키 불일치·변조 모두 실행 전에 거부; 서명이 있으면 플래그 없이도 검증). CI replay는 `--require-signature`와 `ATTEST_KEY_BASE_SHA`(PR 기준 커밋)로 돌아 PR이 공개 키를 바꿔치기할 수 없다.
+- 훅: 공개 키 파일은 게이트 신뢰 집합, 개인 키 경로·이름(`.harness/`, `attest-ed25519`)은 서브에이전트가 쓰거나 언급할 수 없고, `Read(~/.harness/**)`는 settings에서 거부된다. CODEOWNERS에 공개 키 추가.
+- 한계: 서명은 누가 attest했는지만 증명한다. 개인 키가 있는 머신에서 유지자 권한으로 도는 프로세스는 서명할 수 있고, verify·review의 독립성은 여전히 증명되지 않는다.
+
+## 작업 트리 — ruleset 갱신 (병합됨, PR #74)
 
 - 2026-11-23: 서버 ruleset `main-required-ci`(26772795)의 필수 검사에 `attestation summary`를 추가했다(9개에서 10개). 코드 오너 리뷰 요구는 켜지 않았다(소유자 한 명). 결과와 이유는 `docs/merge-policy.md`에 적었다.
 
