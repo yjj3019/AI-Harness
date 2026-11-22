@@ -15,6 +15,7 @@
 - CLAUDE.md/AGENTS.md: strict 완료 명령 문서화, 재시도 예산 문구 정합, `docs/compound-log-active.md`(요약본) 우선 읽기. `tests/instruction-skill-drift.test.js`가 CLAUDE.md 스킬 목록과 `skills/`의 어긋남을 잡는다.
 - 테스트·CI: 훅 테스트 확장(jq 없음, 복사본 일치, PowerShell 규칙), `run-all.sh`에 evidence-redact 단계 추가, CI self-qa에 훅 shellcheck 추가.
 - 리눅스 실측(2026-11-22, Ubuntu·Node 24·bash 5.3, `mcp-country` 호스트): `tests/hooks.test.sh`의 jq 없음 케이스가 PATH에서 jq 디렉터리를 빼면 bash까지 사라져 종료 코드 127로 실패하던 결함을 고쳤다(`nojq_ready`가 bash 실행 가능과 jq 부재를 함께 확인하고, 아니면 링크 디렉터리로 대체한다). 수정 후 리눅스 전체 스위트 훅 350/350 통과.
+- 훅 `evidence-guard.sh`(Claude·Codex): jq가 없을 때 호출자 분류(`agent_id`/`agent_type` 포함 여부)를 외부 `grep` 대신 bash 패턴 매칭으로 한다. macOS CI에서 PATH에 grep이 없으면 서브에이전트 쓰기가 통과(fail-open)하는 것이 확인되어 고쳤고, jq와 grep이 모두 없는 PATH를 만드는 회귀 케이스를 추가했다(구 훅으로 실패, 새 훅으로 통과를 Linux에서 실측).
 - `--verify-live`: 요청당 15초 타임아웃과 1 MiB 응답 상한을 추가하고(content-length 선검사, 스트림은 상한을 넘는 즉시 취소해 전체를 버퍼링하지 않으며, 초과는 unreachable), `runLive`의 예기치 않은 거부는 종료 코드 2로 처리하고, 종료 코드 매핑(`runLive`: 0 일치, 1 불일치, 2 접속 불가·상한 초과)을 테스트로 고정했다. 오프라인 성공 문구에서 하드코딩된 날짜를 제거했다.
 - attestation 트리 해시는 작업 트리 바이트를 그대로 해시하므로 Windows `core.autocrlf=true`의 CRLF 작업 트리는 LF 리눅스 체크아웃과 해시가 다르다(리눅스 재실행이 "code changed after the attestation"으로 실패하는 것을 실측). attestation은 추적 파일을 LF로 둔 트리에서 만들어야 CI 재실행과 일치한다.
 - `docs/HANDOFF.md`를 State/Open/Next로 압축했다(이전 연대기는 history 파일로 이동).

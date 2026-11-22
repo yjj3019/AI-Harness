@@ -77,5 +77,6 @@ Each bullet ends with the source entry date. Static/fixture evidence is never li
 - Challenge revised shared instructions for new assumptions; keep unvalidated rules out of the shared core. [2026-11-21]
 - The tree hash covers raw bytes: a CRLF Windows worktree never replays on LF Linux. Make tracked files LF before attesting, then replay on Linux. [2026-11-22]
 - A "tool removed from PATH" test must also prove the shell still runs there, or exit 127 reads as a pass or a wrong failure. [2026-11-22]
+- A hook's fail-closed branch must not call external tools: a missing grep made the jq-less subagent check fail open (found on macOS CI). Use bash pattern matching. [2026-11-22]
 
 Entries covered: 2026-10-23 .. 2026-11-22

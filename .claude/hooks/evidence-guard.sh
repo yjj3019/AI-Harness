@@ -19,8 +19,9 @@ if ! command -v jq >/dev/null 2>&1; then
   # which is not restricted, so it must not be locked out of Write/Edit. Anything
   # else, and every explicit deny/test mode, stays fail-closed. This is a substring
   # test, not parsing: a false match blocks, it never allows.
-  if [ "$mode" = auto ] && ! printf '%s' "$input" | grep -Eq 'agent_(id|type)'; then
-    exit 0
+  # Pure bash pattern match: no external tool, so a missing grep can never turn this into a fail-open.
+  if [ "$mode" = auto ]; then
+    case $input in *agent_id*|*agent_type*) ;; *) exit 0 ;; esac
   fi
   echo "Blocked by .claude/hooks/evidence-guard.sh: jq is required (install: winget install jqlang.jq | apt install jq | brew install jq)" >&2
   exit 2
