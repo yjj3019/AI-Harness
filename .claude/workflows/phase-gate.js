@@ -807,7 +807,7 @@ function cmdCheck(args) {
   process.exitCode = 0;
 }
 
-// Guards fail open when a tool they need is missing, so a missing tool must be visible before work starts.
+// A missing tool degrades or blocks the guards (jq missing: Bash and subagent writes fail closed), so it must be visible before work starts.
 function checkClaudeDoctor(ok, bad) {
   // The hooks are bash scripts, so a tool must exist where bash finds it, not only on the Node PATH
   // (on Windows jq and git usually live on the Git Bash PATH). One probe answers all of them, run
@@ -838,7 +838,7 @@ function checkClaudeDoctor(ok, bad) {
     bad("bash could not be started, so the hooks cannot run here (Windows: install Git Bash or use WSL2)");
   } else {
     for (const name of ["bash", "jq", "sha256sum", "git"]) {
-      seen.get(name) ? ok(name) : bad(`${name} is missing; the hooks fail open without it`);
+      seen.get(name) ? ok(name) : bad(`${name} is missing; the hooks cannot work correctly without it (missing jq blocks Bash and subagent writes)`);
     }
     if (seen.get("realpath-e")) ok("realpath -e");
     else if (seen.get("realpath-plain")) ok("realpath (no -e; read-tracker.sh falls back)");
@@ -858,7 +858,7 @@ function checkClaudeDoctor(ok, bad) {
   if (st) {
     const required = [
       ["PreToolUse", "Write|Edit|MultiEdit|NotebookEdit|Bash", "evidence-guard.sh", " auto"],
-      ["PreToolUse", "Bash", "block-destructive.sh", ""],
+      ["PreToolUse", "Bash|PowerShell", "block-destructive.sh", ""],
       ["PostToolUse", "Read", "read-tracker.sh", ""],
     ];
     for (const [event, matcher, want, args] of required) {

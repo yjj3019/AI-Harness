@@ -62,6 +62,15 @@ function fmField(fm, key) {
   return m ? m[1].trim() : null;
 }
 
+// Heuristic SPDX detection for the two texts used in this repository; unknown texts
+// are not classified, so they never produce a false mismatch.
+function detectLicenseIds(text) {
+  const ids = [];
+  if (/^\s*MIT License\b/im.test(text)) ids.push("MIT");
+  if (/Apache License[\s\S]{0,40}Version 2\.0/i.test(text)) ids.push("Apache-2.0");
+  return ids;
+}
+
 for (const file of files) {
   const rel = path.relative(ROOT, file).split(path.sep).join("/");
   // The audit skill documents the patterns; do not flag it.
@@ -73,11 +82,22 @@ for (const file of files) {
   const lic = fmField(frontmatter(text), "license");
   if (!lic) {
     findings.push({ file: rel, why: "missing license: field (repo default " + DEFAULT_LICENSE + ")" });
-  } else if (
-    lic !== DEFAULT_LICENSE &&
-    !fs.existsSync(path.join(path.dirname(file), "LICENSE.txt"))
-  ) {
-    findings.push({ file: rel, why: `license "${lic}" without a matching LICENSE.txt in the skill folder` });
+  } else {
+    const shipped = ["LICENSE", "LICENSE.txt"]
+      .map(name => path.join(path.dirname(file), name))
+      .filter(p => fs.existsSync(p));
+    if (lic !== DEFAULT_LICENSE && !shipped.length) {
+      findings.push({ file: rel, why: `license "${lic}" without a matching LICENSE or LICENSE.txt in the skill folder` });
+    }
+    // A shipped license text must be named by the frontmatter, so a third-party
+    // notice cannot sit beside a frontmatter that claims only the repository default.
+    for (const p of shipped) {
+      for (const id of detectLicenseIds(fs.readFileSync(p, "utf8"))) {
+        if (!new RegExp(`(^|[^A-Za-z0-9.-])${id.replace(/\./g, "\\.")}($|[^A-Za-z0-9.-])`, "i").test(lic)) {
+          findings.push({ file: rel, why: `frontmatter license "${lic}" does not name ${id}, which ${path.basename(p)} contains` });
+        }
+      }
+    }
   }
 }
 

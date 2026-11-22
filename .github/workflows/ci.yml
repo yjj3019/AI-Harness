@@ -190,3 +190,6 @@ jobs:
           shellcheck --version | head -1
           shellcheck -x tests/run-all.sh
           bash -n tests/run-all.sh
+          # Hooks are the guardrails the constitution relies on: lint them too (errors only) and check syntax.
+          shellcheck -S error -x .claude/hooks/*.sh .codex/hooks/*.sh
+          for f in .claude/hooks/*.sh .codex/hooks/*.sh; do bash -n "$f"; done

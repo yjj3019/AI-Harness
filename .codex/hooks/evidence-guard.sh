@@ -11,10 +11,18 @@
 set -u
 
 mode=${1:-deny}
-command -v jq >/dev/null 2>&1 || { echo "Blocked by .codex/hooks/evidence-guard.sh: jq is required" >&2; exit 2; }
-
 input=$(cat)
 [ -n "$input" ] || { echo "Blocked by .codex/hooks/evidence-guard.sh: empty hook input" >&2; exit 2; }
+if ! command -v jq >/dev/null 2>&1; then
+  # Without jq the input cannot be parsed. In auto mode only, input that never mentions
+  # agent_id/agent_type is the main session (unrestricted); every other case stays
+  # fail-closed. A substring test, not parsing: a false match blocks, never allows.
+  if [ "$mode" = auto ] && ! printf '%s' "$input" | grep -Eq 'agent_(id|type)'; then
+    exit 0
+  fi
+  echo "Blocked by .codex/hooks/evidence-guard.sh: jq is required (install: winget install jqlang.jq | apt install jq | brew install jq)" >&2
+  exit 2
+fi
 # Parse the tool and agent classification in one jq process. Emit only fixed
 # tokens, so arbitrary JSON strings cannot become shell syntax or delimiters.
 parsed=$(printf '%s' "$input" | jq -r '

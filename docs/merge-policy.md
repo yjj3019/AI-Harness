@@ -51,5 +51,7 @@ PR #26/#27 results below are historic validation of the prior guard version, not
 - 검사 내용이 요구사항을 충족하는지는 테스트와 리뷰에서 확인합니다. GitHub ruleset의 적용 범위는 유효 브랜치 규칙과 PR의 병합 상태로 확인합니다.
 - `--checks-file`은 parsing/diagnostics에만 남아 있으며 caller-supplied JSON은 readiness 결과로 인정하지 않습니다.
 - 가드 자체의 단위 테스트는 `tests/merge-guard.test.js`이며 CI에서 실행됩니다.
+- attestation 재실행(`attestation replay`)은 `ubuntu-latest` 한 곳에서만 수행됩니다(`.github/workflows/ci.yml`). 추적 파일이 LF일 때 Windows에서 만든 attestation도 LF Linux 체크아웃에서 재실행됩니다. 트리 해시는 작업 트리 바이트를 그대로 해시하므로 `core.autocrlf=true`의 CRLF 작업 트리로 만든 attestation은 리눅스에서 "code changed after the attestation"으로 실패합니다(2026-11-22 실측). attestation은 추적 파일을 LF로 둔 트리에서 만들고, 리눅스에서 `verify-attestation`으로 재실행해 확인합니다. macOS 재실행 통과는 검증되지 않았습니다. 이 한계는 Windows 재실행 단계를 추가하기 전까지 유지됩니다.
+- `portability / windows-latest` 단계는 attestation이 재실행하는 것과 같은 명령(`bash tests/run-all.sh`)을 Windows에서 실행하지만 트리 해시는 비교하지 않습니다. 2026-11-22에 로컬 Windows PC에서 `verify-attestation`(트리 일치와 테스트 통과)이 통과했으나 이는 호스티드 CI 결과가 아닙니다. 별도 Windows 재실행 단계는 `merge-guard`의 필수 체크 이름 규칙(`attestation replay / <phase>`)과 얽혀 판정이 바뀔 수 있어 추가하지 않았습니다.
 
 현재 필수 검사 이름은 `checks / node 22`, `checks / node 24`, `portability / macos-latest`, `portability / windows-latest`, `isolation / linux namespace`, `toolbroker / ubuntu-latest`, `toolbroker / macos-latest`, `toolbroker / windows-latest`, `self-qa / shellcheck`입니다.
