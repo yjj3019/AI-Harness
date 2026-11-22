@@ -11,10 +11,20 @@
 set -u
 
 mode=${1:-deny}
-command -v jq >/dev/null 2>&1 || { echo "Blocked by .claude/hooks/evidence-guard.sh: jq is required" >&2; exit 2; }
-
 input=$(cat)
 [ -n "$input" ] || { echo "Blocked by .claude/hooks/evidence-guard.sh: empty hook input" >&2; exit 2; }
+if ! command -v jq >/dev/null 2>&1; then
+  # Without jq the hook input cannot be parsed. In auto mode only, a call whose raw
+  # input never mentions agent_id/agent_type is the main session (the orchestrator),
+  # which is not restricted, so it must not be locked out of Write/Edit. Anything
+  # else, and every explicit deny/test mode, stays fail-closed. This is a substring
+  # test, not parsing: a false match blocks, it never allows.
+  if [ "$mode" = auto ] && ! printf '%s' "$input" | grep -Eq 'agent_(id|type)'; then
+    exit 0
+  fi
+  echo "Blocked by .claude/hooks/evidence-guard.sh: jq is required (install: winget install jqlang.jq | apt install jq | brew install jq)" >&2
+  exit 2
+fi
 tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null) || { echo "Blocked by .claude/hooks/evidence-guard.sh: invalid hook input" >&2; exit 2; }
 
 # auto: registered in settings.json, so it runs for every tool call. Claude Code adds

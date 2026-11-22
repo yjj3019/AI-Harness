@@ -6,6 +6,19 @@
 
 - 기존 고정 평가 목록에 합성 개발 사례 6건, 공개 holdout 후보 4건과 파일럿 프로토콜 2건을 추가했다. 해시는 LF 정규화된 입력을 고정하며 사전등록 시점, 실행 결과, 독립성 또는 보호 경계의 증거가 아니다.
 
+## 작업 트리 — 하네스 결함 보완 (미병합, 브랜치 `fix/harness-gaps-20261121`)
+
+- 훅: `jq`가 없어도 메인 세션의 Write/Edit가 막히지 않는다(서브에이전트와 Bash는 계속 fail-closed). `block-destructive.sh`는 PowerShell/cmd 재귀 삭제(`Remove-Item`·`del`·`rd` 등)를 넓은 대상에서 막고 `Bash|PowerShell`에 등록된다. `read-tracker.sh`는 Git Bash의 경로 표기(`/tmp` 대 `/c/Users/...`)를 정규화한다. `.codex/hooks.json` 매처에 `apply_patch`를 넣었다.
+- `scripts/skill-audit.js`: 동봉된 LICENSE의 라이선스가 frontmatter에 없으면 실패한다. `design-evidence-harness`는 `Apache-2.0 AND MIT`로 표기한다.
+- 채택 장부(`docs/source-adoption-2026-11-14.json`, schema 2): 라이선스 링크를 브랜치가 아닌 커밋 SHA로 고정하고 그 시점 LICENSE 본문의 sha256을 기록한다(`license_commit`, `license_sha256`). 2026-11-22에 6건의 LICENSE 원문을 다시 읽어 표기와 일치함을 확인했다.
+- `scripts/source-adoption-check.js --verify-live`(선택, CI·run-all 미포함): 고정된 LICENSE를 raw.githubusercontent.com에서 다시 받아 장부의 sha256과 비교한다. 불일치는 종료 코드 1, 접속 불가는 2(통과로 보지 않음). 2026-11-22 실측에서 6건 모두 일치했다. `docs/merge-policy.md`에는 Windows 재실행이 CI 단계가 아니라 로컬 실측이라는 한계를 적었다.
+- CLAUDE.md/AGENTS.md: strict 완료 명령 문서화, 재시도 예산 문구 정합, `docs/compound-log-active.md`(요약본) 우선 읽기. `tests/instruction-skill-drift.test.js`가 CLAUDE.md 스킬 목록과 `skills/`의 어긋남을 잡는다.
+- 테스트·CI: 훅 테스트 확장(jq 없음, 복사본 일치, PowerShell 규칙), `run-all.sh`에 evidence-redact 단계 추가, CI self-qa에 훅 shellcheck 추가.
+- 리눅스 실측(2026-11-22, Ubuntu·Node 24·bash 5.3, `mcp-country` 호스트): `tests/hooks.test.sh`의 jq 없음 케이스가 PATH에서 jq 디렉터리를 빼면 bash까지 사라져 종료 코드 127로 실패하던 결함을 고쳤다(`nojq_ready`가 bash 실행 가능과 jq 부재를 함께 확인하고, 아니면 링크 디렉터리로 대체한다). 수정 후 리눅스 전체 스위트 훅 350/350 통과.
+- `--verify-live`: 요청당 15초 타임아웃과 1 MiB 응답 상한을 추가하고(content-length 선검사, 스트림은 상한을 넘는 즉시 취소해 전체를 버퍼링하지 않으며, 초과는 unreachable), `runLive`의 예기치 않은 거부는 종료 코드 2로 처리하고, 종료 코드 매핑(`runLive`: 0 일치, 1 불일치, 2 접속 불가·상한 초과)을 테스트로 고정했다. 오프라인 성공 문구에서 하드코딩된 날짜를 제거했다.
+- attestation 트리 해시는 작업 트리 바이트를 그대로 해시하므로 Windows `core.autocrlf=true`의 CRLF 작업 트리는 LF 리눅스 체크아웃과 해시가 다르다(리눅스 재실행이 "code changed after the attestation"으로 실패하는 것을 실측). attestation은 추적 파일을 LF로 둔 트리에서 만들어야 CI 재실행과 일치한다.
+- `docs/HANDOFF.md`를 State/Open/Next로 압축했다(이전 연대기는 history 파일로 이동).
+
 ## [3.0.0] - 2026-11-17 (작업 트리, 미병합)
 
 ### 변경 (게이트 호환성)

@@ -1,7 +1,7 @@
 ---
 name: design-evidence-harness
 description: Create or review visual artifacts with existing brand context and format-specific evidence when the user explicitly requests this optional design workflow.
-license: Apache-2.0
+license: Apache-2.0 AND MIT
 ---
 
 # Design evidence harness

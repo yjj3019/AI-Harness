@@ -143,7 +143,28 @@ for (const flags of [["--require-bound-tree", "--require-test-summary"], ["--req
 test("phase workflow requests bound snapshots for both run and check", () => {
   const text = fs.readFileSync(path.resolve(__dirname, "../.claude/commands/phase-harness.md"), "utf8");
   assert.match(text, /phase-gate\.js run <id> test --require-test-summary --require-bound-tree -- <test command>/);
-  assert.match(text, /phase-gate\.js check <id> --require-bound-tree/);
+  assert.match(text, /phase-gate\.js check <id> --require-bound-tree --require-strict-evidence/);
+});
+
+test("CLAUDE.md and AGENTS.md keep identical Primary Rules", () => {
+  const core = file => {
+    const text = fs.readFileSync(path.resolve(__dirname, file), "utf8").replace(/\r\n/g, "\n");
+    const start = text.indexOf("## 1. Primary Rules");
+    assert.ok(start >= 0, `${file}: Primary Rules heading missing`);
+    const rest = text.slice(start + 1);
+    const end = rest.indexOf("\n## ");
+    return (end < 0 ? rest : rest.slice(0, end)).split("\n").filter(line => line.startsWith("- "));
+  };
+  const claude = core("../CLAUDE.md");
+  assert.ok(claude.length >= 10, "expected the shared rules");
+  assert.deepEqual(core("../AGENTS.md"), claude);
+});
+
+test("host constitutions document strict checking as the completion command for a new Phase", () => {
+  for (const file of ["../CLAUDE.md", "../AGENTS.md"]) {
+    const text = fs.readFileSync(path.resolve(__dirname, file), "utf8");
+    assert.match(text, /check <id> --require-bound-tree --require-strict-evidence/, file);
+  }
 });
 
 test("case-only Phase ID collisions are refused before overwriting evidence", () => fixture(({ root, call, ok }) => {

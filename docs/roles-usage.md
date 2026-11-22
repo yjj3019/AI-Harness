@@ -53,7 +53,7 @@ node .claude/workflows/phase-gate.js doctor   # 환경 사전 점검 (jq·bash·
 ```
 phase-gate.js record <id> <step> --status PASS --report <file>   # 단계 기록
 phase-gate.js run     <id> test --require-test-summary -- <cmd>  # 테스트 실행(증거 기록)
-phase-gate.js check   <id> --require-bound-tree                  # Phase 완료 검사
+phase-gate.js check   <id> --require-bound-tree --require-strict-evidence  # Phase 완료 검사
 phase-gate.js attest  <id>                                      # 인증 스냅샷 생성(CI 재검증용)
 phase-gate.js verify-attestation <id>                            # 인증 재검증
 ```
@@ -109,7 +109,7 @@ node .claude/workflows/phase-gate.js doctor   # Environment preflight (jq, bash,
 ```
 phase-gate.js record <id> <step> --status PASS --report <file>   # record a step
 phase-gate.js run     <id> test --require-test-summary -- <cmd>  # run tests (records evidence)
-phase-gate.js check   <id> --require-bound-tree                  # phase completeness check
+phase-gate.js check   <id> --require-bound-tree --require-strict-evidence  # phase completeness check
 phase-gate.js attest  <id>                                      # attestation snapshot (CI re-verifies)
 phase-gate.js verify-attestation <id>                            # re-verify attestation
 ```
