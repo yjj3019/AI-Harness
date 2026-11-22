@@ -5,7 +5,7 @@
 
 set -u
 
-command -v jq >/dev/null 2>&1 || { echo "Blocked by .claude/hooks/block-destructive.sh: jq is required" >&2; exit 2; }
+command -v jq >/dev/null 2>&1 || { echo "Blocked by .claude/hooks/block-destructive.sh: jq is required (install: winget install jqlang.jq | apt install jq | brew install jq)" >&2; exit 2; }
 
 input=$(cat)
 [ -n "$input" ] || { echo "Blocked by .claude/hooks/block-destructive.sh: empty hook input" >&2; exit 2; }
@@ -167,5 +167,30 @@ fi
 if printf '%s' "$cmd" | grep -Eq '(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(shred[[:space:]]|mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'; then
   deny "raw disk write or filesystem creation"
 fi
+
+
+# PowerShell/cmd-style recursive deletes (Remove-Item, ri, del, erase, rd, rmdir) on a broad target.
+# Segment-scoped lexical guard like the rm rules above; it does not parse PowerShell, so quoting
+# tricks, variables and aliases can evade it. Host permissions remain the real boundary.
+ps_open='${'; ps_new='$'   # variables, not inline quotes: quote handling inside ${//} differs on bash 3.2/4.x
+ps_src=${cmd//"$ps_open"/"$ps_new"}
+shopt -s nocasematch   # bash 3.2 has no ${var,,}; nocasematch makes the case patterns below case-insensitive
+while IFS= read -r seg || [ -n "$seg" ]; do
+  read -ra pw <<<"$seg"
+  [ "${#pw[@]}" -gt 0 ] || continue
+  case "${pw[0]}" in remove-item|ri|del|erase|rd|rmdir) ;; *) continue ;; esac
+  ps_recursive=0 ps_broad=0
+  for w in "${pw[@]:1}"; do
+    w=${w//\"/}; w=${w//\'/}
+    case "$w" in
+      -r|-re|-rec|-recu|-recur|-recurs|-recurse|-recurse:*|/s) ps_recursive=1; continue ;;
+      -*|/[a-z]) continue ;;
+      '$env:userprofile'*|'$env:homepath'*|'$env:homedrive'*|'$env:systemroot'*|'$env:windir'*|'$env:programfiles'*|'$env:programdata'*) ps_broad=1; continue ;;
+    esac
+    if protected_rm_target "$w"; then ps_broad=1; fi
+  done
+  if [ "$ps_recursive" -eq 1 ] && [ "$ps_broad" -eq 1 ]; then deny "recursive delete on a broad target"; fi
+done < <(printf '%s' "$ps_src" | tr ';&|(){}' '\n')
+shopt -u nocasematch
 
 exit 0

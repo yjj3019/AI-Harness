@@ -33,6 +33,24 @@ test("skill-audit flags a skill whose frontmatter lacks a license", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+test("skill-audit requires the frontmatter license to name a shipped third-party license", () => {
+  const { writeFileSync, mkdtempSync, mkdirSync, rmSync } = require("node:fs");
+  const os = require("node:os");
+  const dir = mkdtempSync(path.join(os.tmpdir(), "skill-audit-mit-"));
+  try {
+    mkdirSync(path.join(dir, "skills"), { recursive: true });
+    writeFileSync(path.join(dir, "skills", "LICENSE"), "MIT License\n\nCopyright (c) 2026 Example\n");
+    writeFileSync(path.join(dir, "skills", "SKILL.md"), "---\nname: adapted\nlicense: Apache-2.0\n---\nfine\n");
+    const bad = spawnSync(process.execPath, [script, dir], { encoding: "utf8", timeout: 30000 });
+    assert.notEqual(bad.status, 0, "Apache-only frontmatter beside an MIT LICENSE must be rejected");
+    assert.match(bad.stderr, /does not name MIT/);
+    writeFileSync(path.join(dir, "skills", "SKILL.md"), "---\nname: adapted\nlicense: Apache-2.0 AND MIT\n---\nfine\n");
+    const ok = spawnSync(process.execPath, [script, dir], { encoding: "utf8", timeout: 30000 });
+    assert.equal(ok.status, 0, `expected clean: ${ok.stderr}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 test("skill-audit flags a planted prompt-injection skill", () => {
   const { writeFileSync, mkdtempSync, mkdirSync, rmSync } = require("node:fs");
   const os = require("node:os");

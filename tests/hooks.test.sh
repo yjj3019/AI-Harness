@@ -156,6 +156,20 @@ t $B "" 0 Bash command 'rm --force file.txt'
 t $B "" 0 Bash command 'chmod 777 file.txt'
 t $B "" 0 Bash command 'chmod -R 755 /srv'
 
+echo "== block-destructive: PowerShell/cmd recursive deletes (JSON only) =="
+for c in 'Remove-Item -Recurse -Force C:\Users\synthetic-user' 'Remove-Item -Recurse -Force .\*' \
+  'ri -r -fo $env:USERPROFILE' 'del /s /q C:\' 'rd /s /q C:\Windows' 'Remove-Item -Recurse -Force "$HOME"' \
+  'Remove-Item -Path C:\ -Recurse' 'cd x; Remove-Item -Recurse -Force ~' \
+  'Remove-Item -Recurse -Force ${HOME}' 'REMOVE-ITEM -RECURSE C:\Users' 'Remove-Item -Recurse C:\build\out' \
+  'Remove-Item -rec C:\Users\x' 'Remove-Item -Recurse:$true -Force $env:USERPROFILE' 'Remove-Item -LiteralPath C:\ -Recurse'; do
+  t $B "" 2 PowerShell command "$c"
+  t $B "" 2 Bash command "$c"
+done
+for c in 'Remove-Item -Recurse -Force .\build' 'Remove-Item C:\temp\file.txt' 'Remove-Item -Recurse node_modules' \
+  'Get-ChildItem -Recurse C:\' 'del /s /q build' 'Remove-Item -Force C:\Users'; do
+  t $B "" 0 PowerShell command "$c"
+done
+
 echo "== block-destructive: scoped literal command lexing (JSON only) =="
 for c in 'rm -rf /; echo done' 'rm -rf /usr;' 'rm -rf "/"' "rm -rf '/usr'" \
   'rm -rf "/home/user"' 'rm --recursive --force /etc/nginx' 'rm -rf /root/data' \
@@ -266,6 +280,98 @@ for h in $B "$G deny" "$G auto"; do
   total=$((total + 1))
   printf 'not json' | bash .claude/hooks/$h >/dev/null 2>&1 && { fails=$((fails + 1)); echo "FAIL garbage input should be denied: $h"; }
 done
+
+echo "== evidence-guard: jq missing (main session must not be locked out; the rest stays fail-closed) =="
+# Run with PATH minus every directory that provides jq. When jq shares a directory with the
+# basic tools (for example /usr/bin on Linux) that cannot be split, so a bin directory of
+# links without jq is built instead; if neither works the suite fails (never a silent skip).
+nojq_path=
+nojq_bin=
+IFS=: read -r -a path_dirs <<<"$PATH"
+for d in "${path_dirs[@]}"; do
+  [ -e "$d/jq" ] || [ -e "$d/jq.exe" ] || nojq_path="${nojq_path:+$nojq_path:}$d"
+done
+# True only when bash still runs under that PATH and jq is really gone. A PATH that lost bash as
+# well (every directory held jq, as on Linux) must not read as "jq removed", or the cases would
+# fail with exit 127 for the wrong reason.
+nojq_ready() { env PATH="$1" bash -c 'command -v bash >/dev/null && ! command -v jq >/dev/null' >/dev/null 2>&1; }
+nojq() { # nojq <hook> <mode> <raw-json>
+  printf '%s' "$3" | env PATH="$nojq_path" bash "$1" "$2" >/dev/null 2>&1; echo $?
+}
+if ! nojq_ready "$nojq_path"; then
+  # jq shares a directory with the basic tools (for example /usr/bin on Linux): build a bin
+  # directory holding only the tools the hooks call, so the cases still run without jq.
+  nojq_bin=$(mktemp -d)
+  for tool in bash cat grep sed tr cut head tail dirname basename env date wc sha256sum realpath cygpath mktemp rm; do
+    src=$(command -v "$tool" 2>/dev/null) || continue
+    # A tool the hooks need must link; optional ones (for example cygpath on Linux) may be absent.
+    if ! ln -s "$src" "$nojq_bin/$tool" 2>/dev/null; then
+      case "$tool" in bash|cat|grep|sed|tr|realpath)
+        total=$((total + 1)); fails=$((fails + 1)); echo "FAIL no-jq setup: cannot link required tool $tool" ;;
+      esac
+    fi
+  done
+  nojq_path=$nojq_bin
+fi
+if ! nojq_ready "$nojq_path"; then
+  # Never a silent skip: an untestable security branch must fail the suite.
+  total=$((total + 1)); fails=$((fails + 1))
+  echo "FAIL no-jq: jq could not be removed from PATH, so the jq-missing behavior is untested"
+else
+  main_json='{"tool_name":"Write","tool_input":{"file_path":"src/a.js"}}'
+  sub_json='{"tool_name":"Write","tool_input":{"file_path":"src/a.js"},"agent_id":"x1","agent_type":"coding"}'
+  for tc in "main-auto|.claude/hooks/$G|auto|$main_json|0" "subagent-auto|.claude/hooks/$G|auto|$sub_json|2" \
+              "main-deny|.claude/hooks/$G|deny|$main_json|2" "bash-guard|.claude/hooks/$B||$main_json|2" \
+              "codex-main-auto|.codex/hooks/$G|auto|$main_json|0" "codex-subagent-auto|.codex/hooks/$G|auto|$sub_json|2" \
+              "codex-bash-guard|.codex/hooks/$B||$main_json|2"; do
+    IFS='|' read -r label hook mode json want <<<"$tc"
+    got=$(nojq "$hook" "$mode" "$json")
+    total=$((total + 1))
+    [ "$got" = "$want" ] || { fails=$((fails + 1)); echo "FAIL no-jq $label: want=$want got=$got"; }
+  done
+fi
+[ -z "$nojq_bin" ] || rm -rf "$nojq_bin"
+
+# Regression (found by the macOS CI run): with jq AND grep missing, a subagent call must still be
+# blocked. A hook that classified the caller with an external grep failed open when grep was absent.
+main_json='{"tool_name":"Write","tool_input":{"file_path":"src/a.js"}}'
+sub_json='{"tool_name":"Write","tool_input":{"file_path":"src/a.js"},"agent_id":"x1","agent_type":"coding"}'
+nogrep_bin=$(mktemp -d)
+for tool in bash cat; do ln -s "$(command -v "$tool")" "$nogrep_bin/$tool" 2>/dev/null; done
+if env PATH="$nogrep_bin" bash -c 'command -v cat >/dev/null && ! command -v grep >/dev/null && ! command -v jq >/dev/null' >/dev/null 2>&1; then
+  for tc in "subagent-auto|.claude/hooks/$G|auto|$sub_json|2" "codex-subagent-auto|.codex/hooks/$G|auto|$sub_json|2" \
+            "main-auto|.claude/hooks/$G|auto|$main_json|0"; do
+    IFS='|' read -r label hook mode json want <<<"$tc"
+    got=$(printf '%s' "$json" | env PATH="$nogrep_bin" bash "$hook" "$mode" >/dev/null 2>&1; echo $?)
+    total=$((total + 1))
+    [ "$got" = "$want" ] || { fails=$((fails + 1)); echo "FAIL no-jq-no-grep $label: want=$want got=$got"; }
+  done
+else
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      # Git Bash: a linked bash does not load, so a grep-less PATH cannot be built here.
+      # Linux and macOS CI run this case.
+      echo "SKIP no-jq-no-grep: cannot build a PATH without grep on this platform (covered by Linux and macOS CI)" ;;
+    *)
+      # Never a silent skip where the case can run: an untestable guard must fail the suite.
+      total=$((total + 1)); fails=$((fails + 1))
+      echo "FAIL no-jq-no-grep: could not build a PATH with only bash and cat, so the grep-less guard is untested" ;;
+  esac
+fi
+rm -rf "$nogrep_bin"
+
+echo "== Claude and Codex hook copies must not drift =="
+# block-destructive.sh and read-tracker.sh are shared logic; only the self-referencing path may differ.
+for pair in block-destructive.sh read-tracker.sh; do
+  total=$((total + 1))
+  cmp -s <(sed "s#\.claude/hooks#HOOKS#g" ".claude/hooks/$pair") <(sed "s#\.codex/hooks#HOOKS#g" ".codex/hooks/$pair") \
+    || { fails=$((fails + 1)); echo "FAIL .claude/hooks/$pair and .codex/hooks/$pair differ beyond the path"; }
+done
+
+echo "== codex hooks.json: apply_patch must reach the guard =="
+total=$((total + 1))
+jq -e '[.hooks.PreToolUse[].matcher // "" | split("|")[]] | index("apply_patch") != null' .codex/hooks.json >/dev/null \
+  || { fails=$((fails + 1)); echo "FAIL .codex/hooks.json PreToolUse matcher omits apply_patch"; }
 
 echo "hooks: $((total - fails))/$total passed"
 [ "$fails" -eq 0 ]

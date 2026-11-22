@@ -103,7 +103,7 @@ A step may only proceed when the previous step has produced clear evidence of su
 
 ### 3.7 Compounded Intelligence
 
-Agents must read `docs/compound-log.md` before starting any task to avoid repeating past mistakes.
+Agents must read `docs/compound-log-active.md` before starting any task, and the full `docs/compound-log.md` for Phase, gate, evidence, hook, security or license work, to avoid repeating past mistakes.
 
 ## 4. Notable Frameworks & Practices
 
@@ -151,7 +151,7 @@ This pattern directly applies the No One-Shot and sample-first verification prin
 | .claude/agents/ | Independent Subagents | Isolated contexts; evidence-based PASS/FAIL |
 | .claude/workflows/phase-gate.js | Evidence recorder and gate | `list`, `run <id> test -- <cmd>`, `record <id> <step>`, `check <id>`. Evidence JSON carries status, artifact SHA-256, a hash link to the previous step and, for the test step, argv and a code tree hash (`check` fails if the code changed afterwards). `attest` writes `docs/attestations/phase-<id>.json`; CI runs `verify-attestation` to recompute the tree and re-run the test command. Hand-written evidence is rejected. Exit codes: 0=ok, 1=usage or invalid input, 2=evidence invalid or test failed. |
 | .claude/commands/phase-harness.md | Loop orchestrator | `/phase-harness <id>` runs coding → test → verify → review → compound (max 3 attempts) and records evidence only through phase-gate.js. |
-| .claude/hooks/ + .claude/settings.json | Guardrails | `block-destructive.sh` (Bash), `evidence-guard.sh auto` (subagents may not write `.phase-evidence/`; registered in settings.json because agent frontmatter hooks are skipped until the workspace is trusted) and `read-tracker.sh` (records evidence files the verify agent opened; verify PASS needs the test log in that record). |
+| .claude/hooks/ + .claude/settings.json | Guardrails | `block-destructive.sh` (Bash and PowerShell; PowerShell/cmd recursive deletes on broad targets are lexically blocked), `evidence-guard.sh auto` (with `jq` missing the main session's Write/Edit is unguarded, including phase-gate.js edits, while subagents and Bash stay fail-closed; subagents may not write `.phase-evidence/`; registered in settings.json because agent frontmatter hooks are skipped until the workspace is trusted) and `read-tracker.sh` (records evidence files the verify agent opened; verify PASS needs the test log in that record). |
 | tests/ | Regression checks | `bash tests/run-all.sh` runs syntax, frontmatter, hook and phase-gate tests. CI runs the same script. |
 
 ### Verify read-signal limits

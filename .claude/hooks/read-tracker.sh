@@ -28,10 +28,15 @@ root=${CLAUDE_PROJECT_DIR:-$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev
 [ -n "$root" ] || exit 0
 
 # Resolve without GNU-only flags: BSD/macOS realpath has neither -e nor -m.
+# Git Bash can spell one location two ways (/tmp/x and /c/Users/.../Temp/x); fold both through the
+# Windows form so the root and the read path compare equal.
+canon() {
+  if command -v cygpath >/dev/null 2>&1; then cygpath -u "$(cygpath -m "$1")" 2>/dev/null || printf '%s' "$1"; else printf '%s' "$1"; fi
+}
 abspath() {
   local out
-  out=$(realpath -e "$1" 2>/dev/null) && [ -n "$out" ] && { printf '%s' "$out"; return 0; }
-  out=$(realpath "$1" 2>/dev/null) && [ -n "$out" ] && { printf '%s' "$out"; return 0; }
+  out=$(realpath -e "$1" 2>/dev/null) && [ -n "$out" ] && { canon "$out"; return 0; }
+  out=$(realpath "$1" 2>/dev/null) && [ -n "$out" ] && { canon "$out"; return 0; }
   return 1
 }
 
