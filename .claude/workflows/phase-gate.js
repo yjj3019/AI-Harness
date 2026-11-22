@@ -1059,8 +1059,7 @@ function checkAttestationSignature(att, publicPem) {
 // The trusted public key: from the PR base commit when ATTEST_KEY_BASE_SHA is set (a pull request cannot swap it),
 // else from the working tree. A base without the key file is the one-time introduction of the key: the key of the
 // change itself is used and a warning says so.
-function loadTrustedPublicKey(bad) {
-  const baseSha = process.env.ATTEST_KEY_BASE_SHA;
+function loadTrustedPublicKey(bad, baseSha) {
   const local = () => {
     try { return fs.readFileSync(path.join(ROOT, ATTEST_PUBKEY_REL), "utf8"); } catch { return null; }
   };
@@ -1181,6 +1180,10 @@ async function cmdVerifyAttestation(args) {
       (expected !== null && expected.length === 0)) usage();
   const requirePin = options.includes("--require-pinned-command");
   const requireSignature = options.includes("--require-signature");
+  // Read the base commit once and remove it from the environment: the replayed test command (and every test it
+  // runs) must not inherit it, or a test that spawns the gate would see the CI job's base commit.
+  const keyBaseSha = process.env.ATTEST_KEY_BASE_SHA;
+  delete process.env.ATTEST_KEY_BASE_SHA;
   const phase = head[0];
   requirePhase(phase);
   const file = attestationFile(phase);
@@ -1202,7 +1205,7 @@ async function cmdVerifyAttestation(args) {
   // CI passes --require-signature: an unsigned attestation, or one that does not verify against the trusted
   // public key, is refused before anything is executed.
   if (requireSignature) {
-    const problem = checkAttestationSignature(att, loadTrustedPublicKey(bad));
+    const problem = checkAttestationSignature(att, loadTrustedPublicKey(bad, keyBaseSha));
     if (problem) bad(problem);
   } else if (att.signature !== undefined) {
     const pem = (() => { try { return fs.readFileSync(path.join(ROOT, ATTEST_PUBKEY_REL), "utf8"); } catch { return null; } })();

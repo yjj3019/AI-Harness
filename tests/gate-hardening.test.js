@@ -20,6 +20,7 @@ function withAttestation({ pin = false, appMode = null, sign = false }, fn) {
   const keyPath = path.join(keyDir, "attest.pem");
   const env = { ...process.env, PHASE_GATE_ROOT: root };
   delete env.NODE_TEST_CONTEXT;
+  delete env.ATTEST_KEY_BASE_SHA; // a CI job exports it for the replay; fixtures must not see it
   const gate = (...args) => spawnSync(process.execPath, [GATE, ...args], { cwd: root, env, encoding: "utf8" });
   const git = (...args) => spawnSync("git", args, { cwd: root, encoding: "utf8" });
   const passes = (result) => assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -29,7 +30,8 @@ function withAttestation({ pin = false, appMode = null, sign = false }, fn) {
     fs.writeFileSync(path.join(root, "docs/PHASES.md"), "### Phase 1: Hardening fixture\n");
     fs.writeFileSync(path.join(root, "app.js"), "module.exports = 1;\n");
     if (appMode !== null) fs.chmodSync(path.join(root, "app.js"), appMode);
-    fs.writeFileSync(path.join(root, "ok.test.js"), "const {test}=require('node:test');\ntest('passes',()=>{});\n");
+    // The replayed command must not inherit the CI job's ATTEST_KEY_BASE_SHA (the gate removes it after reading it).
+    fs.writeFileSync(path.join(root, "ok.test.js"), "const {test}=require('node:test');\nconst assert=require('node:assert/strict');\ntest('passes',()=>{ assert.equal(process.env.ATTEST_KEY_BASE_SHA, undefined); });\n");
     const argv = [process.execPath, "--test", "--test-reporter=tap", "ok.test.js"];
     if (pin) {
       fs.mkdirSync(path.join(root, ".claude"));
@@ -225,6 +227,7 @@ test("unlock removes a stale lock, and refuses a live owner, another host and a 
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gate-unlock-"));
   const env = { ...process.env, PHASE_GATE_ROOT: root };
   delete env.NODE_TEST_CONTEXT;
+  delete env.ATTEST_KEY_BASE_SHA; // a CI job exports it for the replay; fixtures must not see it
   const gate = (...args) => spawnSync(process.execPath, [GATE, ...args], { cwd: root, env, encoding: "utf8" });
   try {
     fs.mkdirSync(path.join(root, "docs"));
@@ -269,6 +272,7 @@ test("attest-keygen writes a key pair, refuses to overwrite either key, and the 
   const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), "gate-keygen-key-"));
   const env = { ...process.env, PHASE_GATE_ROOT: root };
   delete env.NODE_TEST_CONTEXT;
+  delete env.ATTEST_KEY_BASE_SHA; // a CI job exports it for the replay; fixtures must not see it
   const gate = (...args) => spawnSync(process.execPath, [GATE, ...args], { cwd: root, env, encoding: "utf8" });
   try {
     fs.mkdirSync(path.join(root, "docs"));
@@ -365,6 +369,11 @@ test("CI takes the public key from the base commit, so a change cannot swap the 
     const swapped = gate("verify-attestation", "1", "--require-signature");
     assert.equal(swapped.status, 2);
     assert.match(swapped.stderr, /different key than the trusted public key/, "without a base the working-tree key is trusted");
+    // The replayed test asserts that ATTEST_KEY_BASE_SHA is not in its environment, so a pass proves the gate strips it.
+    fs.writeFileSync(pubFile(root), originalKey);
+    const stripped = withBase(base);
+    assert.equal(stripped.status, 0, stripped.stdout + stripped.stderr);
+    fs.writeFileSync(pubFile(root), other);
     const fromBase = withBase(base);
     assert.equal(fromBase.status, 2);
     assert.doesNotMatch(fromBase.stderr, /signature|trusted public key/, "with the base key the signature itself is fine");
