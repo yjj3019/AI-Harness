@@ -78,5 +78,7 @@ Each bullet ends with the source entry date. Static/fixture evidence is never li
 - The tree hash covers raw bytes: a CRLF Windows worktree never replays on LF Linux. Make tracked files LF before attesting, then replay on Linux. [2026-11-22]
 - A "tool removed from PATH" test must also prove the shell still runs there, or exit 127 reads as a pass or a wrong failure. [2026-11-22]
 - A hook's fail-closed branch must not call external tools: a missing grep made the jq-less subagent check fail open (found on macOS CI). Use bash pattern matching. [2026-11-22]
+- Probe guards with real payloads before trusting a review: globs, trailing dots, `.js`-less gate calls and `git -C ... reset --hard` all slipped past guards that their tests covered only in the plain spelling. [2026-11-22]
+- A frozen count is not a frozen set, and exit code 0 is not a test run: freeze exact patterns and check executed/skipped counts. [2026-11-22]
 
 Entries covered: 2026-10-23 .. 2026-11-22

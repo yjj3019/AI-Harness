@@ -23,6 +23,10 @@ const PATTERNS = [
   { re: /^\s*(api[_-]?key|secret|password|token)\s*[:=]\s*(?!(?:placeholder|example|dummy|changeme|change-me|replace-me|your-api-key-here)(?:[^\s#]*\s|\s|#|$))[^\s#]{8,}\s*(?:#.*)?$/im, why: "hardcoded credential (unquoted)" },
 ];
 
+// Where credentials usually live: more than source and docs. A committed .env, key or config file is the common leak.
+const SCANNED_EXT = /\.(js|py|sh|md|json|yml|yaml|ts|toml|cfg|ini|conf|env|pem|key|crt|txt|properties|tf|tfvars)$/i;
+const SCANNED_NAME = /^(\.env(\..*)?|\.npmrc|\.netrc|\.pypirc|id_rsa|id_dsa|id_ecdsa|id_ed25519|credentials)$/i;
+
 function scan(root) {
   const findings = [], errors = [];
   const files = [];
@@ -31,14 +35,15 @@ function scan(root) {
     try { names = fs.readdirSync(dir); }
     catch (error) { errors.push(`${path.relative(root, dir) || "."}: cannot list path (${error.code || error.message})`); return; }
     for (const name of names) {
-      if (SKIP.has(name)) continue;
       const p = path.join(dir, name);
+      // SKIP holds names and repo-relative paths (docs/attestations); a bare name never matched a nested path.
+      if (SKIP.has(name) || SKIP.has(path.relative(root, p).split(path.sep).join("/"))) continue;
       let st;
       try { st = fs.lstatSync(p); }
       catch (error) { errors.push(`${path.relative(root, p)}: cannot inspect path (${error.code || error.message})`); continue; }
       if (st.isSymbolicLink()) continue; // never follow links: a link to an ancestor would recurse without bound
       if (st.isDirectory()) walk(p);
-      else if (/\.(js|py|sh|md|json|yml|yaml|ts)$/.test(name)) files.push(p);
+      else if (SCANNED_EXT.test(name) || SCANNED_NAME.test(name)) files.push(p);
     }
   }
   walk(root);

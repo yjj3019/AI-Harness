@@ -27,7 +27,9 @@ for file in tests/*.test.js; do
   [ -f "$file" ] && test_files+=("$file")
 done
 count=${#test_files[@]}
-floor=15
+# The committed inventory is 48 files. A removed or renamed suite must fail here, not shrink the gate.
+# The override exists only for the fixture tests of this script (tests/test-inventory.test.js).
+floor=${HARNESS_MIN_TEST_FILES:-48}
 echo "test files: $count (floor $floor)"
 if [ "$count" -lt "$floor" ]; then
   echo "ERROR: test file count $count is below the floor $floor. A suite file was probably removed or renamed; restore it, or adjust the floor in tests/run-all.sh deliberately." >&2
@@ -78,6 +80,19 @@ if [ "$mode" = "fast" ]; then
 fi
 
 echo "== phase-gate =="
-node --test "${test_files[@]}"
+# Run the suites, keep their output, then inspect the summary: exit code 0 alone is not enough. Empty test
+# files and a suite that skips itself away both exit 0, so the gate also demands a minimum executed count and
+# a maximum skipped count (the committed suite runs about 460 tests with at most 10 platform skips).
+node_log=$(mktemp)
+set +e
+node --test "${test_files[@]}" 2>&1 | tee "$node_log"
+node_status=${PIPESTATUS[0]}
+set -e
+if [ "$node_status" -ne 0 ]; then rm -f "$node_log"; exit "$node_status"; fi
+if ! node scripts/test-summary-gate.js "$node_log" "${HARNESS_MIN_TESTS:-400}" "${HARNESS_MAX_SKIPPED:-20}"; then
+  rm -f "$node_log"
+  exit 2
+fi
+rm -f "$node_log"
 
 echo "ALL CHECKS PASSED"

@@ -67,7 +67,7 @@ Detailed checks: `references/tdd-checklist.md`, `references/review-axes.md`.
 |------|-------|---------|
 | Full lifecycle | addyosmani/agent-skills | `npx skills add addyosmani/agent-skills` |
 | TDD focus | mattpocock/skills (tdd) | `npx skills add mattpocock/skills` |
-| Senior engineer loop | adityaarakeri/senior-agent-skills | `npx skills add adityaarakeri/senior-agent-skills` |
+| Senior engineer loop | adityaarakeri/senior-agent-skills | (no install command: the repository has no license, reference only) |
 | SOLID / clean | various solid-skills | project-specific |
 
 Apply this skill’s gates and evidence rules on top of any external tool.
