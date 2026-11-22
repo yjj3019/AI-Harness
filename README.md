@@ -225,7 +225,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 1. `AGENTS.md` (또는 Claude Code면 `CLAUDE.md`) 읽기.
 2. `docs/compound-log.md` 검토.
 3. `docs/PHASES.md`에 단계 정의, `docs/DETAIL_SPEC.md`에 요구사항 작성.
-4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id> --require-bound-tree`.
+4. `/phase-harness <phase-id>`로 Phase 실행. 완료 판정은 `node .claude/workflows/phase-gate.js check <phase-id> --require-bound-tree --require-strict-evidence`.
 5. 컨텍스트가 저하되면 `docs/HANDOFF.md`에 상태를 기록하고 새 세션 시작.
 
 ## 다른 프로젝트에 적용하는 방법
@@ -244,7 +244,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 3. 이식 시 `.claude/workflows/phase-gate.js`, `.claude/workflows/test-summary.js`, `scripts/context-contract.js`, `.claude/commands/phase-harness.md`와 필요한 에이전트·설정을 함께 검토합니다. 증거는 직접 쓰지 않고 `phase-gate.js`의 `run`·`record`로 남깁니다. `check`는 누락되거나 검증 조건에 맞지 않는 증거를 거부하지만, 해시 체인은 같은 권한을 가진 작성자에 대한 인증이나 OS 격리가 아닙니다.
    ```bash
    node .claude/workflows/phase-gate.js run 1 test --require-test-summary --require-bound-tree -- npm test
-   node .claude/workflows/phase-gate.js check 1 --require-bound-tree
+   node .claude/workflows/phase-gate.js check 1 --require-bound-tree --require-strict-evidence
    ```
 
 ### Default-FAIL 계약 추가 (권장)
@@ -332,7 +332,7 @@ Oh My Claudecode / Oh My Opencode 등은 개별 하네스 패턴 위에 Team, Au
 
 ## 엄격한 테스트 증거 검사
 
-신규 Phase는 `phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <command>`와 `phase-gate.js check <id> --require-bound-tree`를 사용합니다. 바인딩 옵션은 호출별 요구이며 검증자도 check에 독립적으로 지정해야 합니다. 옵션 없는 기존 호출은 Git을 확인할 수 없을 때 미바인딩 증거를 경고와 함께 허용할 수 있습니다. 기존 해시만으로 과거 실행이 엄격 모드였거나 스냅샷이 완전했다고 증명할 수 없습니다. 과거 스냅샷의 완전성이 중요하면 현재 규칙으로 테스트를 다시 실행하고 attestation도 재발급하세요. Attest와 재실행 검증은 바인딩된 트리를 요구하지만, 기존 해시의 과거 읽기 완전성을 복구하지는 않습니다. 스냅샷 비교는 OS 격리가 아니며 ignored 입력, 파일 모드와 검사 사이에 복원된 변경 등을 보장하지 않습니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
+신규 Phase는 `phase-gate.js run <id> test --require-test-summary --require-bound-tree -- <command>`와 `phase-gate.js check <id> --require-bound-tree --require-strict-evidence`를 사용합니다. 바인딩 옵션은 호출별 요구이며 검증자도 check에 독립적으로 지정해야 합니다. 옵션 없는 기존 호출은 Git을 확인할 수 없을 때 미바인딩 증거를 경고와 함께 허용할 수 있습니다. 기존 해시만으로 과거 실행이 엄격 모드였거나 스냅샷이 완전했다고 증명할 수 없습니다. 과거 스냅샷의 완전성이 중요하면 현재 규칙으로 테스트를 다시 실행하고 attestation도 재발급하세요. Attest와 재실행 검증은 바인딩된 트리를 요구하지만, 기존 해시의 과거 읽기 완전성을 복구하지는 않습니다. 스냅샷 비교는 OS 격리가 아니며 ignored 입력, 파일 모드와 검사 사이에 복원된 변경 등을 보장하지 않습니다. Node TAP/pytest 결과의 테스트 수와 실패·스킵 수를 검사합니다. 인식 가능한 요약에서 테스트 0건·전체 스킵은 레거시 호출에서도 FAIL 처리됩니다. 엄격 모드에서 요약이 없으면 FAIL이며, `.claude/required-test-command.json`이 있을 경우 최초 테스트 실행 단계에서도 지정 명령만 허용합니다. 엄격 모드의 CI attestation 재실행 역시 테스트 수를 확인합니다. 테스트 내용이 실제 요구사항을 검증하는지는 독립 리뷰가 계속 확인해야 합니다. 자세한 수용 조건은 [성숙도 수용 기준](docs/maturity/ACCEPTANCE-2026-10-26.md)을 참고하세요.
 
 ### 필수 attestation 목록 검사 (선택형)
 
