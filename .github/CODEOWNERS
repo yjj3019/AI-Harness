@@ -1,0 +1,28 @@
+# The gate's trust set: these files decide what a Phase PASS and an attestation mean, and a change to any
+# of them is a change to the verifier itself. They need an owner's review.
+# Enforcement is a server setting: enable "Require review from Code Owners" in the branch ruleset.
+# Without it this file only requests reviews.
+/.claude/workflows/ @yjj3019
+/.claude/hooks/ @yjj3019
+/.claude/settings.json @yjj3019
+/.claude/required-test-command.json @yjj3019
+/.codex/hooks/ @yjj3019
+/.codex/hooks.json @yjj3019
+/.codex/config.toml @yjj3019
+/.github/ @yjj3019
+/scripts/phase-definition.js @yjj3019
+/scripts/context-contract.js @yjj3019
+/scripts/tree-exclude-check.js @yjj3019
+/scripts/merge-guard.js @yjj3019
+/scripts/verify-attestation-inventory.js @yjj3019
+/tests/run-all.sh @yjj3019
+/scripts/test-summary-gate.js @yjj3019
+/scripts/secret-scan.js @yjj3019
+/scripts/source-adoption-check.js @yjj3019
+/.claude/agents/ @yjj3019
+/.codex/agents/ @yjj3019
+/docs/PHASES.md @yjj3019
+/docs/attestations/ @yjj3019
+/CODEOWNERS @yjj3019
+# A single owner cannot approve their own pull request: GitHub does not count the author's review as a
+# code-owner review. Add a second owner or accept that the ruleset's code-owner requirement cannot be met alone.

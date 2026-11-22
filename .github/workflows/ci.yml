@@ -52,7 +52,7 @@ jobs:
         env:
           PHASE_ID: ${{ matrix.phase }}
         run: |
-          node .claude/workflows/phase-gate.js verify-attestation "$PHASE_ID"
+          node .claude/workflows/phase-gate.js verify-attestation "$PHASE_ID" --require-pinned-command
 
   attestation-summary:
     name: attestation summary
@@ -70,6 +70,8 @@ jobs:
   checks:
     name: checks / node ${{ matrix.node }}
     needs: attestation-summary
+    # always(): when the attestation replay fails this job must report a failure, not be skipped.
+    if: ${{ always() }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -77,6 +79,10 @@ jobs:
         node: [22, 24]
     runs-on: ubuntu-latest
     steps:
+      - name: Require the attestation summary
+        env:
+          SUMMARY_RESULT: ${{ needs.attestation-summary.result }}
+        run: test "$SUMMARY_RESULT" = success
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -101,6 +107,8 @@ jobs:
           path: host-permission-matrix-ubuntu.md
   portability:
     name: portability / ${{ matrix.os }}
+    needs: attestation-summary
+    if: ${{ always() }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -111,6 +119,10 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Require the attestation summary
+        env:
+          SUMMARY_RESULT: ${{ needs.attestation-summary.result }}
+        run: test "$SUMMARY_RESULT" = success
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -175,11 +187,21 @@ jobs:
         with:
           python-version: '3.12'
       - name: Deny-default broker, atomic DB and unknown API result regression
-        run: python -m unittest discover -s tests/toolbroker -p 'test_*.py' -v
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests/toolbroker -p 'test_*.py' -v 2>&1 | tee toolbroker.log
+          # A required check must show that tests ran: discovery of zero cases, or only skipped ones, exits 0.
+          ran=$(sed -n 's/^Ran \([0-9][0-9]*\) test.*/\1/p' toolbroker.log | tail -1)
+          skipped=$(sed -n 's/^OK (skipped=\([0-9][0-9]*\)[,)].*/\1/p' toolbroker.log | tail -1)
+          echo "toolbroker: ran=${ran:-0} skipped=${skipped:-0}"
+          test "${ran:-0}" -ge 20
+          test $(( ${ran:-0} - ${skipped:-0} )) -ge 20
 
   self-qa:
     name: self-qa / shellcheck
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -191,5 +213,5 @@ jobs:
           shellcheck -x tests/run-all.sh
           bash -n tests/run-all.sh
           # Hooks are the guardrails the constitution relies on: lint them too (errors only) and check syntax.
-          shellcheck -S error -x .claude/hooks/*.sh .codex/hooks/*.sh
+          shellcheck -S error -x .claude/hooks/*.sh .codex/hooks/*.sh tests/hooks.test.sh
           for f in .claude/hooks/*.sh .codex/hooks/*.sh; do bash -n "$f"; done

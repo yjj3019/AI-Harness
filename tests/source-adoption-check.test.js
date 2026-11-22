@@ -10,10 +10,11 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 const modified = cb => { const clone = structuredClone(manifest); cb(clone); return clone; };
 
 test('reviewed adoption declarations are consistent and contain no copied files', () => {
-  assert.deepEqual(validate(manifest), { entries: 6, copied_files: 0, certification: 'NOT_PERFORMED' });
-  assert.deepEqual(manifest.entries.map(x => x.license_label),
+  assert.deepEqual(validate(manifest), { entries: manifest.entries.length, copied_files: 0, certification: 'NOT_PERFORMED' });
+  assert.ok(manifest.entries.length >= 25, 'the ledger also registers every external repository cited under skills/');
+  assert.deepEqual(manifest.entries.slice(0, 6).map(x => x.license_label),
     ['MIT', 'MIT', 'MIT', 'Apache-2.0', 'CUSTOM-ATTRIBUTION', 'Apache-2.0']);
-  assert.deepEqual(manifest.entries.map(x => x.verified_spdx),
+  assert.deepEqual(manifest.entries.slice(0, 6).map(x => x.verified_spdx),
     ['MIT', 'MIT', 'MIT', 'Apache-2.0', 'CUSTOM-ATTRIBUTION', 'Apache-2.0']);
 });
 test('rejects copied file claims, unknown fields, and verified_spdx mismatches', () => {
@@ -41,7 +42,7 @@ test('license links must be pinned to a commit with a matching sha256', () => {
   assert.throws(() => validate(modified(m => { m.entries[0].license_sha256 = 'abc'; })));
   assert.throws(() => validate(modified(m => { delete m.entries[0].license_sha256; })));
   assert.throws(() => validate(modified(m => { m.schema = 1; })));
-  for (const e of manifest.entries) {
+  for (const e of manifest.entries.filter(x => x.license_label !== 'UNVERIFIED')) {
     assert.match(e.license_commit, /^[0-9a-f]{40}$/);
     assert.match(e.license_sha256, /^[0-9a-f]{64}$/);
     assert.ok(e.license_url.includes('/blob/' + e.license_commit + '/'));
@@ -55,7 +56,7 @@ test('custom attribution requires source credit and sensible date', () => {
 test('CLI validates the reviewed baseline in read-only mode', () => {
   const result = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'source-adoption-check.js'), manifestPath], {encoding:'utf8'});
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /6 declarations consistent/);
+  assert.match(result.stdout, /\d+ declarations consistent/);
   assert.match(result.stdout, /verified_spdx recorded per entry/);
   assert.match(result.stdout, /unregistered code references: 0/);
 });
@@ -144,4 +145,37 @@ test('live read cap: exactly 1 MiB is read, one byte more is rejected, a stream 
   }) };
   assert.equal(await run({ ok: true, body: stream }), 'unreachable');
   assert.ok(cancelled && pulled === 5, 'stream cancelled right after crossing the cap, pulled=' + pulled);
+});
+test('UNVERIFIED sources are reference-only: no license triple, no fresh implementation, no pinned claims', () => {
+  const unverified = manifest.entries.filter(e => e.license_label === 'UNVERIFIED');
+  assert.ok(unverified.length >= 1, 'the unlicensed repository cited under skills/ is registered as UNVERIFIED');
+  const i = manifest.entries.indexOf(unverified[0]);
+  assert.equal(unverified[0].license_url, null);
+  validate(manifest);
+  // A license triple on an UNVERIFIED source is contradictory, and so is a partial one.
+  assert.throws(() => validate(modified(m => { m.entries[i].license_url = m.entries[0].license_url; })));
+  assert.throws(() => validate(modified(m => { m.entries[i].license_sha256 = m.entries[0].license_sha256; })));
+  assert.throws(() => validate(modified(m => { m.entries[i].method = 'fresh-implementation'; })));
+  // A licensed source cannot drop its triple to skip the pin.
+  assert.throws(() => validate(modified(m => { m.entries[0].license_url = null; m.entries[0].license_commit = null; m.entries[0].license_sha256 = null; })));
+});
+test('the scanner covers skills/ and an unregistered reference there is a violation', () => {
+  const root = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'sa-skills-'));
+  try {
+    fs.mkdirSync(path.join(root, 'skills', 'x'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'skills', 'x', 'SKILL.md'), 'See ' + 'https://github.com' + '/someone/unregistered-skill-repo for ideas.\n');
+    const found = scanCodeReferences(manifest, root);
+    assert.equal(found.length, 1);
+    assert.match(found[0], /unregistered-skill-repo/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+test('verifyLive reports no-license for UNVERIFIED sources and does not fetch them', async () => {
+  const unverified = manifest.entries.find(e => e.license_label === 'UNVERIFIED');
+  const only = { ...structuredClone(manifest), entries: [structuredClone(unverified)] };
+  let calls = 0;
+  const result = await verifyLive(only, async () => { calls++; throw new Error('must not fetch'); });
+  assert.deepEqual(result, [{ id: unverified.id, status: 'no-license' }]);
+  assert.equal(calls, 0);
+  const quiet = process.stdout.write; process.stdout.write = () => true;
+  try { assert.equal(await runLive(only, async () => { throw new Error('must not fetch'); }), 0); } finally { process.stdout.write = quiet; }
 });
