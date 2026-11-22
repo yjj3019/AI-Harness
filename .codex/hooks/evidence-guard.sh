@@ -79,6 +79,8 @@ strip_win32_tails() {
 # 8.3 short names (CLAUDE~1, WORKFL~1, SETTIN~1.JSO ...) can alias any protected directory or file, and a path
 # check by long name cannot see them, so a subagent may not write through any "~N" component.
 re_short_names='(^|/)[^/]*~[0-9]'
+# The attestation signing key: a subagent may neither write nor name it (reading it is signing).
+re_signing_key='(^|/)\.harness(/|$)|attest-ed25519|attest[-_]?key'
 
 # Any component that starts with ".phase-" is treated as the evidence directory: this also covers
 # trailing Win32 dots/spaces and NTFS stream suffixes (".phase-evidence." ".phase-evidence :$DATA").
@@ -87,12 +89,13 @@ re_evidence_component='(^|/)(\.phase-|phase-~[0-9])'
 # A dot-prefixed component that contains a glob character can expand to the evidence directory.
 re_dot_glob_path='(^|/)\.[^/]*[*?\[{]'
 # The gate's trust base: files whose content decides what a PASS means. Subagents may not edit them.
-re_trust_set='(^|/)(\.claude/(workflows/|hooks/|settings[^/]*\.json$|required-test-command\.json$)|\.codex/(hooks/|hooks\.json$|config\.toml$)|\.github/(workflows/|required-phases\.json$|CODEOWNERS$)|CODEOWNERS$|tests/run-all\.sh$|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js$)|(^|/)phase-gate\.js[.\ ]*(:[^/]*)?$'
+re_trust_set='(^|/)(\.claude/(workflows/|hooks/|settings[^/]*\.json$|required-test-command\.json$|attestation-public-key\.pem$)|\.codex/(hooks/|hooks\.json$|config\.toml$)|\.github/(workflows/|required-phases\.json$|CODEOWNERS$)|CODEOWNERS$|tests/run-all\.sh$|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js$)|(^|/)phase-gate\.js[.\ ]*(:[^/]*)?$'
 
 check_write_path() { # check_write_path <raw path>
   local raw=$1 norm real
   [ -n "$raw" ] || block "missing file path in the tool input"
   norm=$(strip_win32_tails "$(norm_path "$raw")")
+  [[ $norm =~ $re_signing_key ]] && block "the attestation signing key is for the orchestrator only"
   [[ $norm =~ $re_short_names ]] && block "an 8.3 short name may alias a protected directory; use the long name"
   [[ $norm =~ $re_evidence_component ]] && block "only the orchestrator records evidence"
   [[ $norm =~ $re_dot_glob_path ]] && block "a wildcard in a dot-prefixed path component may reach .phase-evidence"
@@ -113,13 +116,14 @@ check_command() { # check_command <command text> (Bash and PowerShell)
   local re_cmd_evidence='\.phase-|phase-~[0-9]|\[\.\]phase|phase-g[^[:space:]]*[*?\[]'
   local re_cmd_dot_glob='(^|[[:space:]/="'"'"'])(\.[*?\[{]|\.[^[:space:]/.][^[:space:]/]*[*?\[{])'
   [[ $cmd =~ $re_cmd_evidence ]] && block "commands must not touch .phase-evidence/"
+  [[ ${cmd//\\//} =~ $re_signing_key ]] && block "commands must not name the attestation signing key"
   [[ $cmd =~ $re_cmd_dot_glob ]] && block "a dot-prefixed wildcard may expand to .phase-evidence; name the paths explicitly"
   # A command that names a trust-set path and also writes (redirect, sed -i, tee, cp, mv, rm, git apply, Set-Content ...).
   # Reading, running and diffing those files stays allowed. Lexical only: variables, indirection, python -c and
   # node -e writers evade it. Backslashes are read as slashes, and the path may carry any prefix (absolute, ../,
   # $CLAUDE_PROJECT_DIR/ ...), so the match is not anchored to the start of a word.
   local cmd_n=${cmd//\\//}
-  local re_cmd_trust='(\.claude/(workflows|hooks)(/|[[:space:]"'"'"';&|)]|$)|\.claude/(settings[^[:space:]/]*\.json|required-test-command\.json)|\.codex/(hooks(/|[[:space:]"'"'"';&|)]|$)|hooks\.json|config\.toml)|\.github/(workflows(/|[[:space:]"'"'"';&|)]|$)|required-phases\.json|CODEOWNERS)|(^|[^A-Za-z0-9_.-])CODEOWNERS|tests/run-all\.sh|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js)'
+  local re_cmd_trust='(\.claude/(workflows|hooks)(/|[[:space:]"'"'"';&|)]|$)|\.claude/(settings[^[:space:]/]*\.json|required-test-command\.json|attestation-public-key\.pem)|\.codex/(hooks(/|[[:space:]"'"'"';&|)]|$)|hooks\.json|config\.toml)|\.github/(workflows(/|[[:space:]"'"'"';&|)]|$)|required-phases\.json|CODEOWNERS)|(^|[^A-Za-z0-9_.-])CODEOWNERS|tests/run-all\.sh|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js)'
   local re_cmd_write='(sed|perl)([[:space:]]+-[^[:space:]]+)*[[:space:]]+-[a-zA-Z]*i|--in-place|(^|[[:space:];&|(])(tee|cp|mv|rm|install|truncate|ln|patch|chmod|chown|dd|sponge|touch|unlink|rsync|curl|wget)[[:space:]]|git[[:space:]]+(apply|checkout|restore|reset|stash|rm|mv|clean)|find[[:space:]].*-delete|(Set|Add|Out|New|Remove|Move|Copy|Rename)-(Content|Item|File)'
   # Redirects: drop the harmless ones (to /dev/null, and fd duplication such as 2>&1), then any ">" left is a write,
   # including 1>, &> and >>.
