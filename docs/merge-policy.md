@@ -8,7 +8,7 @@
 
 ## 서버 측 강제 현황
 
-2026-11-18 확인 기준, 공개 저장소의 활성 ruleset `main-required-ci`(26772795)가 `main`에 적용됩니다. GitHub Actions의 필수 검사 9개가 모두 통과하고 PR의 기준 브랜치가 최신이어야 합니다. 직접 변경에는 PR이 필요하며 우회 계정은 없습니다. 검사 실패 상태의 PR #69는 GitHub에서 `BLOCKED`로 표시됩니다.
+2026-11-18 확인 기준, 공개 저장소의 활성 ruleset `main-required-ci`(26772795)가 `main`에 적용됩니다. GitHub Actions의 필수 검사가 모두 통과하고 PR의 기준 브랜치가 최신이어야 합니다. 직접 변경에는 PR이 필요하며 우회 계정은 없습니다. 검사 실패 상태의 PR #69는 GitHub에서 `BLOCKED`로 표시됩니다.
 
 ### 2026-11-01 기록
 
@@ -54,6 +54,6 @@ PR #26/#27 results below are historic validation of the prior guard version, not
 - attestation 재실행(`attestation replay`)은 `ubuntu-latest` 한 곳에서만 수행됩니다(`.github/workflows/ci.yml`). 추적 파일이 LF일 때 Windows에서 만든 attestation도 LF Linux 체크아웃에서 재실행됩니다. 트리 해시는 작업 트리 바이트를 그대로 해시하므로 `core.autocrlf=true`의 CRLF 작업 트리로 만든 attestation은 리눅스에서 "code changed after the attestation"으로 실패합니다(2026-11-22 실측). attestation은 추적 파일을 LF로 둔 트리에서 만들고, 리눅스에서 `verify-attestation`으로 재실행해 확인합니다. macOS 재실행 통과는 검증되지 않았습니다. 이 한계는 Windows 재실행 단계를 추가하기 전까지 유지됩니다.
 - `portability / windows-latest` 단계는 attestation이 재실행하는 것과 같은 명령(`bash tests/run-all.sh`)을 Windows에서 실행하지만 트리 해시는 비교하지 않습니다. 2026-11-22에 로컬 Windows PC에서 `verify-attestation`(트리 일치와 테스트 통과)이 통과했으나 이는 호스티드 CI 결과가 아닙니다. 별도 Windows 재실행 단계는 `merge-guard`의 필수 체크 이름 규칙(`attestation replay / <phase>`)과 얽혀 판정이 바뀔 수 있어 추가하지 않았습니다.
 
-현재 필수 검사 이름은 `checks / node 22`, `checks / node 24`, `portability / macos-latest`, `portability / windows-latest`, `isolation / linux namespace`, `toolbroker / ubuntu-latest`, `toolbroker / macos-latest`, `toolbroker / windows-latest`, `self-qa / shellcheck`입니다.
+현재 필수 검사 이름은 `checks / node 22`, `checks / node 24`, `portability / macos-latest`, `portability / windows-latest`, `isolation / linux namespace`, `toolbroker / ubuntu-latest`, `toolbroker / macos-latest`, `toolbroker / windows-latest`, `self-qa / shellcheck`, `attestation summary`입니다. `scripts/merge-guard.js`의 허용 목록은 `ci.yml`의 작업 이름과 대조하는 별도 도구이며 `attestation summary`는 `requireAttestations` 경로에서 따로 확인합니다.
 
-2026-11-22 ruleset 조회: 위 9개만 필수이고 `attestation summary`와 `attestation replay / <phase>`는 필수 검사가 아니며, 코드 오너 리뷰도 요구하지 않습니다. attestation 실패가 병합을 막는 경로는 `ci.yml`의 의존 관계입니다. 예전에는 `checks`가 `needs: attestation-summary`만 가져 실패한 replay가 필수 잡을 실패가 아닌 건너뜀(skipped)으로 만들었고, GitHub는 건너뛴 필수 검사를 충족한 것으로 볼 수 있습니다. 이제 `checks`와 `portability`는 `if: always()`로 항상 실행되고 첫 단계에서 `attestation summary`가 `success`가 아니면 실패합니다. replay는 `--require-pinned-command`로 실행되어 `.claude/required-test-command.json`이 없으면 실패합니다. 서버 설정으로 남은 일은 관리자가 ruleset에 `attestation summary`를 필수 검사로 추가하고 "Require review from Code Owners"를 켜는 것입니다(`.github/CODEOWNERS`가 게이트 신뢰 집합을 나열합니다). 이 둘은 저장소 설정 변경이라 여기서 적용하지 않았습니다.
+2026-11-23 ruleset 갱신: 위 9개에 `attestation summary`를 필수 검사로 추가해 10개가 되었습니다(ruleset 26772795, `attestation summary`는 `if: always()`라 항상 결과를 냅니다). `attestation replay / <phase>`는 필수 검사 이름이 아니라 `attestation summary`가 그 결과를 모읍니다. 코드 오너 리뷰는 요구하지 않습니다. 소유자가 한 명이라 GitHub가 작성자의 리뷰를 코드 오너 리뷰로 세지 않으므로, 이 요구를 켜려면 두 번째 소유자나 우회 설정이 필요합니다(`.github/CODEOWNERS`는 게이트 신뢰 집합을 나열해 리뷰를 요청만 합니다). attestation 실패가 병합을 막는 경로는 `ci.yml`의 의존 관계이기도 합니다. 예전에는 `checks`가 `needs: attestation-summary`만 가져 실패한 replay가 필수 잡을 실패가 아닌 건너뜀(skipped)으로 만들었고, GitHub는 건너뛴 필수 검사를 충족한 것으로 볼 수 있습니다. 이제 `checks`와 `portability`는 `if: always()`로 항상 실행되고 첫 단계에서 `attestation summary`가 `success`가 아니면 실패합니다. replay는 `--require-pinned-command`로 실행되어 `.claude/required-test-command.json`이 없으면 실패합니다.

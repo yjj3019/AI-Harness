@@ -2,6 +2,10 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — ruleset 갱신 (미병합)
+
+- 2026-11-23: 서버 ruleset `main-required-ci`(26772795)의 필수 검사에 `attestation summary`를 추가했다(9개에서 10개). 코드 오너 리뷰 요구는 켜지 않았다(소유자 한 명). 결과와 이유는 `docs/merge-policy.md`에 적었다.
+
 ## 작업 트리 — 3모델 리뷰(Opus·Codex·Grok) 개선 (미병합, 브랜치 `fix/three-model-review-20261122`)
 
 - 훅 `evidence-guard.sh`(Claude·Codex) 재작성: 허용/거부 판정이 bash 내장(`[[ =~ ]]`, `case`)만 쓰므로 PATH에 grep·sed가 없어도 거부가 허용으로 바뀌지 않는다. 직접 입력으로 확인한 우회를 모두 막았다: `.phase-ev*` 같은 글롭(Write 경로와 Bash 명령), 끝의 점·공백(`.phase-evidence.`, `.phase-evidence `), 8.3 짧은 이름, `.js` 없는 `phase-gate` 호출, PowerShell 도구, MCP 도구(`mcp__*`). 경로가 비었거나 realpath가 실패하면 차단한다.
