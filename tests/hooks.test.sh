@@ -332,6 +332,34 @@ else
 fi
 [ -z "$nojq_bin" ] || rm -rf "$nojq_bin"
 
+# Regression (found by the macOS CI run): with jq AND grep missing, a subagent call must still be
+# blocked. A hook that classified the caller with an external grep failed open when grep was absent.
+main_json='{"tool_name":"Write","tool_input":{"file_path":"src/a.js"}}'
+sub_json='{"tool_name":"Write","tool_input":{"file_path":"src/a.js"},"agent_id":"x1","agent_type":"coding"}'
+nogrep_bin=$(mktemp -d)
+for tool in bash cat; do ln -s "$(command -v "$tool")" "$nogrep_bin/$tool" 2>/dev/null; done
+if env PATH="$nogrep_bin" bash -c 'command -v cat >/dev/null && ! command -v grep >/dev/null && ! command -v jq >/dev/null' >/dev/null 2>&1; then
+  for tc in "subagent-auto|.claude/hooks/$G|auto|$sub_json|2" "codex-subagent-auto|.codex/hooks/$G|auto|$sub_json|2" \
+            "main-auto|.claude/hooks/$G|auto|$main_json|0"; do
+    IFS='|' read -r label hook mode json want <<<"$tc"
+    got=$(printf '%s' "$json" | env PATH="$nogrep_bin" bash "$hook" "$mode" >/dev/null 2>&1; echo $?)
+    total=$((total + 1))
+    [ "$got" = "$want" ] || { fails=$((fails + 1)); echo "FAIL no-jq-no-grep $label: want=$want got=$got"; }
+  done
+else
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      # Git Bash: a linked bash does not load, so a grep-less PATH cannot be built here.
+      # Linux and macOS CI run this case.
+      echo "SKIP no-jq-no-grep: cannot build a PATH without grep on this platform (covered by Linux and macOS CI)" ;;
+    *)
+      # Never a silent skip where the case can run: an untestable guard must fail the suite.
+      total=$((total + 1)); fails=$((fails + 1))
+      echo "FAIL no-jq-no-grep: could not build a PATH with only bash and cat, so the grep-less guard is untested" ;;
+  esac
+fi
+rm -rf "$nogrep_bin"
+
 echo "== Claude and Codex hook copies must not drift =="
 # block-destructive.sh and read-tracker.sh are shared logic; only the self-referencing path may differ.
 for pair in block-destructive.sh read-tracker.sh; do

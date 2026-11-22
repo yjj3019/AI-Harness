@@ -17,8 +17,9 @@ if ! command -v jq >/dev/null 2>&1; then
   # Without jq the input cannot be parsed. In auto mode only, input that never mentions
   # agent_id/agent_type is the main session (unrestricted); every other case stays
   # fail-closed. A substring test, not parsing: a false match blocks, never allows.
-  if [ "$mode" = auto ] && ! printf '%s' "$input" | grep -Eq 'agent_(id|type)'; then
-    exit 0
+  # Pure bash pattern match: no external tool, so a missing grep can never turn this into a fail-open.
+  if [ "$mode" = auto ]; then
+    case $input in *agent_id*|*agent_type*) ;; *) exit 0 ;; esac
   fi
   echo "Blocked by .codex/hooks/evidence-guard.sh: jq is required (install: winget install jqlang.jq | apt install jq | brew install jq)" >&2
   exit 2
