@@ -7,6 +7,9 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { skipReason } = require("./helpers/bash-probe");
 
+// A nested `node --test` inherits NODE_TEST_CONTEXT from this test run and then prints no summary at all.
+const fixtureEnv = (extra) => { const env = { ...process.env, ...extra }; delete env.NODE_TEST_CONTEXT; return env; };
+
 // Exercise the real entry point in an isolated tree; the guard precedes all
 // other checks, so neither the suite nor production files are touched.
 const BASH_SKIP = skipReason();
@@ -18,6 +21,7 @@ const BASH_SKIP = skipReason();
 const PRODUCTION_FILES = [
   ".claude/workflows/phase-gate.js",
   ".claude/workflows/test-summary.js",
+  "scripts/test-summary-gate.js",
   ".claude/hooks/block-destructive.sh",
   ".claude/hooks/evidence-guard.sh",
   ".claude/hooks/read-tracker.sh",
@@ -77,7 +81,7 @@ test("inventory guard counts files and rejects a shrunken suite", { skip: BASH_S
   fs.copyFileSync(path.join(__dirname, "run-all.sh"), path.join(tests, "run-all.sh"));
   const bash = process.env.HARNESS_BASH || "bash";
   const run = () => {
-    const result = spawnSync(bash, [path.join(tests, "run-all.sh")], { encoding: "utf8" });
+    const result = spawnSync(bash, [path.join(tests, "run-all.sh")], { encoding: "utf8", env: fixtureEnv({ HARNESS_MIN_TEST_FILES: "15", HARNESS_MIN_TESTS: "1" }) });
     assert.ifError(result.error);
     return result;
   };
@@ -99,4 +103,25 @@ test("inventory guard counts files and rejects a shrunken suite", { skip: BASH_S
   assert.match(result.stdout, /ALL CHECKS PASSED/);
   assert.doesNotMatch(result.stdout, /below the floor/);
   assert.doesNotMatch(result.stderr, /missing required tool/);
+});
+
+const { gate: summaryGate } = require("../scripts/test-summary-gate.js");
+test("the node summary gate rejects empty, all-skipped, too-small and too-skippy runs", () => {
+  const spec = (tests, pass, skipped) => [
+    "ℹ tests " + tests, "ℹ suites 0", "ℹ pass " + pass, "ℹ fail 0", "ℹ cancelled 0", "ℹ skipped " + skipped, "ℹ todo 0", "ℹ duration_ms 5",
+  ].join("\n");
+  assert.equal(summaryGate(spec(458, 448, 10), 400, 20).ok, true);
+  assert.match(summaryGate(spec(458, 448, 10), 400, 20).message, /448 passed, 10 skipped of 458/);
+  assert.equal(summaryGate("", 1, 20).ok, false, "no summary at all");
+  assert.equal(summaryGate(spec(15, 15, 0), 400, 20).ok, false, "fifteen empty files pass but are too few tests");
+  assert.match(summaryGate(spec(15, 15, 0), 400, 20).message, /minimum tests 400/);
+  assert.equal(summaryGate(spec(15, 0, 15), 1, 20).ok, false, "everything skipped");
+  assert.equal(summaryGate(spec(458, 440, 18), 400, 10).ok, false, "too many skips");
+  assert.match(summaryGate(spec(458, 440, 18), 400, 10).message, /maximum skipped 10/);
+  assert.equal(summaryGate(spec(10, 9, 0).replace("ℹ fail 0", "ℹ fail 1"), 1, 20).ok, false, "a failure is never ok");
+});
+test("run-all uses the summary gate with the committed minimums", () => {
+  const script = fs.readFileSync(path.join(__dirname, "run-all.sh"), "utf8");
+  assert.ok(script.includes("floor=${HARNESS_MIN_TEST_FILES:-48}"));
+  assert.ok(script.includes('test-summary-gate.js "$node_log" "${HARNESS_MIN_TESTS:-400}" "${HARNESS_MAX_SKIPPED:-20}"'));
 });

@@ -177,7 +177,7 @@ Recommended adoption order when transplanting this harness into a new project.
    - Evidence is required before claiming completion
    - Each Phase must be independently executable and human-testable
 2. Create `docs/PHASES.md` with phases sized so a person can run and verify each one.
-3. Copy `.claude/workflows/phase-gate.js` and `.claude/commands/phase-harness.md`. Never write evidence by hand; record it only with `phase-gate.js run` and `record`. Hand-written JSON is rejected by `check`, and missing evidence fails.
+3. Copy `.claude/workflows/phase-gate.js` and `.claude/commands/phase-harness.md`. Never write evidence by hand; record it only with `phase-gate.js run` and `record`. Evidence without the gate's schema, hash links and artifact hashes is rejected by `check`. That is an integrity check, not proof of authorship: a forged but internally consistent chain passes, so the attestation binds the chain digest and signing remains open (see `docs/architecture-spec.md`, "What an attestation proves"), and missing evidence fails.
    ```bash
    node .claude/workflows/phase-gate.js run 1 test -- npm test
    node .claude/workflows/phase-gate.js check 1

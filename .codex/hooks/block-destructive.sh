@@ -66,6 +66,12 @@ check_simple_command() {
         *) git_subcommand=$word; break ;;
       esac
     done
+    if [[ "$git_subcommand" == reset ]]; then
+      # Same option-aware parse as push: `git -C dir reset --hard` must not bypass the check.
+      for ((i=i + 1; i<${#words[@]}; i++)); do
+        [[ "${words[$i]}" == --hard ]] && deny "git reset --hard"
+      done
+    fi
     if [[ "$git_subcommand" == push ]]; then
       push_option=1
       for ((i=i + 1; i<${#words[@]}; i++)); do
@@ -149,25 +155,19 @@ done
 if [ "$active" -eq 1 ]; then words+=("$word"); fi
 check_simple_command
 
+# Whole-command regex checks. They use bash [[ =~ ]] only (no external grep), so a PATH without grep
+# cannot turn a deny into an allow.
+re_push_force='git[[:space:]]+push([[:space:]]+[^;&|]*)?[[:space:]](--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)'
+re_reset_hard='git[[:space:]]+(-[^[:space:]]+[[:space:]]+([^-[:space:]][^[:space:]]*[[:space:]]+)?)*reset[[:space:]]+(.*[[:space:]])?--hard'
+re_curl_sh='(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$|[;&)])'
+re_disk='(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(shred[[:space:]]|mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'
 # git push --force / -f (--force-with-lease is allowed)
-if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push([[:space:]]+[^;&|]*)?[[:space:]](--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)'; then
-  deny "git force push"
-fi
-
-# git reset --hard discards uncommitted work
-if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+reset[[:space:]]+(.*[[:space:]])?--hard'; then
-  deny "git reset --hard"
-fi
-
+if [[ $cmd =~ $re_push_force ]]; then deny "git force push"; fi
+# git reset --hard discards uncommitted work (also with global options such as -C dir)
+if [[ $cmd =~ $re_reset_hard ]]; then deny "git reset --hard"; fi
 # piping a download straight into a shell
-if printf '%s' "$cmd" | grep -Eq '(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$|[;&)])'; then
-  deny "download piped into a shell"
-fi
-
-if printf '%s' "$cmd" | grep -Eq '(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(shred[[:space:]]|mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'; then
-  deny "raw disk write or filesystem creation"
-fi
-
+if [[ $cmd =~ $re_curl_sh ]]; then deny "download piped into a shell"; fi
+if [[ $cmd =~ $re_disk ]]; then deny "raw disk write or filesystem creation"; fi
 
 # PowerShell/cmd-style recursive deletes (Remove-Item, ri, del, erase, rd, rmdir) on a broad target.
 # Segment-scoped lexical guard like the rm rules above; it does not parse PowerShell, so quoting
