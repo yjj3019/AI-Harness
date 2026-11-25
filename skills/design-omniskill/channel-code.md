@@ -1,6 +1,6 @@
 # Channel: Code (UI layout tokens — inherits api-design)
 
-Input: code with a UI/layout surface (HTML/CSS/JS/TS/component files) plus its token rules. Checks the code against `tokens.md` without running the app.
+Input: code with a UI/layout surface (HTML/CSS/JS/TS/component files) plus its token rules. Checks the code against [tokens.md](tokens.md) without running the app.
 
 ## Render contract
 

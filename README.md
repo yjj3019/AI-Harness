@@ -377,5 +377,5 @@ ode --test tests/*.test.js run takes roughly 20 minutes. Budget CI accordingly o
 ## 최근 갱신 (2026-11-06) — 메모리 가드 강화·정적 게이트 등재
 
 - `scripts/memory-guard.js`: 외부 URL(`https://`·`mailto:`·`//`)·닻(#anchor)을 broken 링크 오탐에서 제외 — 증류 저장소에 외부 링크가 있어도 유효. 회귀 테스트 추가(테스트 6/6 관련, fail 0).
-- 정적 게이트 등재: skill license/메타데이터 감사 `scripts/skill-audit.js`(license 필수·Apache-2.0 정합), 증류 저장소 리뷰 `scripts/memory-guard.js`, 증거 레드액션 `scripts/evidence-redact.js`, 시크릿 스캔 `scripts/secret-scan.js`(AGENTS.md·CLAUDE.md 문서 맵 동일 등재).
+- 정적 게이트 등재: skill license/메타데이터 감사 `scripts/skill-audit.js`(license 필수·MIT 정합), 증류 저장소 리뷰 `scripts/memory-guard.js`, 증거 레드액션 `scripts/evidence-redact.js`, 시크릿 스캔 `scripts/secret-scan.js`(AGENTS.md·CLAUDE.md 문서 맵 동일 등재).
 - 시뮬레이션 100회(secret-scan·skill-audit ×100) 실측 **ALL_OK**(200/200 exit 0) — 결정적 게이트 변동성 0%.

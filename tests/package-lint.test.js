@@ -42,7 +42,7 @@ test("repository package definitions pass without executing hooks", () => {
 test("command needs no name; CRLF, quoted scalars and unrelated metadata are accepted", t => {
   const { root, write } = fixture(t);
   write(skill, "---\r\nname: 'example'\r\ndescription: \"Example skill\"\r\nlicense: MIT\r\n---\r\nBody\r\n");
-  assert.deepEqual(checkPackage(root), { ok: true, checked: 7, errors: [] });
+  assert.deepEqual(checkPackage(root), { ok: true, checked: 7, errors: [], warnings: [] });
 });
 
 for (const [label, text] of [
@@ -130,6 +130,84 @@ test("a short-named root still accepts a file reached through a junction", { ski
   fs.appendFileSync(path.join(root, skill), "[inside](../../linked/guide.md)\n");
   const result = checkPackage(short);
   assert.equal(result.ok, true, result.errors.join("\n"));
+});
+
+test("backticked references resolve per convention; missing targets fail", t => {
+  const { root, write } = fixture(t);
+  write("skills/example/references/notes.md", "# Notes\n");
+  write("skills/example/channel-alpha.md", "# Alpha\n");
+  write("scripts/tool.js", "// tool\n");
+  const header = "---\nname: example\ndescription: Example\n---\n";
+  write(skill, header + "See `references/notes.md`, `channel-alpha.md`, and `scripts/tool.js`.\n");
+  const result = checkPackage(root);
+  assert.equal(result.ok, true, result.errors.join("\n"));
+  assert.deepEqual(result.warnings, [skill + ": reference outside skill package (absent from a distributed copy): scripts/tool.js"]);
+  write(skill, header + "See `references/absent.md`.\n");
+  assert.ok(checkPackage(root).errors.some(error => error.includes("missing referenced file: references/absent.md")));
+  write(skill, header + "See `channel-gone.md`.\n");
+  assert.ok(checkPackage(root).errors.some(error => error.includes("missing referenced file: channel-gone.md")));
+  write(skill, header + "See `scripts/absent.sh`.\n");
+  assert.ok(checkPackage(root).errors.some(error => error.includes("missing referenced file: scripts/absent.sh")));
+});
+
+test("skill links that escape the package warn without failing", t => {
+  const { root, write } = fixture(t);
+  write(skill, "---\nname: example\ndescription: Example\n---\n[Guide](../../docs/guide.md#section)\n");
+  const result = checkPackage(root);
+  assert.equal(result.ok, true, result.errors.join("\n"));
+  assert.deepEqual(result.warnings, [skill + ": link outside skill package (absent from a distributed copy): ../../docs/guide.md#section"]);
+});
+
+for (const reference of ["references/검토.md", "references/검토 자료/요약 (초안).md", "channel-사용 안내.md", "scripts/품질 검사/확인.py"]) {
+  test("installed-skill requires the literal filename " + reference, t => {
+    const { root, write } = fixture(t);
+    const skillDir = path.join(root, "skills/example");
+    write(skill, "---\nname: example\ndescription: Example\n---\nRead `" + reference + "`.\n");
+    write("skills/example/" + reference, "fixture\n");
+    assert.equal(checkPackage(skillDir, { installedSkill: true }).ok, true);
+    fs.unlinkSync(path.join(skillDir, reference));
+    const missing = checkPackage(skillDir, { installedSkill: true });
+    assert.equal(missing.ok, false);
+    assert.ok(missing.errors.some(error => error.includes("missing referenced file: " + reference)));
+  });
+}
+
+test("installed-skill CLI checks files actually shipped, including transitive references", t => {
+  const { root, write } = fixture(t);
+  const sourceDir = path.join(root, "skills/example");
+  const copy = path.join(root, "installed/example");
+  const header = "---\nname: example\ndescription: Example\n---\n";
+  write(skill, header + "Read `references/index.md`, `channel-alpha.md` and `scripts/run.js`.\n");
+  write("skills/example/channel-alpha.md", "[Index](references/index.md)\n");
+  write("skills/example/scripts/run.js", "// fixture only\n");
+  write("skills/example/references/index.md", "[Details](detail.md)\n  ~~~~md\n[Example](absent.md)\n  ~~~~~\n");
+  write("skills/example/references/detail.md", "[Index](index.md)\n");
+  fs.cpSync(sourceDir, copy, { recursive: true });
+  const run = () => {
+    const result = spawnSync(process.execPath, [path.join(source, "scripts/package-lint.js"), "--installed-skill", copy], { encoding: "utf8" });
+    assert.ifError(result.error);
+    return { status: result.status, report: JSON.parse(result.stdout) };
+  };
+  assert.equal(run().status, 0);
+  fs.unlinkSync(path.join(copy, "references/detail.md"));
+  const missing = run();
+  assert.equal(missing.status, 2);
+  assert.match(missing.report.errors.join("\n"), /missing referenced file: detail.md/);
+  fs.writeFileSync(path.join(copy, "references/detail.md"), "[Outside](../../../docs/guide.md)\n");
+  const escape = run();
+  assert.equal(escape.status, 2);
+  assert.match(escape.report.errors.join("\n"), /outside installed skill/);
+  assert.equal(checkPackage(root).ok, true);
+});
+
+test("installed-skill rejects a reference reached through a junction outside the copy", t => {
+  const { root, write } = fixture(t);
+  write(skill, "---\nname: example\ndescription: Example\n---\nSee `references/guide.md`.\n");
+  const dir = path.join(root, "skills/example");
+  fs.symlinkSync(path.join(root, "docs"), path.join(dir, "references"), process.platform === "win32" ? "junction" : "dir");
+  const installed = checkPackage(dir, { installedSkill: true });
+  assert.equal(installed.ok, false);
+  assert.match(installed.errors[0], /outside installed skill/);
 });
 
 test("CLI returns 2 for invalid definitions, not a vacuous success", t => {

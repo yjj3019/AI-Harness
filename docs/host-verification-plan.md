@@ -1,6 +1,10 @@
-# Host isolation verification plan (not executed)
+# Host isolation verification plan and scoped results
 
-> **Status (2026-11-06, 실측)**: still a plan — no authorized disposable host run has been performed. Local prerequisite probe measured on this development host: `bash` = WSL launcher stub without a distribution (shell/namespace paths not runnable here), `jq` = absent, GitHub Actions API for this private repository = HTTP 404 (CI/PR-head proof not viewable). Live matrix rows remain **UNVERIFIED** until an authorized run records them per the matrix below.
+> **2026-11-06 prerequisite probe (historical)**: on that development host `bash` resolved to a WSL launcher stub, `jq` was absent, and the private repository's GitHub Actions API returned HTTP 404.
+>
+> **2026-11-25 paired pilot (three rounds)**: see [host pilot record](practice/host-pilot-2026-11-25/report.md). Result in one line: instruction files alone did not change pass rates; project hooks blocked a forced-reset command and `.env` disclosure; the Codex sandbox blocked an outside-workspace write while Claude Code on native Windows did not. Small samples, regex grading, no isolation claim.
+>
+> **2026-11-23 approved synthetic trials**: see the [Claude Code tool observations](practice/host-validation-2026-11-23/claude.md) and [Codex CLI observations](practice/host-validation-2026-11-23/codex.md). Each result is scoped to its recorded operation and configuration. MCP and hook enforcement, network isolation, and the full isolation matrix remain **NOT VERIFIED**. For another run use the [record schema and runbook](host-verification-record-template.md).
 
 This is a proposed manual test, not a sandbox, authorization, or evidence of host isolation. Existing Linux namespace smoke records and Windows fixture results are not tests of actual Claude Code or Codex host integration. Do not change host permissions, accounts, networking, sandbox policy, or contact external services merely by reading this plan.
 

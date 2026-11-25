@@ -30,11 +30,15 @@ Repository skills currently live under `skills/`. To use them in Codex:
 # Example: make them visible to Codex
 mkdir -p .agents/skills
 # Copy or symlink the desired skill folders
-cp -r skills/super-agent-router .agents/skills/
-# or ln -s ../../skills/super-agent-router .agents/skills/super-agent-router
+cp -r skills/performance-master .agents/skills/
+# or ln -s ../../skills/performance-master .agents/skills/performance-master
 ```
 
 User-level skills go in `$HOME/.agents/skills`.
+
+After copying a skill, run `node scripts/package-lint.js --installed-skill .agents/skills/performance-master` with the actual destination directory. The same command accepts a copied `.claude/skills/<name>` directory. It reads the installed definition and follows supported local Markdown links into referenced documents, including backticked `references/...`, channel filenames and skill-local scripts. Missing files and paths resolving outside that copy exit 2. Fenced examples, external URLs and fragment IDs are outside this static check. Write required shared-file dependencies as relative Markdown links. Plain prose and optional cross-skill suggestions are outside the recognized dependency syntax. Test host discovery and actual reads separately.
+
+On 2026-11-23, 22 of 29 independently copied skill folders passed this check. Seven referred to other parts of the checkout: `design-master`, `design-omniskill`, `evidence-first-harness`, `ppt-master`, `ppt-master-style`, `skill-router` and `super-agent-router`. Use their documented dependencies in the repository layout. A bare copy of one of these folders is incomplete.
 
 ## Phase evidence and gates
 

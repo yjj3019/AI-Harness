@@ -1,4 +1,4 @@
-# Anti-AI 패턴 체크리스트 (자체 작성 — [docs/anti-ai-skills-2026-11-11.md](../anti-ai-skills-2026-11-11.md)의 실측 요약 기반 아이디어만 취함, 원문 미복사)
+# Anti-AI 패턴 체크리스트 (자체 작성 — [docs/anti-ai-skills-2026-11-11.md](https://github.com/yjj3019/AI-Harness/blob/d1e09227eac3c16cda6133ae18a37986e5e934c2/docs/anti-ai-skills-2026-11-11.md)의 실측 요약 기반 아이디어만 취함, 원문 미복사)
 
 검수는 목적과 독자를 먼저 읽고, 문체는 근거 유지 수정만 한다. 각 항목에 **근거**(인용·링크·로그) 또는 **삭제** 중 하나가 붙어야 한다. 저자 판정·탐지 예측 문구는 쓰지 않는다.
 

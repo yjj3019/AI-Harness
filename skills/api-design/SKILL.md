@@ -1,7 +1,7 @@
 ---
 name: api-design
 description: Design or review API and interface contracts. Covers request/response shapes, error semantics, versioning, and compatibility.  Use when adding or changing an endpoint, RPC, or public function that others depend on.
-license: Apache-2.0
+license: MIT
 ---
 
 # API Design
