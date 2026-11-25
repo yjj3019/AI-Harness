@@ -1,6 +1,6 @@
 # Anti-Slop Checklist
 
-Reject or justify these defaults:
+Use these examples to investigate specific usability or content problems. A familiar choice that fits the brief can remain.
 
 - Purple/blue gradients as the only visual interest
 - Nested cards for every content block

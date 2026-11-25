@@ -1,7 +1,7 @@
 ---
 name: skill-composition
 description: Guidance for combining multiple master skills on one task. Use when a feature needs coding + security + observability, or any multi-skill workflow.  Prevents loading everything at once and missing handoffs.
-license: Apache-2.0
+license: MIT
 ---
 
 # Skill Composition

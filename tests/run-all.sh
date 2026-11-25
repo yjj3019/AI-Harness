@@ -7,6 +7,12 @@
 set -eu
 cd "$(dirname "$0")/.."
 
+# The Phase gate rejects inherited GIT_* variables on purpose (docs/PHASES.md): they can redirect the
+# repository, index or configuration. Some hosts (Claude Code) export prompt/editor variables on every
+# shell call, which made over a hundred gate tests fail there. Clear exactly these three, which cannot
+# affect what Git reads; every other GIT_* variable is still rejected by the gate and its tests.
+unset GIT_ASKPASS GIT_EDITOR GIT_TERMINAL_PROMPT
+
 mode=full
 if [ "${1:-}" = "--fast" ]; then mode=fast; fi
 

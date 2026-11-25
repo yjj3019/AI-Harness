@@ -1,7 +1,7 @@
 ---
 name: design-omniskill
 description: Entry-point design skill for HTML, image, PDF, PPTX, DOCX, and code artifacts — pick the artifact format, then use the channel document for its rubric, render evidence contract, and scorecard. Video is an experimental PoC channel (channel-video.md) with a measurement-only contract — never gate evidence (D4). Use before shipping any designed artifact, after the authoring skill, and before the evidence gates. Not for visual-artist-only images and not a replacement for the PPTX approval gate.
-license: Apache-2.0
+license: MIT
 ---
 
 # Design OmniSkill (Entry)
@@ -29,7 +29,7 @@ license: Apache-2.0
 
 ## Backbone (every channel)
 
-1. **Tokens first** — read `tokens.md`; violations are scored, not debated.
+1. **Tokens first** — read [tokens.md](tokens.md); violations are scored, not debated.
 2. **Score** — the channel rubric, 0-5 per axis, every score backed by a measurement or a marked-unverified reason.
 3. **Evidence** — render by the channel's contract; record path, size, and sha. A score with no evidence row is FAIL.
 4. **Report** — four blocks: **Changed / Kept / Evidence / Uncovered**. All four present; otherwise FAIL.

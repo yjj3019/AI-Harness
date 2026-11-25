@@ -1,7 +1,7 @@
 ---
 name: browser-evidence
 description: Capture browser or E2E evidence for UI changes. Use when a change affects what the user sees, or when Playwright / screenshot  proof is required. Complements coding-master for frontend work.
-license: Apache-2.0
+license: MIT
 ---
 
 # Browser Evidence

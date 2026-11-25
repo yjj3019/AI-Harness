@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>점검 결과 조회 · 검증용 화면</title>
+<style>
+  :root { font-family: system-ui, sans-serif; color: #18263a; background: #f2f5f8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  main { max-width: 44rem; margin: 3rem auto; padding: 0 1.25rem; }
+  h1 { margin: .25rem 0 1.5rem; font-size: 2rem; }
+  article { background: white; padding: 1.25rem; border-top: 4px solid #254b75; }
+  caption { font-size: 1.125rem; text-align: left; font-weight: 650; margin-bottom: .75rem; }
+  table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+  th, td { text-align: left; padding: .6rem .25rem; border-bottom: 1px solid #ced8e2; }
+  caption, button { word-break: keep-all; overflow-wrap: anywhere; }
+  button { max-width: 100%; padding: .75rem 1rem; font: inherit; color: white; background: #254b75; border: 0; border-radius: .25rem; }
+  button:focus-visible { outline: 3px solid #102a44; outline-offset: 3px; }
+  #notice { line-height: 1.6; min-height: 1.6em; }
+  [data-state="loading"] #notice::before { content: ''; display: inline-block; width: .75rem; height: .75rem; margin-right: .5rem; border: 2px solid #adbed1; border-top-color: #254b75; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { [data-state="loading"] #notice::before { animation: none; } }
+  .defect caption, .defect button { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+  .defect button:focus-visible { outline: none; }
+  .defect[data-state="loading"] #notice::before { animation: spin 1s linear infinite; }
+  .summary { font-size: .875rem; color: #425874; }
+</style>
+<main>
+  <p class="summary">합성 자료 · 화면 검증용</p>
+  <h1>점검 결과 조회</h1>
+  <article>
+    <table>
+      <caption>정보보호관리체계인증심사 준비를 위한 부서별 보완 조치 현황</caption>
+      <thead><tr><th>담당 부서</th><th>처리 결과</th></tr></thead>
+      <tbody><tr><td colspan="2" id="result">등록된 결과가 없습니다.</td></tr></tbody>
+    </table>
+    <p id="notice" role="status"></p>
+    <button type="button">정보보호관리체계인증심사 보완 조치 결과 다시 불러오기</button>
+  </article>
+</main>
+<script>
+  const fixture = new URLSearchParams(location.search);
+  if (fixture.get("view") === "defect") document.body.className = "defect";
+  const result = document.getElementById("result");
+  const notice = document.getElementById("notice");
+  const states = {
+    empty: ["등록된 결과가 없습니다.", "점검 결과를 요청할 수 있습니다."],
+    loading: ["담당 부서 확인 중", "결과를 불러오는 중입니다."],
+    error: ["조회 실패", "결과를 불러오지 못했습니다. 다시 시도해 주세요."],
+    ready: ["운영지원팀 · 확인 완료", "결과를 갱신했습니다."]
+  };
+  function render(state) {
+    document.body.dataset.state = state;
+    [result.textContent, notice.textContent] = states[state];
+  }
+  render("empty");
+  let requests = 0;
+  document.querySelector("button").addEventListener("click", () => {
+    if (document.body.dataset.state === "loading") return;
+    requests++;
+    render("loading");
+    setTimeout(() => render(requests === 1 ? "error" : "ready"), 450);
+  });
+</script>
+</html>

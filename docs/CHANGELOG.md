@@ -2,6 +2,16 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — MIT 전환·CI 취소 규칙 (미병합)
+
+- 2026-11-24: 저장소 라이선스를 Apache-2.0에서 MIT로 바꿨다(소유자 결정, `docs/DECISIONS.md` D8). `LICENSE`를 MIT 본문과 `Copyright (c) 2026 yjj3019`로 교체했고, 스킬 29개의 `license:`를 `MIT`로 맞췄다. `scripts/skill-audit.js`의 기본 라이선스와 `tests/skill-audit.test.js`를 MIT 기준으로 바꿨다. 동봉 LICENSE가 있는 스킬(`design-evidence-harness`)은 그대로 둔다.
+- `ci.yml`에 `concurrency`를 추가했다: 같은 PR의 이전 실행은 새 push가 오면 취소하고, main push는 취소하지 않는다.
+- 과거 도입 기록의 'Apache-2.0'은 외부 출처의 라이선스라 고치지 않았다.
+- `scripts/secret-scan.js`: 알려진 암호화 파일 헤더로 시작하는 파일은 확장자와 무관하게 실패한다(암호화된 파일 커밋 차단). `tests/gate-hardening.test.js`에 시험을 추가했다.
+- `tests/run-all.sh`: `GIT_ASKPASS`·`GIT_EDITOR`·`GIT_TERMINAL_PROMPT` 세 변수만 시작 시 비운다. Claude Code가 셸 호출마다 내보내서 게이트가 fail-closed로 거부하고, 게이트 테스트가 매번 실패했다(같은 28개 테스트: 변수가 있으면 통과 12·실패 15, 비우면 통과 26·실패 0·skip 2). 게이트의 거부 규칙과 나머지 `GIT_*` 거부는 그대로다.
+- `.claude/hooks/block-destructive.sh`와 `.codex/hooks/block-destructive.sh`: `.env`·`.env.<이름>` 경로를 인수로 받는 읽기·복사 명령(`cat`, `type`, `Get-Content`, `grep`, `cp`, `source` 등)을 차단한다(`.env.example`·`.sample`·`.template`는 허용). `Read` 거부 규칙은 셸을 덮지 않는 호스트가 있어 방어를 한 겹 더한 것이다. 문자열 검사라 변수·별칭·와일드카드로 우회될 수 있어 가드레일일 뿐 경계가 아니다. `tests/hooks.test.sh`에 두 훅 대상 24건씩(차단 15·허용 9) 시험을 추가했다.
+- `docs/practice/host-pilot-2026-11-25/`: Claude Code·Codex CLI 쌍대 평가 3차 기록(합성 입력만). 지침 파일은 통과율을 바꾸지 않았고, 훅은 되돌리기 강제 명령과 `.env` 노출을 막았으며, Claude Code(Windows 네이티브)는 작업 폴더 밖 쓰기를 막지 못했다. 품질 보증이나 격리 증거가 아니다.
+
 ## 작업 트리 — ruleset 갱신 (미병합)
 
 - 2026-11-23: 서버 ruleset `main-required-ci`(26772795)의 필수 검사에 `attestation summary`를 추가했다(9개에서 10개). 코드 오너 리뷰 요구는 켜지 않았다(소유자 한 명). 결과와 이유는 `docs/merge-policy.md`에 적었다.
