@@ -1,0 +1,1219 @@
+{
+  "file": "input.md",
+  "total_sentences": 13,
+  "suspect_count": 6,
+  "average_score": 18.9,
+  "threshold": 17,
+  "corpus_signal_active": true,
+  "signal_meaning": "corpus_collocation freq=0은 코퍼스 기준 양성(적발)이다. \"거짓양성\"은 검사 결과가 아니라 모델이 사후에 붙이는 미검증 라벨일 뿐이다. 해당 명사의 의미를 직접(자기 지식, 필요시 웹검색) 확인하고 그 명사에 자연스러운 동사인지 같은 부류 명사의 연어로 판정하기 전에는 어떤 적발도 일축하지 마라. 동사가 어긋나면 적절한 동사로 고치고, 자연스러우면 그 치환·의미 비교 근거를 한 줄 남겨라. \"코퍼스가 작아서/명사가 없어서 0\" 단독 사유로는 일축 불가다. corpus_associations는 문맥을 보지 않은 단어 빈도 연관어다. 대체 표현 후보로 쓰지 말고 적발 근거 확인용으로만 참고하며, 수정 문장은 문제 단어의 치환이 아니라 원문이 전달하려는 의미 관계(누가 무엇을 하는지)를 기준으로 새로 작성하라.",
+  "oov_nouns": [
+    "노드",
+    "드레인"
+  ],
+  "document_patterns": {
+    "active": true,
+    "paragraph_count": 4,
+    "sentence_count": 10,
+    "measured": {
+      "lead_total": 4,
+      "short_lead_count": 0,
+      "short_lead_ratio": 0.0,
+      "pair_count": 6,
+      "note": "25자 이하로 문단을 여는 비율은 심각도 참고용 통계이지 대상 목록이 아니다. 실측 기준선은 문제로 지적된 글 0.48, 사람이 직접 손본 글 0.16이었다. 길이는 원인이 아니라 상관 지표이므로 이 수치로 대상을 고르지 마라."
+    },
+    "sentence_pairs": [
+      {
+        "paragraph": 1,
+        "position": "1-2",
+        "lead": "본 문서는 OpenShift 4.17 클러스터의 노드 운영체계를 RHEL 9.4로 업그레이드하는 방안의 검토 결과를 정리한 것입니다.",
+        "lead_chars": 74,
+        "follow": "이 작업은 궁극적으로 클러스터의 안정성을 혁신적으로 향상시키는 것을 목표로 합니다.",
+        "first_person_lead": false
+      },
+      {
+        "paragraph": 2,
+        "position": "1-2",
+        "lead": "현재 클러스터에는 14개의 노드가 구성되어 있으며, 총 3개 namespace, 42개 pod가 실행되고 있습니다.",
+        "lead_chars": 64,
+        "follow": "OLM이 관리하는 operator는 8개입니다.",
+        "first_person_lead": false
+      },
+      {
+        "paragraph": 2,
+        "position": "2-3",
+        "lead": "OLM이 관리하는 operator는 8개입니다.",
+        "lead_chars": 26,
+        "follow": "최근 CVE-2026-12345에 대한 패치가 RHEL 9.4에 포함되었기 때문에, 이 CVE에 있어 노출된 노드는 업그레이드가 필요하다고 평가되고 있습니다.",
+        "first_person_lead": false
+      },
+      {
+        "paragraph": 3,
+        "position": "1-2",
+        "lead": "업그레이드에는 약 7일간의 유지보수 창이 필요합니다.",
+        "lead_chars": 29,
+        "follow": "이 기간은 추정치이며, 실제 소요 시간은 워크로드 부하에 따라 달라질 수 있습니다.",
+        "first_person_lead": false
+      },
+      {
+        "paragraph": 3,
+        "position": "2-3",
+        "lead": "이 기간은 추정치이며, 실제 소요 시간은 워크로드 부하에 따라 달라질 수 있습니다.",
+        "lead_chars": 46,
+        "follow": "해당 수치는 아직 공식적으로 검증하지 않은 상태입니다.",
+        "first_person_lead": false
+      },
+      {
+        "paragraph": 4,
+        "position": "1-2",
+        "lead": "종합하면, 이번 업그레이드는 이를 통해 보안 취약점을 해소하는 동시에 장기적인 운영 안정성을 확보할 수 있습니다.",
+        "lead_chars": 63,
+        "follow": "다만, 리스크 항목에 대해 추가적인 검증이 필요합니다.",
+        "first_person_lead": false
+      }
+    ],
+    "tail_sentences": [
+      {
+        "paragraph": 1,
+        "position": "2/2",
+        "text": "이 작업은 궁극적으로 클러스터의 안정성을 혁신적으로 향상시키는 것을 목표로 합니다.",
+        "chars": 46,
+        "solo": false
+      },
+      {
+        "paragraph": 2,
+        "position": "3/3",
+        "text": "최근 CVE-2026-12345에 대한 패치가 RHEL 9.4에 포함되었기 때문에, 이 CVE에 있어 노출된 노드는 업그레이드가 필요하다고 평가되고 있습니다.",
+        "chars": 88,
+        "solo": false
+      },
+      {
+        "paragraph": 3,
+        "position": "3/3",
+        "text": "해당 수치는 아직 공식적으로 검증하지 않은 상태입니다.",
+        "chars": 30,
+        "solo": false
+      },
+      {
+        "paragraph": 4,
+        "position": "2/2",
+        "text": "다만, 리스크 항목에 대해 추가적인 검증이 필요합니다.",
+        "chars": 30,
+        "solo": false
+      }
+    ],
+    "review_required": [
+      {
+        "id": "pair_relation",
+        "unit": "sentence_pairs",
+        "target": "예고 또는 선언 뒤에 설명을 분리한 인접 쌍 (문장 사이의 관계)",
+        "scope": "sentence_pairs 전체를 하나씩 순회한다. 문단 첫 문장에 한정하지 마라. 실측에서 문단 3번째 문장에도 같은 관계가 있었다.",
+        "test": "lead를 지웠다고 가정하고 follow만 읽어라. (a) follow만으로 정보가 온전하면 lead는 예고다 → 대상. (b) lead에만 있던 사실이 사라지면 삭제하지 않는다. 단, 구조 검사는 계속한다. (c) 사라지는 것이 주어뿐이면 그 주어를 follow 안에 넣어 합칠 수 있다 → 대상. 이어서 두 문장이 원인과 결과, 조건과 결론, 배경과 판단, 같은 대상의 설명 관계인지 확인한다. 관계가 있으면 두 문장의 정보를 보존한 재구성문을 실제로 쓴다. 원인이나 조건을 앞에 놓고 결과를 뒤에 두거나 같은 대상의 설명을 통합한다. 원문 유지에는 재구성문과 비교한 구체적 이유가 필요하며 독립 정보라는 이유만으로 통과시키지 않는다. 관계가 없는 병렬 사실은 억지로 합치지 않는다. first_person_lead는 화자 보존 참고값이며 구조 검사 면제 사유가 아니다. 경험과 의견의 주체는 재구성문에도 보존한다.",
+        "prescription": "대상으로 판정한 쌍만 고친다. lead의 정보를 follow 안으로 옮겨 한 문장으로 다시 써라. 옮길 자리는 주어·부사어·서술어 중 뜻이 맞는 곳이다. 정보를 빼지도 더하지도 않는다. lead를 앞에 그대로 두고 연결어미만 붙이면 결론이 앞에 남아 더 어색해진다. 인과관계를 새로 만들거나 사실, 조건, 확실성을 바꾸지 않는다. 합치면 과도하게 길어지거나 문맥상 결론을 먼저 강조할 필요가 있으면 비교 근거를 남기고 유지한다. 전부 없애지는 마라. 선언 전멸은 과교정이며, 문단이 무엇을 다루는지 알려주는 기능까지 사라진다.",
+        "reporting": "판정 결과를 쌍 단위로 남겨라. 대상이 아니라고 본 쌍도 위 test의 삭제 결과와 문장 관계를 적고, 관계가 있으면 재구성문과 채택 또는 유지 이유를 남긴다. 대상만 골라 보고하면 순회를 건너뛴 것과 구분되지 않는다."
+      },
+      {
+        "id": "cleft_structure",
+        "unit": "sentence_pairs[].lead + tail_sentences[].text",
+        "target": "문장 하나로 판정되는 쪼개진 구문 (문장 내부의 구조)",
+        "scope": "pair_relation과 독립된 검사다. 관계가 아니라 구문을 보므로 관계 검사에서 유지한 문장도 여기서는 대상일 수 있다 (실측: \"목요일부터 시장을 되돌린 건 결국 실적이었습니다\"는 수치가 사라져 (b)지만 분열문이다). sentence_pairs의 lead와 tail_sentences를 합치면 전 문장이 한 번씩 검사된다 — n문장 문단은 lead가 1~n-1번째, tail이 n번째를 덮는다. tail을 빠뜨리면 문단마다 마지막 한 문장이 통째로 검사에서 빠진다.",
+        "test": "되돌리기 테스트: \"~한 건/것은 X이다\"를 \"X가 ~했다\"로 바꿔 본다. 뜻이 같고 더 단순해지면 분열문이다 (\"방향이 완전히 무너진 건 수요일입니다\" → \"수요일에 방향이 완전히 무너졌습니다\"). 되돌렸을 때 뜻이 달라지거나 어색해지면 그 강조가 필요한 자리이므로 그대로 둔다.",
+        "signatures": [
+          "분열문 \"~한 건/것은/게 X이다\" (예: 이 중 제일 아팠던 건 세 번째입니다)",
+          "추상명사 주어 \"시작·결과·이유·근거·차이·문제·숫자·기준은 X이다\" (예: 결과는 러셀 2000에 나타났습니다)",
+          "대조 선언 \"X는 반대였다/달랐다/비슷하다\" (예: 아마존은 방식이 달랐습니다)"
+        ],
+        "prescription": "문장을 합치지 말고 구문만 푼다. 분열문은 기본 어순으로 되돌리고(\"목요일부터 시장을 되돌린 건 결국 실적이었습니다\" → \"목요일부터는 실적이 시장을 되돌렸습니다\"), 추상명사 주어는 그 명사가 지고 있던 뜻을 서술어로 옮긴다. pair_relation에서도 대상으로 판정된 문장이면 합치기를 적용하고 이 항목을 중복 적용하지 않는다. 한국어에도 있는 정상 구문이므로 전부 풀지 마라. 문서에 한두 번 남는 것은 강조로 기능한다.",
+        "reporting": "분열문으로 판정한 문장은 되돌린 문장을 함께 적는다. 되돌려 보지 않고 \"자연스럽다\"로 넘기지 않는다."
+      }
+    ],
+    "review_note": "두 검사는 독립이며 판정 단위도 다르다. pair_relation은 문장 사이의 관계를, cleft_structure는 문장 내부의 구문을 본다. 한 문장이 양쪽 모두에 걸릴 수 있고, 그때는 합치기(pair_relation)만 적용하면 구문도 함께 풀린다. 이 판정들은 코드가 대신할 수 없다 — 명사서술 종결·구조 정규식·길이 임계를 차례로 시도해 모두 실패했다. 코드는 판정 단위를 만드는 데까지만 관여한다.",
+    "confirm_by": [
+      "sentence_count_after",
+      "clause_link_rate",
+      "long_sentence_count"
+    ],
+    "confirm_only": {
+      "clause_link_rate": 0.0,
+      "long_sentence_count": 0,
+      "long_sentence_measurable": true,
+      "punctuation_density": 1.0,
+      "note": "처방 대상이 아니다. review_required의 처방을 적용한 뒤 이 값이 움직였는지 확인하는 용도다. 이 수치를 직접 겨냥해 문장을 늘리면 수식어가 붙어 정확히 피하려던 증상이 생긴다. long_sentence_count가 null이면 종결부호 밀도가 낮아(SNS 톤 등) 문장 분리가 성립하지 않는 글이므로 이 지표는 측정하지 않았다."
+    },
+    "meaning": "문단 설계 층위다. 문장 단위 시그널(suspects·review_band)이 구조상 볼 수 없으며, suspects 처리와 별개의 패스로 처리한다. 이 블록에는 임계도 적발 목록도 없다. measured는 심각도 참고용 통계이고, 실제 판정은 review_required의 두 검사를 모델이 수행한다. confirm_only는 수정 후 확인용이며 직접 겨냥하지 않는다."
+  },
+  "suspects": [
+    {
+      "sentence": "최근 CVE-2026-12345에 대한 패치가 RHEL 9.4에 포함되었기 때문에, 이 CVE에 있어 노출된 노드는 업그레이드가 필요하다고 평가되고 있습니다.",
+      "score": 56,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 36,
+        "corpus_collocation": 20
+      },
+      "matched": [
+        "에\\s*있어서?",
+        "(진행|관찰|확인|평가|기록|판단|형성|도출|요구|권장|추천|예상|발생|지원|구성|작성|시행|생각)[되됩됨]",
+        "(되|보이|지)고\\s*있"
+      ],
+      "matched_groups": [
+        "번역투_있어서",
+        "수동태_한자어",
+        "진행형_남용"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "패치",
+          "verb": "포함되",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "부착하",
+              "freq": 2,
+              "sig": 24.9
+            },
+            {
+              "verb": "진행하",
+              "freq": 2,
+              "sig": 10.2
+            }
+          ]
+        },
+        {
+          "rel": "nv",
+          "noun": "업그레이드",
+          "verb": "필요하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "가능하",
+              "freq": 11,
+              "sig": 55.4
+            },
+            {
+              "verb": "제공하",
+              "freq": 10,
+              "sig": 55.3
+            },
+            {
+              "verb": "추가하",
+              "freq": 4,
+              "sig": 30.5
+            },
+            {
+              "verb": "시키",
+              "freq": 2,
+              "sig": 14.2
+            },
+            {
+              "verb": "진행하",
+              "freq": 4,
+              "sig": 13.1
+            }
+          ]
+        }
+      ],
+      "oov_nouns": [
+        "노드"
+      ]
+    },
+    {
+      "sentence": "업그레이드에는 약 7일간의 유지보수 창이 필요합니다.",
+      "score": 46.7,
+      "breakdown": {
+        "noun_density": 2.7,
+        "noun_verb_ratio": 20,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 12,
+        "corpus_collocation": 12
+      },
+      "matched": [
+        "의\\s*(인상|인하|상승|하락|증가|감소|구매|증대|확보|유지|해소|실천|실시|획득|제공|향상|도출|달성|마무리|조화)"
+      ],
+      "matched_groups": [
+        "보고서투_명사화_의"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "창",
+          "verb": "필요하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "띄우",
+              "freq": 5,
+              "sig": 41.5
+            },
+            {
+              "verb": "설치하",
+              "freq": 7,
+              "sig": 39.1
+            },
+            {
+              "verb": "닫",
+              "freq": 5,
+              "sig": 36.5
+            },
+            {
+              "verb": "뜯",
+              "freq": 3,
+              "sig": 29.4
+            },
+            {
+              "verb": "뜨",
+              "freq": 4,
+              "sig": 25.8
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "네트워크 어댑터 드라이버 호환성은 아직 확인되지 않았습니다.",
+      "score": 24,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 12,
+        "corpus_collocation": 12
+      },
+      "matched": [
+        "(진행|관찰|확인|평가|기록|판단|형성|도출|요구|권장|추천|예상|발생|지원|구성|작성|시행|생각)[되됩됨]"
+      ],
+      "matched_groups": [
+        "수동태_한자어"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "호환",
+          "verb": "확인되",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "가능하",
+              "freq": 10,
+              "sig": 68.2
+            },
+            {
+              "verb": "높",
+              "freq": 9,
+              "sig": 53.4
+            },
+            {
+              "verb": "떨어지",
+              "freq": 2,
+              "sig": 8.7
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "노드 드레인 과정에서 pod 재스케줄링 실패가 발생할 수 있습니다.",
+      "score": 20.4,
+      "breakdown": {
+        "noun_density": 7.8,
+        "noun_verb_ratio": 6.7,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 6
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "실패",
+          "verb": "발생하",
+          "freq": 4,
+          "sig": 1.5,
+          "corpus_associations": [
+            {
+              "verb": "되풀이하",
+              "freq": 12,
+              "sig": 117.5
+            },
+            {
+              "verb": "돌아가",
+              "freq": 16,
+              "sig": 90.3
+            },
+            {
+              "verb": "끝나",
+              "freq": 18,
+              "sig": 87.0
+            },
+            {
+              "verb": "인정하",
+              "freq": 17,
+              "sig": 86.9
+            },
+            {
+              "verb": "두려워하",
+              "freq": 8,
+              "sig": 75.2
+            }
+          ]
+        }
+      ],
+      "oov_nouns": [
+        "노드",
+        "드레인"
+      ]
+    },
+    {
+      "sentence": "이 작업은 궁극적으로 클러스터의 안정성을 혁신적으로 향상시키는 것을 목표로 합니다.",
+      "score": 18.7,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 6.7,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "혁신",
+          "verb": "향상시키",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "주도하",
+              "freq": 26,
+              "sig": 147.0
+            },
+            {
+              "verb": "이루",
+              "freq": 30,
+              "sig": 122.0
+            },
+            {
+              "verb": "새롭",
+              "freq": 28,
+              "sig": 110.7
+            },
+            {
+              "verb": "촉진하",
+              "freq": 13,
+              "sig": 98.3
+            },
+            {
+              "verb": "선도하",
+              "freq": 14,
+              "sig": 92.0
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "현재 클러스터에는 14개의 노드가 구성되어 있으며, 총 3개 namespace, 42개 pod가 실행되고 있습니다.",
+      "score": 18,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 18,
+        "corpus_collocation": 0
+      },
+      "matched": [
+        "(진행|관찰|확인|평가|기록|판단|형성|도출|요구|권장|추천|예상|발생|지원|구성|작성|시행|생각)[되됩됨]",
+        "(되|보이|지)고\\s*있"
+      ],
+      "matched_groups": [
+        "수동태_한자어",
+        "진행형_남용"
+      ],
+      "awkward_collocations": [],
+      "oov_nouns": [
+        "노드"
+      ]
+    }
+  ],
+  "review_band_count": 4,
+  "review_band": [
+    {
+      "sentence": "본 문서는 OpenShift 4.17 클러스터의 노드 운영체계를 RHEL 9.4로 업그레이드하는 방안의 검토 결과를 정리한 것입니다.",
+      "score": 16.4,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 4.4,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "체계",
+          "verb": "업그레이드하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "구축하",
+              "freq": 315,
+              "sig": 2603.6
+            },
+            {
+              "verb": "갖추",
+              "freq": 110,
+              "sig": 552.4
+            },
+            {
+              "verb": "강화하",
+              "freq": 100,
+              "sig": 424.0
+            },
+            {
+              "verb": "개편하",
+              "freq": 51,
+              "sig": 397.6
+            },
+            {
+              "verb": "전환하",
+              "freq": 64,
+              "sig": 363.9
+            }
+          ]
+        }
+      ],
+      "oov_nouns": [
+        "노드"
+      ]
+    },
+    {
+      "sentence": "이 기간은 추정치이며, 실제 소요 시간은 워크로드 부하에 따라 달라질 수 있습니다.",
+      "score": 12,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 6,
+        "corpus_collocation": 6
+      },
+      "matched": [
+        "에\\s*따라"
+      ],
+      "matched_groups": [
+        "문어체_조사구"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "부하",
+          "verb": "따르",
+          "freq": 2,
+          "sig": 0.5,
+          "corpus_associations": [
+            {
+              "verb": "걸리",
+              "freq": 20,
+              "sig": 168.4
+            },
+            {
+              "verb": "명령하",
+              "freq": 6,
+              "sig": 63.0
+            },
+            {
+              "verb": "줄이",
+              "freq": 5,
+              "sig": 23.8
+            },
+            {
+              "verb": "생기",
+              "freq": 4,
+              "sig": 18.7
+            },
+            {
+              "verb": "발생하",
+              "freq": 5,
+              "sig": 15.5
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "해당 수치는 아직 공식적으로 검증하지 않은 상태입니다.",
+      "score": 12,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "공식",
+          "verb": "검증하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "출범하",
+              "freq": 74,
+              "sig": 645.7
+            },
+            {
+              "verb": "선언하",
+              "freq": 82,
+              "sig": 613.4
+            },
+            {
+              "verb": "발표하",
+              "freq": 117,
+              "sig": 599.7
+            },
+            {
+              "verb": "사과하",
+              "freq": 68,
+              "sig": 583.9
+            },
+            {
+              "verb": "제안하",
+              "freq": 32,
+              "sig": 174.8
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "종합하면, 이번 업그레이드는 이를 통해 보안 취약점을 해소하는 동시에 장기적인 운영 안정성을 확보할 수 있습니다.",
+      "score": 12,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "취약점",
+          "verb": "해소하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "보완하",
+              "freq": 4,
+              "sig": 39.8
+            },
+            {
+              "verb": "드러내",
+              "freq": 4,
+              "sig": 27.7
+            },
+            {
+              "verb": "꼽히",
+              "freq": 4,
+              "sig": 27.6
+            },
+            {
+              "verb": "드러나",
+              "freq": 3,
+              "sig": 20.1
+            },
+            {
+              "verb": "파악하",
+              "freq": 3,
+              "sig": 20.1
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    }
+  ],
+  "review_band_meaning": "review_band는 12점 이상 임계 미만이라 suspects에서 빠진 문장이다. 임계 아래는 검사 통과가 아니라 미보고일 뿐이다. 이 결과를 소비하는 모델은 suspects 처리 후 review_band를 반드시 훑는다. 한 글자 명사, 고유명사의 부분 문자열, oov 명사 같은 파서 조각 적발을 제외하고 온전한 결합이나 어휘 패턴이 남는 문장만 실제로 읽고 판정한다. suspects처럼 재작성을 강제하는 구간이 아니라 어색 여부를 판정하는 구간이며 어색하면 고치고 자연스러우면 그대로 둔다. oov_nouns가 낀 문장은 코퍼스 미검수 상태이므로 결합이 자연스러운지 자기 지식으로 한 번 더 확인한다. suspects만 처리하고 끝내면 이 검사를 절반만 쓴 것이다.",
+  "all_results": [
+    {
+      "sentence": "본 문서는 OpenShift 4.17 클러스터의 노드 운영체계를 RHEL 9.4로 업그레이드하는 방안의 검토 결과를 정리한 것입니다.",
+      "score": 16.4,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 4.4,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "체계",
+          "verb": "업그레이드하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "구축하",
+              "freq": 315,
+              "sig": 2603.6
+            },
+            {
+              "verb": "갖추",
+              "freq": 110,
+              "sig": 552.4
+            },
+            {
+              "verb": "강화하",
+              "freq": 100,
+              "sig": 424.0
+            },
+            {
+              "verb": "개편하",
+              "freq": 51,
+              "sig": 397.6
+            },
+            {
+              "verb": "전환하",
+              "freq": 64,
+              "sig": 363.9
+            }
+          ]
+        }
+      ],
+      "oov_nouns": [
+        "노드"
+      ]
+    },
+    {
+      "sentence": "이 작업은 궁극적으로 클러스터의 안정성을 혁신적으로 향상시키는 것을 목표로 합니다.",
+      "score": 18.7,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 6.7,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "혁신",
+          "verb": "향상시키",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "주도하",
+              "freq": 26,
+              "sig": 147.0
+            },
+            {
+              "verb": "이루",
+              "freq": 30,
+              "sig": 122.0
+            },
+            {
+              "verb": "새롭",
+              "freq": 28,
+              "sig": 110.7
+            },
+            {
+              "verb": "촉진하",
+              "freq": 13,
+              "sig": 98.3
+            },
+            {
+              "verb": "선도하",
+              "freq": 14,
+              "sig": 92.0
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "현재 클러스터에는 14개의 노드가 구성되어 있으며, 총 3개 namespace, 42개 pod가 실행되고 있습니다.",
+      "score": 18,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 18,
+        "corpus_collocation": 0
+      },
+      "matched": [
+        "(진행|관찰|확인|평가|기록|판단|형성|도출|요구|권장|추천|예상|발생|지원|구성|작성|시행|생각)[되됩됨]",
+        "(되|보이|지)고\\s*있"
+      ],
+      "matched_groups": [
+        "수동태_한자어",
+        "진행형_남용"
+      ],
+      "awkward_collocations": [],
+      "oov_nouns": [
+        "노드"
+      ]
+    },
+    {
+      "sentence": "OLM이 관리하는 operator는 8개입니다.",
+      "score": 0,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 0
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "최근 CVE-2026-12345에 대한 패치가 RHEL 9.4에 포함되었기 때문에, 이 CVE에 있어 노출된 노드는 업그레이드가 필요하다고 평가되고 있습니다.",
+      "score": 56,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 36,
+        "corpus_collocation": 20
+      },
+      "matched": [
+        "에\\s*있어서?",
+        "(진행|관찰|확인|평가|기록|판단|형성|도출|요구|권장|추천|예상|발생|지원|구성|작성|시행|생각)[되됩됨]",
+        "(되|보이|지)고\\s*있"
+      ],
+      "matched_groups": [
+        "번역투_있어서",
+        "수동태_한자어",
+        "진행형_남용"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "패치",
+          "verb": "포함되",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "부착하",
+              "freq": 2,
+              "sig": 24.9
+            },
+            {
+              "verb": "진행하",
+              "freq": 2,
+              "sig": 10.2
+            }
+          ]
+        },
+        {
+          "rel": "nv",
+          "noun": "업그레이드",
+          "verb": "필요하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "가능하",
+              "freq": 11,
+              "sig": 55.4
+            },
+            {
+              "verb": "제공하",
+              "freq": 10,
+              "sig": 55.3
+            },
+            {
+              "verb": "추가하",
+              "freq": 4,
+              "sig": 30.5
+            },
+            {
+              "verb": "시키",
+              "freq": 2,
+              "sig": 14.2
+            },
+            {
+              "verb": "진행하",
+              "freq": 4,
+              "sig": 13.1
+            }
+          ]
+        }
+      ],
+      "oov_nouns": [
+        "노드"
+      ]
+    },
+    {
+      "sentence": "업그레이드에는 약 7일간의 유지보수 창이 필요합니다.",
+      "score": 46.7,
+      "breakdown": {
+        "noun_density": 2.7,
+        "noun_verb_ratio": 20,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 12,
+        "corpus_collocation": 12
+      },
+      "matched": [
+        "의\\s*(인상|인하|상승|하락|증가|감소|구매|증대|확보|유지|해소|실천|실시|획득|제공|향상|도출|달성|마무리|조화)"
+      ],
+      "matched_groups": [
+        "보고서투_명사화_의"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "창",
+          "verb": "필요하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "띄우",
+              "freq": 5,
+              "sig": 41.5
+            },
+            {
+              "verb": "설치하",
+              "freq": 7,
+              "sig": 39.1
+            },
+            {
+              "verb": "닫",
+              "freq": 5,
+              "sig": 36.5
+            },
+            {
+              "verb": "뜯",
+              "freq": 3,
+              "sig": 29.4
+            },
+            {
+              "verb": "뜨",
+              "freq": 4,
+              "sig": 25.8
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "이 기간은 추정치이며, 실제 소요 시간은 워크로드 부하에 따라 달라질 수 있습니다.",
+      "score": 12,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 6,
+        "corpus_collocation": 6
+      },
+      "matched": [
+        "에\\s*따라"
+      ],
+      "matched_groups": [
+        "문어체_조사구"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "부하",
+          "verb": "따르",
+          "freq": 2,
+          "sig": 0.5,
+          "corpus_associations": [
+            {
+              "verb": "걸리",
+              "freq": 20,
+              "sig": 168.4
+            },
+            {
+              "verb": "명령하",
+              "freq": 6,
+              "sig": 63.0
+            },
+            {
+              "verb": "줄이",
+              "freq": 5,
+              "sig": 23.8
+            },
+            {
+              "verb": "생기",
+              "freq": 4,
+              "sig": 18.7
+            },
+            {
+              "verb": "발생하",
+              "freq": 5,
+              "sig": 15.5
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "해당 수치는 아직 공식적으로 검증하지 않은 상태입니다.",
+      "score": 12,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "공식",
+          "verb": "검증하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "출범하",
+              "freq": 74,
+              "sig": 645.7
+            },
+            {
+              "verb": "선언하",
+              "freq": 82,
+              "sig": 613.4
+            },
+            {
+              "verb": "발표하",
+              "freq": 117,
+              "sig": 599.7
+            },
+            {
+              "verb": "사과하",
+              "freq": 68,
+              "sig": 583.9
+            },
+            {
+              "verb": "제안하",
+              "freq": 32,
+              "sig": 174.8
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "노드 드레인 과정에서 pod 재스케줄링 실패가 발생할 수 있습니다.",
+      "score": 20.4,
+      "breakdown": {
+        "noun_density": 7.8,
+        "noun_verb_ratio": 6.7,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 6
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "실패",
+          "verb": "발생하",
+          "freq": 4,
+          "sig": 1.5,
+          "corpus_associations": [
+            {
+              "verb": "되풀이하",
+              "freq": 12,
+              "sig": 117.5
+            },
+            {
+              "verb": "돌아가",
+              "freq": 16,
+              "sig": 90.3
+            },
+            {
+              "verb": "끝나",
+              "freq": 18,
+              "sig": 87.0
+            },
+            {
+              "verb": "인정하",
+              "freq": 17,
+              "sig": 86.9
+            },
+            {
+              "verb": "두려워하",
+              "freq": 8,
+              "sig": 75.2
+            }
+          ]
+        }
+      ],
+      "oov_nouns": [
+        "노드",
+        "드레인"
+      ]
+    },
+    {
+      "sentence": "CVO(Cluster Version Operator)가 업그레이드 중 일시적으로 대기 상태(waiting)로 전환될 수 있습니다.",
+      "score": 3.3,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 3.3,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 0
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "네트워크 어댑터 드라이버 호환성은 아직 확인되지 않았습니다.",
+      "score": 24,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 12,
+        "corpus_collocation": 12
+      },
+      "matched": [
+        "(진행|관찰|확인|평가|기록|판단|형성|도출|요구|권장|추천|예상|발생|지원|구성|작성|시행|생각)[되됩됨]"
+      ],
+      "matched_groups": [
+        "수동태_한자어"
+      ],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "호환",
+          "verb": "확인되",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "가능하",
+              "freq": 10,
+              "sig": 68.2
+            },
+            {
+              "verb": "높",
+              "freq": 9,
+              "sig": 53.4
+            },
+            {
+              "verb": "떨어지",
+              "freq": 2,
+              "sig": 8.7
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "종합하면, 이번 업그레이드는 이를 통해 보안 취약점을 해소하는 동시에 장기적인 운영 안정성을 확보할 수 있습니다.",
+      "score": 12,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 0,
+        "corpus_collocation": 12
+      },
+      "matched": [],
+      "matched_groups": [],
+      "awkward_collocations": [
+        {
+          "rel": "nv",
+          "noun": "취약점",
+          "verb": "해소하",
+          "freq": 0,
+          "sig": 0.0,
+          "corpus_associations": [
+            {
+              "verb": "보완하",
+              "freq": 4,
+              "sig": 39.8
+            },
+            {
+              "verb": "드러내",
+              "freq": 4,
+              "sig": 27.7
+            },
+            {
+              "verb": "꼽히",
+              "freq": 4,
+              "sig": 27.6
+            },
+            {
+              "verb": "드러나",
+              "freq": 3,
+              "sig": 20.1
+            },
+            {
+              "verb": "파악하",
+              "freq": 3,
+              "sig": 20.1
+            }
+          ]
+        }
+      ],
+      "oov_nouns": []
+    },
+    {
+      "sentence": "다만, 리스크 항목에 대해 추가적인 검증이 필요합니다.",
+      "score": 6,
+      "breakdown": {
+        "noun_density": 0,
+        "noun_verb_ratio": 0,
+        "bound_josa_chains": 0,
+        "awkward_lexical": 6,
+        "corpus_collocation": 0
+      },
+      "matched": [
+        "(추가|지속|효율|전반|체계|안정|전략|즉각|성공)적[인으]"
+      ],
+      "matched_groups": [
+        "한자어_적인"
+      ],
+      "awkward_collocations": [],
+      "oov_nouns": []
+    }
+  ]
+}

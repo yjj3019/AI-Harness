@@ -48,6 +48,7 @@ const PRODUCTION_FILES = [
   "scripts/secret-scan.js",
   "scripts/tree-exclude-check.js",
   "skills/skill-audit/SKILL.md",
+  "skills/skill-audit/references/audit-patterns.md",
   "docs/eval-set/eval-set.json",
   "docs/eval-set/harness-pilot-dev.json",
   "docs/eval-set/harness-pilot-holdout.json",

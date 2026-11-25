@@ -1,7 +1,7 @@
 ---
 name: visual-artist
 description: Maximize the aesthetic quality of static visual output — posters, covers, charts, infographics, diagrams, and shapes — with a numeric visual-quality scorecard, art-direction brief, and critique-and-refine loop. Use for images, charts, posters, infographics, and static graphics. Pairs with design-master (UI) and anti-ai-harness (anti-slop) without replacing them.
-license: Apache-2.0
+license: MIT
 ---
 
 # Visual Artist

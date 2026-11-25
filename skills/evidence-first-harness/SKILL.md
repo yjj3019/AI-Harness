@@ -1,7 +1,7 @@
 ---
 name: evidence-first-harness
 description: Assess or improve an agent coding workflow with evidence-backed contracts, instruction-drift triage, critical review, and proportionate tool/memory adoption. Use for explicit harness or skills audits, not every coding task.
-license: Apache-2.0
+license: MIT
 ---
 
 # Evidence-First Harness Assessment (Optional)
