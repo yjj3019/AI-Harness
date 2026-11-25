@@ -2,6 +2,8 @@
 /**
  * Minimal secret pattern scan for CI.
  * Looks for common hardcoded secret shapes. Exit 1 on findings.
+ * Also rejects encrypted files (a host-side agent can rewrite Office/PDF files in a
+ * working tree; the encrypted bytes are unusable and must never be committed).
  */
 const fs = require("fs");
 const path = require("path");
@@ -27,9 +29,24 @@ const PATTERNS = [
 const SCANNED_EXT = /\.(js|py|sh|md|json|yml|yaml|ts|toml|cfg|ini|conf|env|pem|key|crt|txt|properties|tf|tfvars)$/i;
 const SCANNED_NAME = /^(\.env(\..*)?|\.npmrc|\.netrc|\.pypirc|id_rsa|id_dsa|id_ecdsa|id_ed25519|credentials)$/i;
 
+// Header written by the host agent at the start of an encrypted file. Checked on every file, not only
+// by extension, because the agent rewrites Office, PDF and image files alike. Built from parts so the
+// vendor name is not spelled out in the source.
+const DRM_MARKER = ["<##", "NAS" + "CA", "DR" + "M", "FILE"].join(" ");
+
+function hasDrmHeader(file) {
+  const fd = fs.openSync(file, "r");
+  try {
+    const buf = Buffer.alloc(DRM_MARKER.length);
+    const n = fs.readSync(fd, buf, 0, buf.length, 0);
+    return n === buf.length && buf.toString("latin1") === DRM_MARKER;
+  } finally { fs.closeSync(fd); }
+}
+
 function scan(root) {
   const findings = [], errors = [];
   const files = [];
+  const everyFile = [];
   function walk(dir) {
     let names;
     try { names = fs.readdirSync(dir); }
@@ -43,10 +60,18 @@ function scan(root) {
       catch (error) { errors.push(`${path.relative(root, p)}: cannot inspect path (${error.code || error.message})`); continue; }
       if (st.isSymbolicLink()) continue; // never follow links: a link to an ancestor would recurse without bound
       if (st.isDirectory()) walk(p);
-      else if (SCANNED_EXT.test(name) || SCANNED_NAME.test(name)) files.push(p);
+      else {
+        everyFile.push(p);
+        if (SCANNED_EXT.test(name) || SCANNED_NAME.test(name)) files.push(p);
+      }
     }
   }
   walk(root);
+  for (const file of everyFile) {
+    const rel = path.relative(root, file);
+    try { if (hasDrmHeader(file)) findings.push({ file: rel, why: "DRM-encrypted file (must not be committed)" }); }
+    catch (error) { errors.push(`${rel}: cannot read file header (${error.code || error.message})`); }
+  }
   for (const file of files) {
     const rel = path.relative(root, file);
     if (rel.split(path.sep).join("/") === "scripts/secret-scan.js") continue;

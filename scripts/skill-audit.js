@@ -47,11 +47,11 @@ function walk(dir, out = []) {
 const files = walk(SKILLS);
 const findings = [];
 
-// License policy: the repository is Apache-2.0 (root LICENSE). A skill must either
+// License policy: the repository is MIT (root LICENSE). A skill must either
 // declare a license that matches that default or ship its own LICENSE.txt. Missing
 // license metadata is a CI finding so third-party content cannot sit in the tree
 // with an undeclared provenance (pattern mirrored from Anthropic skills frontmatter).
-const DEFAULT_LICENSE = "Apache-2.0";
+const DEFAULT_LICENSE = "MIT";
 
 function frontmatter(text) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);

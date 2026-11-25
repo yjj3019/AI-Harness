@@ -1,7 +1,7 @@
 ---
 name: office-master
 description: Coordinator and quality gate for producing, reading, converting, and validating office documents — PPTX, DOCX, XLSX, PDF, HWPX — with per-format acceptance criteria, brand/template overlays, a role-separated build-then-critique loop, and a documented deliverable gate. Use for reports, decks, sheets, PDFs, and Hangul (HWPX) documents. Composes writer-master and visual-artist.
-license: Apache-2.0
+license: MIT
 ---
 
 # Office Master — Document Quality Gate

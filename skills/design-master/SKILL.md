@@ -1,7 +1,7 @@
 ---
 name: design-master
-description: Highest-quality design workflow for UI, visual systems, brand, and interfaces. Forces distinctive art direction, design-system tokens, anti-slop rules, and evidence-based visual QA. Use for frontend design, UI components, brand systems,  landing pages, or any visual interface work. Prefer this over generic generation.
-license: Apache-2.0
+description: Design and review interfaces using the product brief, brand tokens, accessibility requirements, and rendered evidence. Use for frontend design, UI components, brand systems, and landing pages.
+license: MIT
 ---
 
 # Design Master
@@ -22,23 +22,23 @@ Does not vendor upstream code. Apply this skill’s gates on top of any external
 
 ## Core principles
 
-1. **Art direction first** — Name the subject, audience, and single job. Choose a deliberate palette, type, and layout before writing code. Take one justified aesthetic risk.
+1. **Art direction first** — Name the subject, audience, and single job. Choose a deliberate palette, type, and layout before writing code. Take one justified aesthetic risk only when it serves the brief.
 
-2. **Anti-slop** — Reject generic AI defaults: purple gradients, nested cards for everything, oversized pills, arbitrary bento, decorative motion, Inter-only type, low-contrast gray-on-white.
+2. **Fit to context** — Keep familiar colors, type, and components when they serve the brand and the task. Change a pattern when it causes a specific problem such as unclear hierarchy, poor contrast, or extra steps. See `references/anti-slop.md`.
 
 3. **Tokens over raw values** — Prefer semantic tokens (color, type, spacing, radius). Document them. If a design system exists, use it.
 
 4. **Source of truth** — Keep a short design brief or `.design`-style contract. Record decisions and why.
 
 5. **Visual QA before done** — Browser or render check at multiple widths. Contrast, hierarchy, alignment, states (empty/loading/error), accessibility.  
-   Use `skills/design-evidence-harness/SKILL.md`. Record FAIL. Evidence required.
+   Use [design evidence checklist](../design-evidence-harness/SKILL.md). Record FAIL. Evidence required.
 
 6. **Phase evidence rules** — Inside a Phase, never hand-write evidence files. Use the phase gate.
 
 ## Stages
 
 1. **Brief** — Subject, audience, job, constraints, existing brand/system.
-2. **Art direction** — Palette (named hex or tokens), type roles, layout concept, one signature idea. Optional: lock with user.
+2. **Art direction** — Select palette tokens, type roles, and layout from the brief. Include a signature idea when it helps the audience.
 3. **System** — Tokens, component rules, states, anti-patterns to avoid.
 4. **Implementation** — Build within the locked direction. Prefer existing components and tokens.
 5. **Critique & QA** — Self-critique against the brief and anti-slop list. Visual evidence. Accessibility check.
@@ -57,7 +57,7 @@ Detailed checks: `references/anti-slop.md`, `references/visual-qa.md`.
 
 - No silent dependency installs.
 - No hand-written Phase evidence.
-- Distinctive direction must be stated before heavy implementation.
+- State the chosen direction and its purpose before heavy implementation.
 - Visual QA and accessibility are mandatory before claiming done.
 - Prefer existing design systems and tokens over invention.
 

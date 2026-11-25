@@ -1,0 +1,95 @@
+{
+  "browser": "157.0.8103.80",
+  "cases": [
+    {
+      "view": "defect",
+      "viewport": 320,
+      "pageOverflow": 224,
+      "buttonOverflow": 206,
+      "captionOverflow": 0,
+      "focusOnButton": true,
+      "outline": "none",
+      "buttonColor": "rgb(37, 75, 117)",
+      "font": "system-ui, sans-serif",
+      "reducedAnimation": "spin",
+      "normalAnimation": "spin"
+    },
+    {
+      "view": "corrected",
+      "viewport": 320,
+      "pageOverflow": 0,
+      "buttonOverflow": 0,
+      "captionOverflow": 0,
+      "focusOnButton": true,
+      "outline": "solid",
+      "buttonColor": "rgb(37, 75, 117)",
+      "font": "system-ui, sans-serif",
+      "reducedAnimation": "none",
+      "normalAnimation": "spin"
+    },
+    {
+      "view": "defect",
+      "viewport": 960,
+      "pageOverflow": 0,
+      "buttonOverflow": 0,
+      "captionOverflow": 0,
+      "focusOnButton": true,
+      "outline": "none",
+      "buttonColor": "rgb(37, 75, 117)",
+      "font": "system-ui, sans-serif",
+      "reducedAnimation": "spin",
+      "normalAnimation": "spin"
+    },
+    {
+      "view": "corrected",
+      "viewport": 960,
+      "pageOverflow": 0,
+      "buttonOverflow": 0,
+      "captionOverflow": 0,
+      "focusOnButton": true,
+      "outline": "solid",
+      "buttonColor": "rgb(37, 75, 117)",
+      "font": "system-ui, sans-serif",
+      "reducedAnimation": "none",
+      "normalAnimation": "spin"
+    }
+  ],
+  "diagram": [
+    {
+      "text": "docs/PHASES.md\nPhase 정의와 제목",
+      "fontPx": 16,
+      "contained": true
+    },
+    {
+      "text": "↓ 파일에서 정의 읽기",
+      "fontPx": 16,
+      "contained": true
+    },
+    {
+      "text": "scripts/dashboard-status.js\n정의에서 ID와 제목 추출",
+      "fontPx": 16,
+      "contained": true
+    },
+    {
+      "text": "↓ 상태 목록을 JSON으로 기록",
+      "fontPx": 16,
+      "contained": true
+    },
+    {
+      "text": "dashboard/status.json\nPhase별 ID, 제목, 증거 상태",
+      "fontPx": 16,
+      "contained": true
+    },
+    {
+      "text": "↓ 브라우저가 읽고 화면에 표시",
+      "fontPx": 16,
+      "contained": true
+    },
+    {
+      "text": "dashboard/index.html\n제목이 있는 항목에 ID와 제목 표시",
+      "fontPx": 16,
+      "contained": true
+    }
+  ],
+  "pageErrors": []
+}

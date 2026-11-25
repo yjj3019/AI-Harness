@@ -1,7 +1,7 @@
 ---
 name: document-master
 description: Highest-quality document writing workflow for technical docs, reports, manuals, READMEs, ADRs, and agent-facing instructions. Forces audience clarity, Diátaxis structure, sourced claims, plain language, and evidence-based review. Use for  any substantial document. Prefer this over generic drafting.
-license: Apache-2.0
+license: MIT
 ---
 
 # Document Master

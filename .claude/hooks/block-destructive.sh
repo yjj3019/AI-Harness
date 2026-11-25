@@ -47,9 +47,39 @@ protected_rm_target() {
   esac
   [[ "$target" =~ ^/[A-Za-z0-9._-]+$ ]]
 }
+# Reading a secret file through the shell. The host `Read` deny rule only covers the Read tool, so
+# `cat .env` was an open path to the same bytes. Lexical guard: a reader/copy command whose argument is a
+# `.env` or `.env.<name>` path (templates such as .env.example are fine). Variables, aliases, globs and
+# wrappers can evade it; it narrows the easy path, host permissions remain the real boundary.
+env_read_guard() {
+  local i=0 name word first tail
+  [ "${#words[@]}" -gt 0 ] || return 0
+  while [[ "${words[$i]:-}" == sudo || "${words[$i]:-}" == command ]]; do i=$((i + 1)); done
+  name=${words[$i]:-}; name=${name##*/}
+  shopt -s nocasematch
+  case "$name" in
+    cat|bat|less|more|head|tail|grep|egrep|fgrep|rg|sed|awk|gawk|cut|sort|uniq|tr|od|xxd|hexdump|strings|base64|nl|tac|rev|diff|cmp|source|.|cp|copy|type|gc|get-content|select-string|sls|more.com) ;;
+    *) shopt -u nocasematch; return 0 ;;
+  esac
+  for ((i=i + 1; i<${#words[@]}; i++)); do
+    word=${words[$i]}
+    word=${word//\\//}; word=${word#<}; word=${word#--file=}
+    tail=${word##*/}
+    case "$tail" in
+      .env|.env.*)
+        case "$tail" in
+          *.example|*.sample|*.template|*.dist|*.tpl) ;;
+          *) shopt -u nocasematch; deny "reading an environment secrets file through the shell" ;;
+        esac ;;
+    esac
+  done
+  shopt -u nocasematch
+  return 0
+}
 check_simple_command() {
   local i=0 name recursive=0 broad=0 end_options=0 mode='' word git_subcommand='' skip_value=0 push_option=0
   [ "${#words[@]}" -gt 0 ] || return 0
+  env_read_guard
   # Common literal wrappers only; wrapper options are intentionally not interpreted.
   while [[ "${words[$i]:-}" == sudo || "${words[$i]:-}" == command ]]; do i=$((i + 1)); done
   name=${words[$i]:-}; name=${name##*/}

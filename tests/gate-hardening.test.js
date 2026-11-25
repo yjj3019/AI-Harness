@@ -157,6 +157,27 @@ test("tree-exclude-check freezes the exact reviewed patterns, not just their num
   assert.equal(cli.status, 0, cli.stdout + cli.stderr);
 });
 
+test("secret-scan rejects a DRM-encrypted file by its header, whatever the extension", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "secret-scan-drm-"));
+  try {
+    const scan = () => spawnSync(process.execPath, [path.join(REPO, "scripts/secret-scan.js"), root], { encoding: "utf8" });
+    fs.writeFileSync(path.join(root, "plain.pptx"), Buffer.from("PK an ordinary zip header", "latin1"));
+    assert.equal(scan().status, 0, "an ordinary binary is clean");
+    const marker = ["<##", "NAS" + "CA", "DR" + "M", "FILE", "-", "VER1.00", "##>"].join(" ");
+    for (const rel of ["deck.pptx", "report.pdf", "noext"]) {
+      const file = path.join(root, rel);
+      fs.writeFileSync(file, Buffer.concat([Buffer.from(marker, "latin1"), Buffer.from([1, 0x99, 0x67, 0x84])]));
+      const result = scan();
+      assert.equal(result.status, 1, rel + " must be flagged: " + result.stdout + result.stderr);
+      assert.match(result.stderr, /DRM-encrypted/);
+      assert.match(result.stderr, new RegExp(rel.replace(".", "\.")));
+      fs.rmSync(file);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("secret-scan reads the files where credentials usually live", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "secret-scan-"));
   try {

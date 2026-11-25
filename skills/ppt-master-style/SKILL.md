@@ -1,7 +1,7 @@
 ---
 name: ppt-master-style
 description: Apply the ppt-master staged, gated workflow for native-editable PowerPoint decks. Use when creating, generating, reconstructing, beautifying, or templating a PPT/PPTX/slide deck.  Prefer this over one-shot generation. Route first, lock design spec, keep source of truth, verify before export.
-license: Apache-2.0
+license: MIT
 ---
 
 # PPT Master Style Workflow
@@ -27,7 +27,7 @@ Encodes the workflow discipline for AI-Harness. Does not vendor upstream scripts
    Prefer outline, Markdown, JSON, or SVG intermediates over opaque images.
 
 5. **Verify before claiming done.**  
-   Run visual, editability, and chart-honesty checks. Use `skills/design-evidence-harness/SKILL.md`.  
+   Run visual, editability, and chart-honesty checks. Use the [design evidence checklist](../design-evidence-harness/SKILL.md).
    Record FAIL items. Do not claim completion without observable evidence.
 
 6. **Handoff.**  
