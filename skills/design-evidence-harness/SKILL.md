@@ -1,7 +1,7 @@
 ---
 name: design-evidence-harness
 description: Create or review visual artifacts with existing brand context and format-specific evidence when the user explicitly requests this optional design workflow.
-license: Apache-2.0 AND MIT
+license: MIT
 ---
 
 # Design evidence harness
@@ -22,6 +22,7 @@ Use the tools available and permitted in the current host. Check the saved outpu
 - **Interactive HTML or prototype:** inspect rendered layout at relevant viewport sizes, check clipping and console errors, and exercise requested interactions, keyboard access, labels, visible focus, links, and image alternatives where applicable.
 - **Slides or documents:** reopen or render the saved artifact, inspect every page for overflow, legibility, and language-appropriate wrapping, and verify requested editable text, charts, speaker notes, or other native elements in the saved file. Check the page or slide count and report any failed or omitted conversion. A rendered view alone does not establish that native elements remain editable.
 - **Charts or infographics:** compare labels, units, data, and citations with their sources, then inspect the rendered layout.
+- **Diagrams and architecture views:** trace each key arrow to the source that establishes its endpoints, direction, and meaning. Label inferred connections or omit them. Show ports, protocols, external systems, network segments, and trust boundaries only when supported. Inspect labels and arrows at the delivery size and apply the asset permissions check above to logos and fonts.
 - **Animation or video:** inspect beginning, key transitions, and ending; verify requested duration, playback, and audio. Check a reduced-motion alternative when the target interface requires it.
 
 Do not install tools, send private material to external services, publish, or make paid calls without authorization for that action. Public-source research and other operations already authorized by the user and host may proceed within that scope. If a needed browser, renderer, font, asset, or native-format check is unavailable, report it as unverified and do not claim the associated acceptance criterion passed. A screenshot is visual evidence for the captured state, not proof of interaction or editability.

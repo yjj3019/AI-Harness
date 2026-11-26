@@ -1,7 +1,7 @@
 ---
 name: writer-master
 description: Highest-quality editorial writing — editorial strategy, research, story shape, drafting, literary editing, fact-checking, and an editor-in-chief publish gate for tech blogs, essays, reports, and publish-ready copy. Distinguishes verified, inferred, and uncertain claims, preserves sources, and coordinates charts and visuals. Use for long-form or publish-ready content.
-license: Apache-2.0
+license: MIT
 ---
 
 # Writer Master — Editorial Intelligence

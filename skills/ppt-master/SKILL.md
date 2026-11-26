@@ -1,7 +1,7 @@
 ---
 name: ppt-master
 description: Highest-quality PowerPoint workflow for AI agents. Produces native-editable PPTX decks with claim-oriented action titles, design-spec lock, source-of-truth intermediates, visual QA gates, and chart honesty checks. Use for any PPT, PPTX, slide deck, pitch,  board, academic, or consulting presentation. Prefer this over one-shot generation.
-license: Apache-2.0
+license: MIT
 ---
 
 # PPT Master
@@ -46,7 +46,7 @@ If ambiguous, ask once.
    Evidence required (file inspection or render).
 
 5. **Visual QA before done** — Overflow, contrast, alignment, hierarchy, chart honesty.  
-   Use `skills/design-evidence-harness/SKILL.md`. Record FAIL. Do not claim completion without evidence.
+   Use [design evidence checklist](../design-evidence-harness/SKILL.md). Record FAIL. Do not claim completion without evidence.
 
 6. **Phase evidence rules** — Inside a Phase, never hand-write evidence files. Use the phase gate.
 

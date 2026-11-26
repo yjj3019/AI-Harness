@@ -1,7 +1,7 @@
 ---
 name: super-agent-router
 description: Design or apply a two-level Router + isolated Worker pattern for concurrent, continuous agent work while preserving evidence gates and approval boundaries. Use when the user asks to "design a super-agent", "split router and workers", "handle multiple concurrent tasks with one voice", "adapt DeepSeek Harness Super-agent ideas", or "set up always-on style coordination without replacing Phase gates".
-license: Apache-2.0
+license: MIT
 ---
 
 # Super-agent Router / Worker Coordination (Optional)
@@ -18,11 +18,11 @@ Do **not** apply for ordinary single-task coding that fits the normal `/phase-ha
 
 ## Procedure
 
-1. Read `docs/super-agent-architecture-notes.md` and the current `docs/deepseek-team-workflow.md`.
+1. Read [super-agent architecture notes](../../docs/super-agent-architecture-notes.md) and the current [team workflow](../../docs/deepseek-team-workflow.md).
 2. Confirm the brief: goal, acceptance criteria, allowed scope, excluded scope, and which operations require separate human approval.
 3. Propose a Router role (long-lived, human-facing, dispatch-only, lighter model if available) and one or more Worker roles (isolated context, full tools, structured status reports).
 4. Recommend isolation mechanisms already available: separate sessions, git worktrees for writers, explicit write scopes, and the existing UNKNOWN stop rule.
-5. Map any lasting work onto an existing or newly defined Phase so that evidence is still recorded only through `.claude/workflows/phase-gate.js`.
+5. Map any lasting work onto an existing or newly defined Phase so that evidence is still recorded only through [Phase gate](../../.claude/workflows/phase-gate.js).
 6. List residual risks (shared checkout, missing Watchdog infrastructure, unmeasured performance claims) and stop conditions.
 7. Output a short design: roles, dispatch rules, thread pass-through idea if applicable, evidence plan, and approval points. Do not claim the design has been executed or measured unless the user has already done so.
 

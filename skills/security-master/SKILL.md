@@ -1,7 +1,7 @@
 ---
 name: security-master
 description: Highest-quality security hardening and review workflow. Covers input validation, authentication/authorization, secret handling, dependency risk, and OWASP-aligned checks. Evidence-based findings only.  Use for any code that handles untrusted input, auth, secrets, or external integrations.
-license: Apache-2.0
+license: MIT
 ---
 
 # Security Master

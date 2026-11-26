@@ -43,7 +43,7 @@ Run before final export. Record results.
 - Chart honesty: visual encoding matches the claim
 - Completeness: every planned slide present
 
-Use `skills/design-evidence-harness/SKILL.md` as the verification checklist.  
+Use the [design evidence checklist](../../design-evidence-harness/SKILL.md) for verification.
 Any FAIL must be fixed or explicitly accepted by the user before claiming completion.
 
 ## Stage 6 — Export & Handoff

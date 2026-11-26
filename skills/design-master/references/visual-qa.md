@@ -16,8 +16,12 @@ Run and record:
 - Empty, loading, and error states exist where relevant
 - Focus and hover states are visible
 
+## CJK & motion
+- Inspect long Korean action labels and table headings at the intended narrow width. Check the full string, wrapping, and access to each action.
+- Where animation or transition is used, check reduced-motion behavior and its static end state
+
 ## Anti-slop
-- Does not match the generic AI defaults list
+- Identify the effect of familiar patterns on this task. Preserve established brand choices when the content remains legible and controls are usable.
 - Direction matches the stated art direction
 
 ## Accessibility
@@ -26,6 +30,6 @@ Run and record:
 - Target sizes adequate
 
 ## Evidence
-- Prefer screenshots or browser inspection at desktop and mobile widths
-- Pair with `skills/design-evidence-harness/SKILL.md`
+- Record the desktop and mobile viewport sizes, states inspected, and defects. Mark each unobserved state or interaction as unverified.
+- Pair with [design evidence checklist](../../design-evidence-harness/SKILL.md)
 - Inside a Phase, record only through the phase gate

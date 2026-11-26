@@ -1,7 +1,7 @@
 ---
 name: anti-ai-harness
 description: Review or revise AI-drafted UI, prose, documents, and code to remove generic AI patterns (AI slop) and AI-writing tells while keeping every fact, claim, source, and evidence intact. Not for authorship judging or AI-detector evasion. Use before shipping a new or reviewed artifact.
-license: Apache-2.0
+license: MIT
 ---
 
 # Anti-AI Harness
