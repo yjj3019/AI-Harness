@@ -39,6 +39,9 @@ python -m toolbroker.server --db /secure/broker.sqlite --secret-file /secure/key
 - 동일 요청 ID와 다른 payload → 409 conflict
 - API 수신 뒤 응답 유실 → `UNKNOWN`, 자동 재시도 거부. 원격 서버의 `Idempotency-Key` 지원이 있더라도 재처리 전 결과 대조 필요
 - 고정 localhost 이외 HTTP 주소 및 원격 URL 주입 → 초기화 거부
+- 충돌 후 `IN_FLIGHT`로 남은 요청, 또는 `UNKNOWN` 요청 → 자동 복구 없음. 운영자가 공급자에서 실제 결과를 확인한 뒤 `Broker.reconcile(request_id, result, operator=...)`로만 `COMPLETED`로 확정한다(재전송 없음, HTTP 서버로 노출되지 않음). 결과를 확인하지 못했거나 다시 실행하려면 새 `request_id`와 새 승인이 필요하다
+- 원장 보존 → `Broker.purge_completed(older_than_seconds)`는 7200초 이상 지난 `COMPLETED` 행만 지운다. `IN_FLIGHT`/`UNKNOWN`은 지우지 않는다
+- 원장의 operation/해시/nonce 대조는 상수 시간(`hmac.compare_digest`)으로 수행한다
 
 CI 검사는 실제 네트워크 외부 호출이나 운영 DB 쓰기를 수행하지 않는다.
 
