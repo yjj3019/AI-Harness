@@ -1,6 +1,6 @@
 # Compound log navigation index (trial)
 
-Navigation only: read `docs/compound-log-active.md` first and the full `docs/compound-log.md` where the constitution requires it. Titles can miss relevant lessons; search and read the original entries. Regenerate or review this list when entries change.
+Navigation only: read `docs/compound-log-active.md` first and the full `docs/compound-log.md` where the constitution requires it. The first 27 titles below (2026-10-23 to 2026-11-02) now live in `docs/compound-log.archive.md` (moved verbatim 2026-11-26). Titles can miss relevant lessons; search and read the original entries. Regenerate or review this list when entries change.
 
 - [2026-10-23] Setup - System Setup
 - [2026-10-25] Harness - Platform Paths

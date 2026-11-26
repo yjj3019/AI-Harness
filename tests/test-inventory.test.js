@@ -58,6 +58,7 @@ const PRODUCTION_FILES = [
   "docs/HANDOFF.md",
   "docs/HANDOFF-history-2026-11-20.md",
   "docs/compound-log.md",
+  "docs/compound-log.archive.md",
   "docs/compound-log-active.md",
   ".github/workflows/ci.yml",
   "tests/agents-lint.sh",

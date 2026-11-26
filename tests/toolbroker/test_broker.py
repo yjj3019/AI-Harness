@@ -1,6 +1,7 @@
 """Tool-level authorization, duplicate prevention and unknown-outcome fixtures."""
 import base64
 import concurrent.futures
+import contextlib
 import hashlib
 import hmac
 import json
@@ -475,6 +476,69 @@ class BrokerTests(unittest.TestCase):
                         self.send(reopened, op="fixture.http.post", rid=rid, payload=payload, token=token)
                     self.assertEqual(retry.exception.code, "REQUEST_IN_FLIGHT")
                     send.assert_called_once_with(payload, rid)
+
+    def strand(self, b, state, rid="request_0001", created=None):
+        """Insert a ledger row as a crash after the intent commit would leave it."""
+        payload = {"value": "x"}
+        with contextlib.closing(sqlite3.connect(b.database, isolation_level=None)) as db:
+            db.execute("INSERT INTO requests VALUES (?,?,?,?,?,?,?)",
+                       (rid, "fixture.http.post", digest("fixture.http.post", rid, payload),
+                        "nonce_" + rid, state, None,
+                        int(time.time()) if created is None else created))
+        return payload
+
+    def test_stranded_in_flight_is_reconciled_only_by_operator_without_resend(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+        payload = self.strand(b, "IN_FLIGHT")
+        with patch.object(b, "_send_http") as send:
+            with self.assertRaises(BrokerError) as blocked:
+                self.send(b, op="fixture.http.post", payload=payload)
+            self.assertEqual(blocked.exception.code, "REQUEST_IN_FLIGHT")
+            done = b.reconcile("request_0001", {"ok": True}, operator="ops-1")
+            again = self.send(b, op="fixture.http.post", payload=payload)
+            send.assert_not_called()
+        self.assertEqual(done["state"], "COMPLETED")
+        self.assertTrue(again["replay"])
+        self.assertEqual(again["result"], {"ok": True})
+        self.assertEqual(b.get_state("request_0001"), "COMPLETED")
+
+    def test_reconcile_rejects_unknown_completed_and_malformed_input(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+        self.strand(b, "COMPLETED", rid="request_0002")
+        for rid, result, operator, code in (
+                ("request_0404", {"ok": 1}, "ops", "NOTHING_TO_RECONCILE"),
+                ("request_0002", {"ok": 1}, "ops", "NOTHING_TO_RECONCILE"),
+                ("bad id", {"ok": 1}, "ops", "INVALID_REQUEST_ID"),
+                ("request_0404", ["no"], "ops", "INVALID_RESULT"),
+                ("request_0404", {"ok": float("nan")}, "ops", "INVALID_RESULT"),
+                ("request_0404", {"ok": 1}, " ", "OPERATOR_REQUIRED")):
+            with self.subTest(rid=rid, code=code), self.assertRaises(BrokerError) as error:
+                b.reconcile(rid, result, operator=operator)
+            self.assertEqual(error.exception.code, code)
+
+    def test_purge_removes_only_old_completed_rows(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+        old = int(time.time()) - 100000
+        self.strand(b, "COMPLETED", rid="request_old1", created=old)
+        self.strand(b, "COMPLETED", rid="request_new1")
+        self.strand(b, "IN_FLIGHT", rid="request_old2", created=old)
+        self.strand(b, "UNKNOWN", rid="request_old3", created=old)
+        self.assertEqual(b.purge_completed(7200), 1)
+        self.assertIsNone(b.get_state("request_old1"))
+        self.assertEqual(b.get_state("request_new1"), "COMPLETED")
+        self.assertEqual(b.get_state("request_old2"), "IN_FLIGHT")
+        self.assertEqual(b.get_state("request_old3"), "UNKNOWN")
+        for bad in (0, 3599, 7199, True, -5, 7200.5, "7200"):
+            with self.subTest(bad=bad), self.assertRaises(BrokerError) as error:
+                b.purge_completed(bad)
+            self.assertEqual(error.exception.code, "PURGE_AGE_TOO_SHORT")
+
+    def test_ledger_comparison_uses_constant_time_digest(self):
+        b = self.broker(["fixture.db.increment"])
+        self.send(b)
+        with patch("toolbroker.broker.hmac.compare_digest", wraps=hmac.compare_digest) as cmp:
+            self.send(b)
+        self.assertGreaterEqual(cmp.call_count, 5)  # approval checks plus three ledger fields
 
     def test_no_arbitrary_destinations_or_user_urls(self):
         for url in ("https://example.com/write", "http://localhost:9001/write",

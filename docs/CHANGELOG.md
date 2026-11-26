@@ -2,6 +2,11 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — toolbroker 원장 보강·compound-log 정리 (미병합)
+
+- 2026-11-26 `toolbroker/broker.py`: 원장 대조(operation·payload 해시·nonce)를 상수 시간(`hmac.compare_digest`)으로 바꿨다. 운영자 전용 `reconcile()`(충돌 후 `IN_FLIGHT` 또는 `UNKNOWN` 요청을 공급자에서 확인한 결과로만 `COMPLETED` 확정, 재전송 없음)과 `purge_completed()`(7200초 이상 지난 `COMPLETED` 행만 삭제, `IN_FLIGHT`/`UNKNOWN`은 보존)를 추가했다. HTTP 서버로는 노출하지 않는다. `tests/toolbroker/test_broker.py`에 시험 4건(전체 31건)과 `toolbroker/README.md` 설명을 추가했다. 상태 값과 DB 스키마는 바꾸지 않았다.
+- 2026-11-26 `docs/compound-log.md`: 항목이 30개를 넘어 가장 오래된 27개를 `docs/compound-log.archive.md`로 그대로 옮겼다(삭제 없음). `docs/compound-log-index.md`에 안내를 추가했고 `tests/run-all.sh`의 증거 비식별 검사 대상에 보관 파일을 넣었다.
+
 ## 작업 트리 — MIT 전환·CI 취소 규칙 (미병합)
 
 - 2026-11-24: 저장소 라이선스를 Apache-2.0에서 MIT로 바꿨다(소유자 결정, `docs/DECISIONS.md` D8). `LICENSE`를 MIT 본문과 `Copyright (c) 2026 yjj3019`로 교체했고, 스킬 29개의 `license:`를 `MIT`로 맞췄다. `scripts/skill-audit.js`의 기본 라이선스와 `tests/skill-audit.test.js`를 MIT 기준으로 바꿨다. 동봉 LICENSE가 있는 스킬(`design-evidence-harness`)은 그대로 둔다.
