@@ -1,7 +1,7 @@
 ---
 name: observability-master
 description: Highest-quality observability and instrumentation workflow. Ensures logs, metrics, and traces are designed with the feature, secrets are never logged, and production behavior is diagnosable. Use when adding features that will run in production or when diagnosing  issues that lack sufficient telemetry.
-license: Apache-2.0
+license: MIT
 ---
 
 # Observability Master

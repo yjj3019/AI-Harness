@@ -4,168 +4,6 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 
 ## Entries
 
-### [2026-10-23] Setup - System Setup
-
-- **Issue/Risk**: Self-congratulatory bias in single-agent workflows.
-- **Root Cause**: LLMs naturally evaluate their own output positively.
-- **Resolution/Pattern**: Always run independent Subagents to verify code rather than relying on self-assessment. Isolate coding and evaluation into separate context windows (coding → test → verify → review → compound).
-
-### [2026-10-25] Harness - Platform Paths
-
-- **Issue/Risk**: `read-tracker.sh`가 POSIX 절대경로만 처리해 Windows에서 읽기 기록이 남지 않았고, 그 결과 `verify PASS`가 영구 거부됐다.
-- **Root Cause**: 훅 입력 경로를 셸이 이해하는 형태로 정규화하지 않았고, 단위 테스트는 경로 스타일을 바꿔 넣어 보지 않았다.
-- **Resolution/Pattern**: 경로를 받는 훅은 `C:\`·`C:/`·POSIX를 모두 정규화하고, 실제 훅을 호출하는 E2E 테스트를 둔다. 플랫폼 차이는 CI 매트릭스가 아니라 실행 테스트로 먼저 확인한다.
-
-### [2026-10-27] Quality closure - Challenge aggregate evidence
-
-- **Issue/Risk**: A passing final summary masked earlier failing suites; replay could mutate source after the initial tree comparison. Fixture HTTP errors could strand requests as IN_FLIGHT.
-- **Root Cause**: Global last-counter parsing, pre-execution-only verification, and incomplete uncertain-response exception classification.
-- **Resolution/Pattern**: Validate every complete result block and exact count accounting, verify the tree after replay, persist UNKNOWN for unclassifiable sent requests, and test interrupted uploads/provider responses. Keep host authorization and live-model certification separate from fixtures.
-
-### [2026-10-27] Report editing - Preserve evidence before style
-
-- **Issue/Risk**: A prose rewrite can erase skips, uncertainty, conditions or the distinction between fixture and production results.
-- **Root Cause**: Optimizing stylistic patterns without comparing supported claims in both directions.
-- **Resolution/Pattern**: Add an opt-in evidence-preserving editor with protected spans and Korean semantic evaluation cases. Keep package checks separate from live-model quality evaluation; do not modify evidence or completion gates for prose style.
-
-### [2026-10-27] Document jobs - Do not aggregate partial conversion as success
-
-- **Issue/Risk**: A worker exit 0 can hide missing files, damaged formula tokens, unreviewed layout, or implicit external document transfer.
-- **Root Cause**: Treating conversion as one local action and trusting aggregate process status.
-- **Resolution/Pattern**: Declare separate capabilities and bounded work, bind result manifests to exact job bytes and input IDs, require complete outcomes and protected-token multisets. Keep offline manifest consistency distinct from actual authorization, artifact hashes, PDF quality and live-engine certification.
-
-### [2026-10-27] Test evidence - Detect persistent mutation during the first run
-
-- **Issue/Risk**: A successful test could persistently change a tracked or unignored input, and the original run recorded only the changed tree as its test evidence.
-- **Root Cause**: The first run and attestation replay had different tree comparison boundaries.
-- **Resolution/Pattern**: Compare pre- and post-run tree snapshots; reject a difference or an unavailable snapshot on only one side, retain explicit legacy unbound behavior when both are unavailable, and test both cases. Endpoint snapshots are not isolation and do not detect temporary changes restored before the second snapshot. Separately record static, fixture and live evidence levels and avoid treating package checks as a live model evaluation.
-
-### [2026-10-28] Evaluation baselines - Separate scorer changes from improvements
-
-- **Issue/Risk**: A changed rubric, case set or normalization can create an apparent improvement without a change in candidate quality.
-- **Root Cause**: Comparing scores across incompatible baselines conflates measurement changes with results.
-- **Resolution/Pattern**: Record baseline revisions and rescore comparable retained outputs or label cross-baseline rounds not comparable. Enforce a test-file count floor to expose substantial suite shrinkage, while recognizing replacements can mask missing suites. A lexical search for network calls is not proof of no egress, particularly when separate components intentionally use loopback networking.
-
-### [2026-10-28] Fixture broker - Preserve uncertain outcomes after adapter exceptions
-
-- **Issue/Risk**: An unexpected adapter exception after a send intent could leave a request IN_FLIGHT rather than explicitly requiring reconciliation.
-- **Root Cause**: The uncertain-outcome handler covered a fixed list of exception types.
-- **Resolution/Pattern**: Treat ordinary adapter and response-serialization exceptions as UNKNOWN after intent is committed, without catching process interrupts or retrying. If the ledger update fails, UNKNOWN persistence is not guaranteed; the previously committed IN_FLIGHT remains the conservative boundary when the ledger is intact.
-
-### [2026-10-28] Attestation - Compare the final snapshot with tested evidence
-
-- **Issue/Risk**: A tree mutation between chain validation and attestation creation could bind an attestation to a tree that did not match the tested evidence.
-- **Root Cause**: Attestation took a second snapshot but did not compare it to the evidence's tree hash.
-- **Resolution/Pattern**: Require a bound test hash and equality with the final snapshot before writing. This closes that comparison gap, not concurrent mutation after the snapshot or the existing tree hash's documented exclusions and read-error limitations.
-
-### [2026-10-30] Verify reads - Limit reuse of previously logged signals
-
-- **Issue/Risk**: Identical test-log bytes allowed an older verifier read record to satisfy a later test run.
-- **Root Cause**: Read records were matched by path and hash without a phase-specific generation.
-- **Resolution/Pattern**: Scope recorded read signals to a fresh generation to reject previously recorded signals in sequential use. A delayed post-read hook can still attribute an older read to the new generation; concurrent operations are not isolated. Treat the hook as a guardrail, not proof of full-file review, comprehension or isolation. A simulated hook event in a disposable fixture reproduced the stale-read case; it did not validate live agent integration.
-
-### [2026-10-28] Package readiness - Validate definitions and exact hook wiring
-
-- **Issue/Risk**: Missing skills or local references escaped general lint; hook-name substring matching and non-object settings could make doctor report readiness without the required wiring.
-- **Root Cause**: Partial inventories and presence-only checks did not validate the actual definition or event/matcher/command contract.
-- **Resolution/Pattern**: Add a bounded package checker to the existing CI entry point and validate exact hook wiring plus repository-contained executable files. Test empty inventories, metadata, broken links, external symlinks, malformed settings and lookalike commands. Keep static readiness distinct from live host authorization and document the supported metadata syntax.
-
-### [2026-10-30] Fixture timeout - Synchronize on the effect, not sleep durations
-
-- **Issue/Risk**: A short client timeout could fire before the loopback provider applied its write, making the post-effect timeout test intermittent or ambiguous.
-- **Root Cause**: Wall-clock sleeps did not establish ordering, and deduplicated fixture state could conceal a repeated call.
-- **Resolution/Pattern**: Use bounded events to hold the response after the fixture effect, observe the actual socket timeout, reopen the ledger and assert the precise retry error and provider call count. This is fixture evidence, not a live-provider guarantee.
-
-### [2026-10-30] Tree snapshots - Do not equate read errors with deletion
-
-- **Issue/Risk**: Silently skipping an unreadable file could produce a partial tree hash and hide persistent source changes.
-- **Root Cause**: The same catch path handled missing paths and all filesystem read failures.
-- **Resolution/Pattern**: Abort on filesystem inspection/read errors except missing initial lstat, preserving the historical tracked-deletion behavior. Successful hashes retain their format, so legacy evidence cannot establish historical snapshot completeness; rerun and re-attest when that matters. Git enumeration failures, absent paths and snapshot races remain limitations, not isolation guarantees.
-
-### [2026-10-30] Test summaries - Recognize standalone expected outcomes
-
-- **Issue/Risk**: An xfailed-only or xpassed-only pytest block could be ignored when another block passed, masking an all-skipped or unexpected-pass result.
-- **Root Cause**: The pytest block detector omitted outcomes the later counter parser already understood.
-- **Resolution/Pattern**: Recognize standalone xfailed and xpassed summaries, pytest long-duration suffixes and decorated zero-test lines; test those forms in both output orders. Output parsing is an untrusted, bounded heuristic rather than proof of test quality; see the later quiet-output entry.
-
-### [2026-10-30] Test summaries - Quiet output and deselection
-
-- **Issue/Risk**: A quiet pytest summary or deselection-only result could be ignored beside a passing block, while mixed passes and deselections were rejected.
-- **Root Cause**: The detector required separator lines and lacked a deselection policy.
-- **Resolution/Pattern**: Inspect anchored quiet summaries and treat deselection as a validated diagnostic rather than an executed test. Summary text is forgeable, collect-only output is not execution evidence, and a silent run after a passing block remains invisible; use trusted runner-level evidence when completeness matters.
-
-### [2026-10-30] Bound evidence - Do not silently downgrade comparison
-
-- **Issue/Risk**: Chain check could succeed with a warning when Git was unavailable even though the test evidence had a tree hash, leaving the current tree unverified.
-- **Root Cause**: The legacy unbound fallback also applied to previously bound evidence.
-- **Resolution/Pattern**: Require comparison when evidence contains a tree hash; retain explicit warnings for unbound null or absent tree fields and reject other invalid types. This does not resolve dual Git enumeration failures at the original run or provide isolation or writer authentication.
-
-### [2026-10-30] Broker fixture - Verify transaction and actual resend boundaries
-
-- **Issue/Risk**: Provider-side deduplication could hide a second HTTP call, while raw SQLite rollback did not exercise the broker request ledger and counter transaction together.
-- **Root Cause**: Fixture state was checked without call count and rollback tests did not enter the broker's execution path.
-- **Resolution/Pattern**: Count loopback requests and inject a fault immediately after the broker counter update; reopen and verify both ledger and counter rolled back before retry and replay. Close inspection connections explicitly (SQLite connection context managers do not close them); this tests fixture exception handling, not crash-at-commit or live-provider exactly-once behavior.
-
-### [2026-10-30] Replay output - Preserve observed stream order
-
-- **Issue/Risk**: Strict replay could accept an incomplete interleaved summary after concatenating stdout and stderr, or reject a valid large output at the capture buffer limit.
-- **Root Cause**: Replay used separate bounded pipes while the original run wrote both streams to one file descriptor.
-- **Resolution/Pattern**: Capture both streams to a temporary file for strict replay and inspect the merged bytes. Snapshot and summary heuristics remain non-isolating; disk and full-output memory use are unbounded, and abrupt termination can leave temporary data.
-
-### [2026-11-01] Offline review - Reject lossy input decoding
-
-- **Issue/Risk**: Invalid UTF-8 in a candidate JSON file could silently become U+FFFD, so a reviewer would see altered text rather than the supplied output.
-- **Root Cause**: Default buffer-to-string decoding replaces invalid byte sequences before JSON parsing.
-- **Resolution/Pattern**: Decode with fatal UTF-8 validation before parsing or creating outputs, test both candidate inputs and preserve valid multilingual text. A leading BOM is deliberately rejected; packet preparation does not establish semantic quality or provenance.
-
-### [2026-11-01] Tree enumeration - Distinguish confirmed worktree failures
-
-- **Issue/Risk**: A damaged Git index made both snapshots unavailable, yet a new test could pass as unbound evidence.
-- **Root Cause**: All `git ls-files` failures shared the legacy no-Git fallback.
-- **Resolution/Pattern**: If a separate Git probe confirms a worktree, treat enumeration failure as an error. Preserve existing unbound fallback when discovery fails, but label it ambiguous: a broken repository or permission problem can still pass unbound with a warning. The existing tree format does not bind file modes; adding that guarantee requires an explicit version and migration policy, not retroactive claims about old evidence.
-
-### [2026-11-01] Tree policy - Require binding at verification too
-
-- **Issue/Risk**: Requiring a bound snapshot during a run does not prevent a later plain legacy check from accepting an unbound chain when Git discovery fails.
-- **Root Cause**: An invocation-only flag is not a durable policy and legacy compatibility remains the default.
-- **Resolution/Pattern**: The Phase workflow requests `--require-bound-tree` for both run and check; tests exercise the unbound boundary and workflow wiring. An independent verifier must also require the flag. This does not authenticate evidence or prove historical snapshot completeness; rerun and re-attest where that matters.
-
-### [2026-11-02] Attestation inventory - Zero is not verified
-
-- **Issue/Risk**: An optional CI discovery loop can succeed with zero files and be mistaken for verification of a required Phase.
-- **Root Cause**: File discovery is not an independently protected list of required phase IDs; no phases are currently defined, so zero is legitimate but proves none complete.
-- **Resolution/Pattern**: Report the discovered count and provide an explicit nonempty required-ID check. Protect the policy, workflow, verifier and command pin independently; replay executes code and must be authorized and isolated. A later failure cannot undo earlier replay effects.
-
-### [2026-10-31] Blind comparison - Record reproducible allocation privately
-
-- **Issue/Risk**: A random A/B packet without a recorded seed could not satisfy the paired protocol's reproducibility requirement; a packet alone does not prove reviewer independence or authentic output provenance.
-- **Root Cause**: Independent random choices were recorded only as assignments, while the protocol required a replayable method and seed.
-- **Resolution/Pattern**: Generate a private 32-byte random seed and derive each assignment using a versioned HMAC over its valid Unicode case ID; retain seed and key separately, record packet/input hashes and independently preserve them before review. Windows key privacy depends on directory ACLs; crashes can leave partial files, and blinded review and action evidence remain separate duties.
-
-### [2026-11-01] Gate mutation PoC - Attribute failures to targeted assertions
-
-- **Issue/Risk**: An unrelated assertion or zero matching tests could appear to kill a gate mutant; long Windows suites also timed out during a broad baseline.
-- **Root Cause**: A nonzero status and generic assertion count did not establish the targeted test or assertion site, and broad suites included unrelated fixture requirements.
-- **Resolution/Pattern**: Use an exact focused test name, require the expected assertion site and retain TAP diagnostics, first run an unmodified baseline, and stop on infrastructure errors. A timeout is not a kill and does not guarantee descendant cleanup; TAP remains trusted local evidence, not a sandbox or proof of all branches.
-
-### [2026-11-01] Security review - Bound reads and preserve write ownership
-
-- **Issue/Risk**: Slow-drip local clients held broker slots past an inactivity timeout; predictable gate log paths could follow pre-existing links; direct gate edits were outside an evidence guard's declared coverage. A smoke test could misinterpret unrelated filesystem errors as read-only enforcement.
-- **Root Cause**: Per-read deadlines, open-by-name truncation, lexical guard coverage, and a missing positive control did not match the intended claims.
-- **Resolution/Pattern**: Use a monotonic request-input deadline, exclusively created staging files, explicit direct-edit guards, matched filesystem controls and mount-state checks; add bounded JSON inputs. Review ownership on error paths and retain platform and race limitations. These are local safeguards, not a sandbox or host authorization certification; actual host/model checks remain separate.
-
-### [2026-11-02] Cross-platform fixtures - Compare filesystem identity
-
-- **Issue/Risk**: A macOS CI test failed because a temporary root was reported as `/var/...` while the child process reported the same cwd as `/private/var/...`.
-- **Root Cause**: The test compared path spellings rather than the resolved filesystem location.
-- **Resolution/Pattern**: Compare canonical cwd identity while still checking the exact root argument and command arguments. Local Windows regression alone does not establish macOS success; require the updated PR CI result.
-
-### [2026-11-02] Offline planning - Preserve unresolved dependencies and attempts
-
-- **Issue/Risk**: A graph could report a node READY through an inconsistent PASS ancestor; a later completed attempt could mask an earlier unresolved STARTED attempt or inflate completion.
-- **Root Cause**: Declared status was accepted without consistent predecessor state, and a retry was treated as reconciliation of an unknown outcome.
-- **Resolution/Pattern**: Reject inconsistent PASS dependencies, require UNKNOWN for unreconciled STARTED attempts, count completion from the last attempt, and test both orders. These checks consume declarations only; they do not enforce host permissions, prove truth, or make parallel work safe.
-
 ### [2026-11-02] Multi-agent planning - Keep coordination separate from evidence
 
 - **Issue/Risk**: A Team completion, a conflict-free label check, or an inventory presence check can be mistaken for verified safe execution.
@@ -342,6 +180,18 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Root Cause**: Claude hook event output showed the actual `PostToolUse:Read` hooks were cancelled; one reported Git Bash `fork: Resource temporarily unavailable`. The specific resource exhaustion mechanism was not established.
 - **Resolution/Pattern**: Keep the valid bound test evidence and the Phase incomplete. Do not synthesize hook events. A failed strict record rotates the read token, so a later attempt needs a fresh real verify Read. Fixture success alone does not prove the production invocation will succeed under different load.
 - **Follow-up**: A fresh actual verify-subagent Read with a per-invocation 60-second hook setting produced successful hook events and a matching phase/token/log-hash signal. Strict verify was recorded with `require_read_proof: true`. This shows a successful configured invocation, not a controlled proof that the 10-second timeout caused earlier cancellations or a permanent repair of the default host configuration.
+
+### [2026-11-25] Phase evidence-baseline (run 11) - Attestation tree, review rubric, hook guard limits, pilot grading
+
+- **Issue/Risk**: (1) A tree-bound attestation made on a CRLF or otherwise different worktree does not match the committed tree. (2) The first review flagged public tool names and model IDs as sensitive. (3) The new `.env` shell-read guard is lexical, so it blocks harmless commands (`grep .env`, `cp .env.example .env`) and does not bound writes on every host. (4) A pilot can look better if the grader changes after the run.
+- **Root Cause**: (1) The tree hash covers raw bytes, and `core.autocrlf` rewrites them. (2) The reviewer read the sensitive-info rule too broadly. The rule covers DRM product names, internal environment details, credentials and user paths. (3) Lexical matching cannot tell intent, so it fails closed and accepts false positives. Hosts differ: the Codex sandbox blocked writes outside the workspace, but native Windows Claude Code did not. (4) The grader and its hash were not frozen before the real run.
+- **Resolution/Pattern**: (1) Before the gate test, set `core.autocrlf=false`, delete the worktree files and check them out again, then confirm with `git ls-files --eol` that they are LF. Run the full suite once in the background (about 33 minutes here) with `PHASE_GATE_TEST_TIMEOUT_MS` raised, and edit no bound file afterwards. (2) Resolve a rubric disagreement by asking the user. Record the decision and its scope in the review report, then have the reviewer re-evaluate; never self-approve. (3) Treat lexical hook guards as guardrails, not boundaries, and test the host write boundary on each host. (4) Freeze the grader and its hash before the real run. Report post-hoc re-grades separately and label them as such.
+
+### [2026-11-26] Phase evidence-baseline (run 12) - Fixture file lists, in-Phase log cleanup, ToolBroker recovery limits, CI-only suites
+
+- **Issue/Risk**: (1) Adding a file to a script's input list (the evidence-redact stage in `tests/run-all.sh`) broke the test-inventory fixture, and the failure surfaced only after a roughly 40-minute gate run (475 passed, 9 skipped, 0 failed after one retry). (2) The 30-entry log limit needed a cleanup, and doing it after attestation would invalidate the evidence. (3) ToolBroker requests stranded as IN_FLIGHT or UNKNOWN have no automatic recovery, and the operator who reconciles one is not recorded. (4) The Python ToolBroker tests do not appear in the gate log.
+- **Root Cause**: (1) `tests/test-inventory.test.js` copies a fixed `PRODUCTION_FILES` list into an isolated root, so any new file dependency of a copied script is missing there. (2) The archive and index are bound to the tree hash. (3) Both are by design: a resend could duplicate an external effect, and the schema has no operator column. (4) `tests/run-all.sh` does not run them; CI does.
+- **Resolution/Pattern**: (1) When a shared script gains a file dependency, update `PRODUCTION_FILES` in the same commit; search for other fixture lists first and run the inventory test alone before the full gate. (2) Move the oldest entries to the archive verbatim, add an index note and delete nothing, inside the same Phase as the other changes. (3) Recovery is operator-only: reconcile with a confirmed provider result (no resend) and purge COMPLETED rows older than twice the approval lifetime. Without a schema change there is no audit trail of who acted. (4) Run the Python ToolBroker tests locally and say so in the verify report.
 
 ## Template for New Entries
 

@@ -32,5 +32,5 @@ Run these checks. Record results. Any FAIL must be fixed or explicitly accepted.
 ## Evidence
 
 - Prefer rendered pages (PDF/PNG) or file inspection over assertion.
-- Pair with `skills/design-evidence-harness/SKILL.md`.
+- Pair with [design evidence checklist](../../design-evidence-harness/SKILL.md).
 - Inside a Phase, record results only through the phase gate.

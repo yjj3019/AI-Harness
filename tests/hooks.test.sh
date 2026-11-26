@@ -283,6 +283,23 @@ for hook in .claude/hooks/block-destructive.sh .codex/hooks/block-destructive.sh
   done
 done
 
+echo "== Shell reads of .env secrets files, both hooks (the Read deny rule does not cover the shell) =="
+for hook in .claude/hooks/block-destructive.sh .codex/hooks/block-destructive.sh; do
+  for cmd in 'cat .env' 'cat ./.env' 'type .env' 'Get-Content .env.production' 'grep KEY .env' 'head -n1 /app/.env' \
+    'cat < .env' 'sudo cat .env' 'cp .env /tmp/x' 'cat "C:\proj\.env"' 'cd x && cat .env' 'base64 .env.local' \
+    'source .env' 'Get-Content .ENV' 'cat sub/.env.local'; do
+    got=$(jq -n --arg c "$cmd" '{tool_input:{command:$c}}' | bash "$hook" >/dev/null 2>&1; echo $?)
+    total=$((total + 1))
+    [ "$got" = 2 ] || { fails=$((fails + 1)); echo "FAIL $hook should block: $cmd"; }
+  done
+  for cmd in 'cat .env.example' 'cat docs/.env.example' 'cat .envrc.sample' 'git add .env.example' 'echo .env >> .gitignore' \
+    'cat environment.txt' 'ls ./.env.d/' 'grep -r TOKEN src' 'node app.js'; do
+    got=$(jq -n --arg c "$cmd" '{tool_input:{command:$c}}' | bash "$hook" >/dev/null 2>&1; echo $?)
+    total=$((total + 1))
+    [ "$got" = 0 ] || { fails=$((fails + 1)); echo "FAIL $hook should allow: $cmd"; }
+  done
+done
+
 echo "== Codex patch payload =="
 for path in '.phase-evidence/x' '.phase-evidence./x' '.phase-evidence /x' '.claude/workflows/phase-gate.js'; do
   got=$(jq -n --arg c "*** Begin Patch
