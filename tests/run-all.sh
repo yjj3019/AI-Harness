@@ -66,7 +66,7 @@ phase agents-lint bash tests/agents-lint.sh
 phase package-lint node scripts/package-lint.js
 phase design-channel node scripts/design-channel-check.js code scripts
 phase eval-set node scripts/eval-set-check.js
-phase evidence-redact node scripts/evidence-redact.js docs/HANDOFF.md docs/HANDOFF-history-2026-11-20.md docs/compound-log.md docs/compound-log-active.md
+phase evidence-redact node scripts/evidence-redact.js docs/HANDOFF.md docs/HANDOFF-history-2026-11-20.md docs/compound-log.md docs/compound-log.archive.md docs/compound-log-active.md
 phase hooks bash tests/hooks.test.sh
 wait
 fails=0
