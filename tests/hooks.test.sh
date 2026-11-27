@@ -149,6 +149,17 @@ ta coding 0 Write file_path "docs/notes.md."
 ta coding 0 Write file_path "src/../src/app.js"
 ta verify 2 Bash command "cat [.]phase-evidence/x"
 ta verify 2 Bash command "node .claude/workflows/phase-g*.js record 1 verify"
+# The attestation signing key and its public counterpart (the public key is part of the gate's trust set).
+ta coding 2 Write file_path ".claude/attestation-public-key.pem"
+ta coding 2 Write file_path ".harness/attest-ed25519.pem"
+ta coding 2 Write file_path "/home/u/.harness/anything"
+ta coding 2 Bash command "echo x > .claude/attestation-public-key.pem"
+ta verify 2 Bash command "cat ~/.harness/attest-ed25519.pem"
+ta verify 2 PowerShell command 'Get-Content $HOME\.harness\attest-ed25519.pem'
+ta coding 2 Bash command "node .claude/workflows/phase-gate.js attest-keygen"
+ta "" 0 Write file_path ".claude/attestation-public-key.pem"
+ta coding 0 Bash command "cat docs/attestations/phase-evidence-baseline.json"
+ta coding 0 Write file_path "docs/attestations-notes.md"
 # Any 8.3 short-name component (leaf files and subdirectories too) may alias a protected path.
 for f in '.claude/WORKFL~1/test-summary.js' '.claude/SETTIN~1.JSO' '.claude/REQUIR~1.JSO' 'scripts/CONTEX~1.JS' \
          '.claude/WORKFL~1/PHASE-~1.JS' 'src/LONGNA~1.TXT'; do

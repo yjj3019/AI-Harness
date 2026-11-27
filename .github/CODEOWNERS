@@ -6,6 +6,7 @@
 /.claude/hooks/ @yjj3019
 /.claude/settings.json @yjj3019
 /.claude/required-test-command.json @yjj3019
+/.claude/attestation-public-key.pem @yjj3019
 /.codex/hooks/ @yjj3019
 /.codex/hooks.json @yjj3019
 /.codex/config.toml @yjj3019

@@ -2,6 +2,12 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — 서명된 attestation (미병합, 브랜치 `feat/signed-attestations-20261123`)
+
+- `phase-gate.js attest-keygen [<개인키 파일>]`(Ed25519 키 쌍 생성, 기존 키 덮어쓰기 거부, 공개 키는 `.claude/attestation-public-key.pem`), `attest <phase> --sign [<개인키>]`(캐노니컬 JSON 서명, 커밋될 공개 키로 즉시 검증), `verify-attestation ... --require-signature`(서명 없음·키 불일치·변조 모두 실행 전에 거부; 서명이 있으면 플래그 없이도 검증). CI replay는 `--require-signature`와 `ATTEST_KEY_BASE_SHA`(PR 기준 커밋)로 돌아 PR이 공개 키를 바꿔치기할 수 없다.
+- 훅: 공개 키 파일은 게이트 신뢰 집합, 개인 키 경로·이름(`.harness/`, `attest-ed25519`)은 서브에이전트가 쓰거나 언급할 수 없고, `Read(~/.harness/**)`는 settings에서 거부된다. CODEOWNERS에 공개 키 추가.
+- 한계: 서명은 누가 attest했는지만 증명한다. 개인 키가 있는 머신에서 유지자 권한으로 도는 프로세스는 서명할 수 있고, verify·review의 독립성은 여전히 증명되지 않는다.
+
 ## 작업 트리 — toolbroker 원장 보강·compound-log 정리 (미병합)
 
 - 2026-11-26 `toolbroker/broker.py`: 원장 대조(operation·payload 해시·nonce)를 상수 시간(`hmac.compare_digest`)으로 바꿨다. 운영자 전용 `reconcile()`(충돌 후 `IN_FLIGHT` 또는 `UNKNOWN` 요청을 공급자에서 확인한 결과로만 `COMPLETED` 확정, 재전송 없음)과 `purge_completed()`(7200초 이상 지난 `COMPLETED` 행만 삭제, `IN_FLIGHT`/`UNKNOWN`은 보존)를 추가했다. HTTP 서버로는 노출하지 않는다. `tests/toolbroker/test_broker.py`에 시험 4건(전체 31건)과 `toolbroker/README.md` 설명을 추가했다. 상태 값과 DB 스키마는 바꾸지 않았다.
