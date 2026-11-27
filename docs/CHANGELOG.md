@@ -2,6 +2,12 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — 라이선스 표기, 쓰지 않는 키 삭제, 문서만 바뀐 PR 정책 (브랜치 `chore/license-holder-remove-unused-key-20261128`)
+
+- LICENSE: 저작권자 표기를 소유자 결정에 따라 `유재`로 바꿨다(MIT 본문은 그대로).
+- 쓰지 않는 서명 키 삭제: 커밋된 공개 키 `.claude/attestation-public-key.pem`을 지웠다. 이 경로는 신뢰 집합(훅)과 CODEOWNERS에 그대로 남는다. 개인 키는 소유자의 PC에서 삭제한다. 서명을 다시 쓰려면 `attest-keygen`으로 새 키 쌍을 만들고 새 공개 키를 검토되는 PR로 도입한다(기준에 키가 없으므로 최초 도입으로 한 번 신뢰).
+- 문서만 바뀐 PR의 CI 범위(소유자 결정: 권장 범위 안에서): 증거 흐름을 완화하지 않는다. 트리 해시 범위(`TREE_EXCLUDE`)와 CI 필수 검사는 그대로이고, 문서 수정도 추적되는 파일이면 새 증거가 필요하다. 비용은 수정을 한 Phase로 모아 줄인다. 자세한 내용은 `docs/merge-policy.md`.
+
 ## 작업 트리 — 정리와 감사 흔적 (브랜치 `fix/cleanup-log-guard-toolbroker-20261127`)
 
 - toolbroker: `reconcile()`의 운영자 이름을 원장 `reconciled_by`(널 허용 열)에 저장하고, 이전 원장은 열 때 `ALTER TABLE ... ADD COLUMN`으로 제자리 이전한다(기존 행·CHECK·키 불변, 두 번 열어도 안전). `COMPLETED` 재생 응답에는 reconcile된 행에만 `reconciled_by`가 붙어 공급자 응답과 구분된다. 암묵적 열 순서에 기대던 `INSERT`는 열 이름을 명시하도록 바꿨다. 테스트 33건(신규 2건).
