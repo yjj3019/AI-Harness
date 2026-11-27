@@ -1,13 +1,18 @@
 {
   "schema": 1,
   "phase": "evidence-baseline",
-  "tree": "35156448df76864ff85173c90c616fc7b93e51c24e4241fb2088f2553940d9b6",
+  "tree": "ffafae14e3144a76ffa7fc7150f3ccb69d3984d6f67ac22fa780959e14fd4489",
   "argv": [
     "bash",
     "tests/run-all.sh"
   ],
   "require_test_summary": true,
   "require_read_proof": true,
-  "evidence_chain_sha256": "d7f5b8d7f8d87d10f77744b3dcb0cda1b6196f009b34f5ff4e5992e9949f774d",
-  "attested_at": "2026-11-26T05:00:07.240Z"
+  "evidence_chain_sha256": "114d981e2f623bbc0fbed6ac08675a46f1ecad436c4440a5c3c7423b6d167fce",
+  "attested_at": "2026-11-27T02:17:00.484Z",
+  "signature": {
+    "alg": "ed25519",
+    "key_id": "eab5d97576117f23fa9c9839b537ea661a25c4f6e3f007e653da0b1596857c0f",
+    "value": "QIx2iJAic18v6TqJtn7hXS1+BoQquL/+IxjLOWtJP2RklqsRDneovr4LqzFfzyVDv+PKTQLXbdmHNUUgvQbrAA=="
+  }
 }
