@@ -14,10 +14,13 @@ const REPO = path.resolve(__dirname, "..");
 const sha256 = (data) => crypto.createHash("sha256").update(data).digest("hex");
 
 // A throw-away repository with a complete, attested Phase 1. `pin` writes the committed command pin.
-function withAttestation({ pin = false, appMode = null }, fn) {
+function withAttestation({ pin = false, appMode = null, sign = false }, fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gate-hardening-"));
+  const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), "gate-hardening-key-"));
+  const keyPath = path.join(keyDir, "attest.pem");
   const env = { ...process.env, PHASE_GATE_ROOT: root };
   delete env.NODE_TEST_CONTEXT;
+  delete env.ATTEST_KEY_BASE_SHA; // a CI job exports it for the replay; fixtures must not see it
   const gate = (...args) => spawnSync(process.execPath, [GATE, ...args], { cwd: root, env, encoding: "utf8" });
   const git = (...args) => spawnSync("git", args, { cwd: root, encoding: "utf8" });
   const passes = (result) => assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -27,12 +30,15 @@ function withAttestation({ pin = false, appMode = null }, fn) {
     fs.writeFileSync(path.join(root, "docs/PHASES.md"), "### Phase 1: Hardening fixture\n");
     fs.writeFileSync(path.join(root, "app.js"), "module.exports = 1;\n");
     if (appMode !== null) fs.chmodSync(path.join(root, "app.js"), appMode);
-    fs.writeFileSync(path.join(root, "ok.test.js"), "const {test}=require('node:test');\ntest('passes',()=>{});\n");
+    // The replayed command must not inherit the CI job's ATTEST_KEY_BASE_SHA (the gate removes it after reading it).
+    fs.writeFileSync(path.join(root, "ok.test.js"), "const {test}=require('node:test');\nconst assert=require('node:assert/strict');\ntest('passes',()=>{ assert.equal(process.env.ATTEST_KEY_BASE_SHA, undefined); });\n");
     const argv = [process.execPath, "--test", "--test-reporter=tap", "ok.test.js"];
     if (pin) {
       fs.mkdirSync(path.join(root, ".claude"));
       fs.writeFileSync(path.join(root, ".claude/required-test-command.json"), JSON.stringify(argv));
     }
+    // The public key is a tracked file of the tree that gets attested, so it is created before the test step.
+    if (sign) passes(gate("attest-keygen", keyPath));
     passes(git("init", "-q"));
     passes(git("add", "-A"));
     const report = ".phase-evidence/report.md";
@@ -42,10 +48,11 @@ function withAttestation({ pin = false, appMode = null }, fn) {
     passes(gate("run", "1", "test", "--", ...argv));
     for (const step of ["verify", "review", "compound"]) passes(record(step));
     passes(gate("check", "1"));
-    passes(gate("attest", "1"));
-    fn({ root, gate, git, passes, record, report, argv });
+    passes(gate("attest", "1", ...(sign ? ["--sign", keyPath] : [])));
+    fn({ root, gate, git, passes, record, report, argv, keyPath });
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(keyDir, { recursive: true, force: true });
   }
 }
 const attFile = (root) => path.join(root, "docs/attestations/phase-1.json");
@@ -241,6 +248,7 @@ test("unlock removes a stale lock, and refuses a live owner, another host and a 
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gate-unlock-"));
   const env = { ...process.env, PHASE_GATE_ROOT: root };
   delete env.NODE_TEST_CONTEXT;
+  delete env.ATTEST_KEY_BASE_SHA; // a CI job exports it for the replay; fixtures must not see it
   const gate = (...args) => spawnSync(process.execPath, [GATE, ...args], { cwd: root, env, encoding: "utf8" });
   try {
     fs.mkdirSync(path.join(root, "docs"));
@@ -275,4 +283,146 @@ test("unlock removes a stale lock, and refuses a live owner, another host and a 
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+const pubFile = (root) => path.join(root, ".claude/attestation-public-key.pem");
+const emptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+
+test("attest-keygen writes a key pair, refuses to overwrite either key, and the key never lands in the repository", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "gate-keygen-"));
+  const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), "gate-keygen-key-"));
+  const env = { ...process.env, PHASE_GATE_ROOT: root };
+  delete env.NODE_TEST_CONTEXT;
+  delete env.ATTEST_KEY_BASE_SHA; // a CI job exports it for the replay; fixtures must not see it
+  const gate = (...args) => spawnSync(process.execPath, [GATE, ...args], { cwd: root, env, encoding: "utf8" });
+  try {
+    fs.mkdirSync(path.join(root, "docs"));
+    fs.writeFileSync(path.join(root, "docs/PHASES.md"), "### Phase 1: Keygen fixture\n");
+    const key = path.join(keyDir, "k.pem");
+    const made = gate("attest-keygen", key);
+    assert.equal(made.status, 0, made.stdout + made.stderr);
+    assert.match(made.stdout, /key_id [0-9a-f]{64}/);
+    assert.match(fs.readFileSync(key, "utf8"), /BEGIN PRIVATE KEY/);
+    assert.match(fs.readFileSync(pubFile(root), "utf8"), /BEGIN PUBLIC KEY/);
+    assert.ok(!fs.readFileSync(pubFile(root), "utf8").includes("PRIVATE"));
+    assert.equal(fs.existsSync(path.join(root, "k.pem")), false, "the private key is written where the caller said, not into the repo");
+    const again = gate("attest-keygen", path.join(keyDir, "other.pem"));
+    assert.equal(again.status, 2);
+    assert.match(again.stderr, /rotating the trusted key is a reviewed change/);
+    fs.rmSync(pubFile(root));
+    const overwrite = gate("attest-keygen", key);
+    assert.equal(overwrite.status, 2);
+    assert.match(overwrite.stderr, /refusing to overwrite a signing key/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(keyDir, { recursive: true, force: true });
+  }
+});
+
+test("a signed attestation verifies with --require-signature, and every kind of tampering is refused", () => {
+  withAttestation({ pin: true, sign: true }, ({ root, gate }) => {
+    const att = JSON.parse(fs.readFileSync(attFile(root), "utf8"));
+    assert.equal(att.signature.alg, "ed25519");
+    assert.match(att.signature.key_id, /^[0-9a-f]{64}$/);
+    const ok = gate("verify-attestation", "1", "--require-pinned-command", "--require-signature");
+    assert.equal(ok.status, 0, ok.stdout + ok.stderr);
+    const write = (mutate) => { const copy = structuredClone(att); mutate(copy); fs.writeFileSync(attFile(root), JSON.stringify(copy)); };
+    const refused = (pattern, extra = []) => {
+      const result = gate("verify-attestation", "1", "--require-signature", ...extra);
+      assert.equal(result.status, 2, result.stdout + result.stderr);
+      assert.match(result.stderr, pattern);
+    };
+    // Any change to a signed field fails at the signature, before anything is executed.
+    write((a) => { a.tree = "0".repeat(64); });
+    refused(/signature does not match/);
+    write((a) => { a.argv = [process.execPath, "-e", "0"]; });
+    refused(/signature does not match/);
+    write((a) => { a.evidence_chain_sha256 = "1".repeat(64); });
+    refused(/signature does not match/);
+    write((a) => { a.require_read_proof = true; });
+    refused(/signature does not match/);
+    // A missing or malformed signature, a different key id, a different algorithm.
+    write((a) => { delete a.signature; });
+    refused(/no valid signature object/);
+    write((a) => { a.signature.value = Buffer.from("not a signature").toString("base64"); });
+    refused(/signature does not match/);
+    write((a) => { a.signature.key_id = "2".repeat(64); });
+    refused(/different key than the trusted public key/);
+    write((a) => { a.signature.alg = "rsa"; });
+    refused(/no valid signature object/);
+    // Without the flag a present-but-wrong signature is still refused; an absent one is allowed (legacy).
+    write((a) => { a.tree = "0".repeat(64); });
+    const noFlag = gate("verify-attestation", "1");
+    assert.equal(noFlag.status, 2);
+    assert.match(noFlag.stderr, /signature does not match/);
+    write((a) => { delete a.signature; });
+    assert.equal(gate("verify-attestation", "1").status, 0, "an unsigned attestation still verifies without the flag");
+  });
+});
+
+test("an unsigned attestation fails --require-signature", () => {
+  withAttestation({ pin: true, sign: true }, ({ root, gate, keyPath }) => {
+    // Re-attest without --sign: the file has no signature although the key exists.
+    const unsigned = gate("attest", "1");
+    assert.equal(unsigned.status, 0, unsigned.stdout + unsigned.stderr);
+    assert.equal(JSON.parse(fs.readFileSync(attFile(root), "utf8")).signature, undefined);
+    const result = gate("verify-attestation", "1", "--require-signature");
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /no valid signature object/);
+    assert.ok(fs.existsSync(keyPath));
+  });
+});
+
+test("CI takes the public key from the base commit, so a change cannot swap the key it is verified against", () => {
+  withAttestation({ pin: true, sign: true }, ({ root, gate, git }) => {
+    const commit = git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-q", "-m", "base");
+    assert.equal(commit.status, 0, commit.stderr);
+    const base = git("rev-parse", "HEAD").stdout.trim();
+    const withBase = (sha, ...args) => {
+      const env = { ...process.env, PHASE_GATE_ROOT: root, ATTEST_KEY_BASE_SHA: sha };
+      delete env.NODE_TEST_CONTEXT;
+      return spawnSync(process.execPath, [GATE, "verify-attestation", "1", "--require-signature", ...args], { cwd: root, env, encoding: "utf8" });
+    };
+    // Swap the working-tree key for another one (what an attacker's change would do).
+    const originalKey = fs.readFileSync(pubFile(root));
+    const other = require("node:crypto").generateKeyPairSync("ed25519").publicKey.export({ type: "spki", format: "pem" });
+    fs.writeFileSync(pubFile(root), other);
+    const swapped = gate("verify-attestation", "1", "--require-signature");
+    assert.equal(swapped.status, 2);
+    assert.match(swapped.stderr, /different key than the trusted public key/, "without a base the working-tree key is trusted");
+    // The replayed test asserts that ATTEST_KEY_BASE_SHA is not in its environment, so a pass proves the gate strips it.
+    fs.writeFileSync(pubFile(root), originalKey);
+    const stripped = withBase(base);
+    assert.equal(stripped.status, 0, stripped.stdout + stripped.stderr);
+    fs.writeFileSync(pubFile(root), other);
+    const fromBase = withBase(base);
+    assert.equal(fromBase.status, 2);
+    assert.doesNotMatch(fromBase.stderr, /signature|trusted public key/, "with the base key the signature itself is fine");
+    assert.match(fromBase.stderr, /code changed after the attestation/, "it fails later, on the changed tree, not on the key");
+    // A base that has no key yet: the introduction case, trusted once with a warning.
+    fs.writeFileSync(pubFile(root), originalKey); // byte-for-byte, so the tree is the attested one again
+    // The empty tree object has to exist in the repository before a commit can point at it.
+    const tree = spawnSync("git", ["hash-object", "-t", "tree", "-w", "--stdin"], { cwd: root, encoding: "utf8", input: "" }).stdout.trim();
+    assert.equal(tree, emptyTree);
+    const emptyBase = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit-tree", tree, "-m", "empty"], { cwd: root, encoding: "utf8" }).stdout.trim();
+    assert.match(emptyBase, /^[0-9a-f]{40}$/);
+    const intro = withBase(emptyBase);
+    assert.equal(intro.status, 0, intro.stdout + intro.stderr);
+    assert.match(intro.stdout, /\[WARNING\] the base commit has no attestation public key/);
+    // A base whose key file exists but is empty is not the introduction case: it fails closed.
+    const emptyKeyBlob = spawnSync("git", ["hash-object", "-w", "--stdin"], { cwd: root, encoding: "utf8", input: "" }).stdout.trim();
+    const claudeTree = spawnSync("git", ["mktree"], { cwd: root, encoding: "utf8", input: "100644 blob " + emptyKeyBlob + "\tattestation-public-key.pem\n" }).stdout.trim();
+    const rootTree = spawnSync("git", ["mktree"], { cwd: root, encoding: "utf8", input: "040000 tree " + claudeTree + "\t.claude\n" }).stdout.trim();
+    const emptyKeyBase = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit-tree", rootTree, "-m", "empty key"], { cwd: root, encoding: "utf8" }).stdout.trim();
+    const emptyKey = withBase(emptyKeyBase);
+    assert.equal(emptyKey.status, 2, emptyKey.stdout + emptyKey.stderr);
+    assert.match(emptyKey.stderr, /public key file at the base commit is empty/);
+    // A base that cannot be read, and a malformed value, fail closed.
+    const missing = withBase("a".repeat(40));
+    assert.equal(missing.status, 2);
+    assert.match(missing.stderr, /not available/);
+    const malformed = withBase("main");
+    assert.equal(malformed.status, 2);
+    assert.match(malformed.stderr, /40-character commit id/);
+  });
 });

@@ -53,11 +53,18 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
+      # The attestation public key is read from the PR base commit, so a change cannot swap the key it is verified against.
+      - name: Fetch the base commit
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA"
       - name: Verify phase attestation
         env:
           PHASE_ID: ${{ matrix.phase }}
+          ATTEST_KEY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          node .claude/workflows/phase-gate.js verify-attestation "$PHASE_ID" --require-pinned-command
+          node .claude/workflows/phase-gate.js verify-attestation "$PHASE_ID" --require-pinned-command --require-signature
 
   attestation-summary:
     name: attestation summary
