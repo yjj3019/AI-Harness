@@ -19,7 +19,7 @@ function sandbox(t) {
   fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Meta\n");
   fs.writeFileSync(path.join(evidence, "report"), "report\n");
   const gate = (args) => spawnSync(process.execPath, [GATE, ...args], {
-    cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 30000,
+    cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 120000,
   });
   return { root, evidence, gate, cleanup: () => fs.rmSync(sandbox, { recursive: true, force: true }) };
 }

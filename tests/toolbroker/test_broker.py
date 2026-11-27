@@ -481,7 +481,8 @@ class BrokerTests(unittest.TestCase):
         """Insert a ledger row as a crash after the intent commit would leave it."""
         payload = {"value": "x"}
         with contextlib.closing(sqlite3.connect(b.database, isolation_level=None)) as db:
-            db.execute("INSERT INTO requests VALUES (?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO requests (request_id,operation,payload_hash,nonce,state,result_json,created_at) "
+                       "VALUES (?,?,?,?,?,?,?)",
                        (rid, "fixture.http.post", digest("fixture.http.post", rid, payload),
                         "nonce_" + rid, state, None,
                         int(time.time()) if created is None else created))
@@ -515,6 +516,57 @@ class BrokerTests(unittest.TestCase):
             with self.subTest(rid=rid, code=code), self.assertRaises(BrokerError) as error:
                 b.reconcile(rid, result, operator=operator)
             self.assertEqual(error.exception.code, code)
+
+    def test_reconcile_records_the_operator_and_marks_the_replay(self):
+        b = self.broker(["fixture.http.post", "fixture.db.increment"], url="http://127.0.0.1:9/write")
+        payload = self.strand(b, "IN_FLIGHT")
+        done = b.reconcile("request_0001", {"ok": True}, operator="  ops-1  ")
+        self.assertEqual(done["reconciled_by"], "ops-1")
+        with contextlib.closing(sqlite3.connect(b.database, isolation_level=None)) as db:
+            stored = db.execute("SELECT reconciled_by FROM requests WHERE request_id='request_0001'").fetchone()
+        self.assertEqual(stored, ("ops-1",))
+        with patch.object(b, "_send_http") as send:
+            again = self.send(b, op="fixture.http.post", payload=payload)
+            send.assert_not_called()
+        self.assertEqual(again["reconciled_by"], "ops-1")
+        # An ordinary completion carries no operator marker.
+        self.send(b, op="fixture.db.increment", rid="request_0003")
+        plain = self.send(b, op="fixture.db.increment", rid="request_0003")
+        self.assertTrue(plain["replay"])
+        self.assertNotIn("reconciled_by", plain)
+
+    def test_a_ledger_created_before_the_operator_column_is_migrated_in_place(self):
+        old_schema = """
+          CREATE TABLE requests (
+            request_id TEXT PRIMARY KEY,
+            operation TEXT NOT NULL,
+            payload_hash TEXT NOT NULL,
+            nonce TEXT NOT NULL UNIQUE,
+            state TEXT NOT NULL CHECK(state IN ('IN_FLIGHT','UNKNOWN','COMPLETED')),
+            result_json TEXT,
+            created_at INTEGER NOT NULL
+          );
+          CREATE TABLE counters (resource TEXT PRIMARY KEY, value INTEGER NOT NULL);
+        """
+        payload = {"value": "x"}
+        with contextlib.closing(sqlite3.connect(self.db, isolation_level=None)) as db:
+            db.executescript(old_schema)
+            db.execute("INSERT INTO requests VALUES (?,?,?,?,?,?,?)",
+                       ("request_0001", "fixture.http.post", digest("fixture.http.post", "request_0001", payload),
+                        "nonce_request_0001", "COMPLETED", json.dumps({"ok": True}), int(time.time())))
+        for _ in range(2):  # opening twice must be idempotent
+            b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+            with contextlib.closing(sqlite3.connect(b.database, isolation_level=None)) as db:
+                columns = [row[1] for row in db.execute("PRAGMA table_info(requests)")]
+            self.assertEqual(columns.count("reconciled_by"), 1)
+        with patch.object(b, "_send_http") as send:
+            again = self.send(b, op="fixture.http.post", payload=payload)
+            send.assert_not_called()
+        self.assertTrue(again["replay"])
+        self.assertEqual(again["result"], {"ok": True})
+        self.assertNotIn("reconciled_by", again)
+        self.strand(b, "IN_FLIGHT", rid="request_0002")
+        self.assertEqual(b.reconcile("request_0002", {"ok": 2}, operator="ops")["state"], "COMPLETED")
 
     def test_purge_removes_only_old_completed_rows(self):
         b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
