@@ -62,4 +62,4 @@ attestation 서명(2026-11-23 이후): `attest --sign`은 attestation 내용(트
 
 ## 문서만 바뀐 PR (2026-11-28 소유자 결정)
 
-문서만 고치는 PR도 같은 증거 흐름을 따릅니다. 트리 해시에서 제외되는 파일(`TREE_EXCLUDE`: `.phase-evidence/`, `.claude/.verification/`, `docs/compound-log.md`, `docs/HANDOFF.md`, `docs/attestations/`, `dashboard/status.json`)만 바꾸는 PR은 새 테스트가 필요 없지만, 그 밖의 추적 파일(다른 `docs/*`, LICENSE 포함)을 바꾸면 트리가 달라져 새 증거(테스트 재실행)가 필요합니다. 제외 범위를 넓히거나 문서 PR만 CI 검사를 줄이는 완화는 하지 않습니다(필수 검사 12개는 모든 PR에 그대로 적용). 비용은 문서 수정을 모아 한 번의 Phase로 처리해 줄입니다.
+문서만 고치는 PR도 같은 증거 흐름을 따릅니다. 트리 해시에서 제외되는 파일(`TREE_EXCLUDE`: `.phase-evidence/`, `.claude/.verification/`, `docs/compound-log.md`, `docs/HANDOFF.md`, `docs/attestations/`, `dashboard/status.json`)만 바꾸는 PR은 새 테스트가 필요 없지만, 그 밖의 추적 파일(다른 `docs/*`, LICENSE 포함)을 바꾸면 트리가 달라져 새 증거(테스트 재실행)가 필요합니다. 제외 범위를 넓히거나 문서 PR만 CI 검사를 줄이는 완화는 하지 않습니다(필수 검사 10개(서버 ruleset)는 모든 PR에 그대로 적용). 비용은 문서 수정을 모아 한 번의 Phase로 처리해 줄입니다.
