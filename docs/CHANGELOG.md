@@ -2,6 +2,13 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — 정리와 감사 흔적 (브랜치 `fix/cleanup-log-guard-toolbroker-20261127`)
+
+- toolbroker: `reconcile()`의 운영자 이름을 원장 `reconciled_by`(널 허용 열)에 저장하고, 이전 원장은 열 때 `ALTER TABLE ... ADD COLUMN`으로 제자리 이전한다(기존 행·CHECK·키 불변, 두 번 열어도 안전). `COMPLETED` 재생 응답에는 reconcile된 행에만 `reconciled_by`가 붙어 공급자 응답과 구분된다. 암묵적 열 순서에 기대던 `INSERT`는 열 이름을 명시하도록 바꿨다. 테스트 33건(신규 2건).
+- 훅: 서명 키 가드 패턴을 `attest[-_]?key` 전체에서 `attest[-_]keygen`, `attest[-_]?key[-_]?file`, `attest[-_]?key.pem`(과 기존 `.harness/`, `attest-ed25519`)으로 좁혔다. 문서 이름(`attest-key-rotation-notes.md` 등)은 더 이상 막지 않는다. 개인 키를 임의 이름으로 두면 어차피 어휘 검사로는 막을 수 없다는 한계는 그대로다.
+- 복합 로그: 가장 오래된 항목 8건을 `docs/compound-log.archive.md`로 그대로 옮겨 `## Entries`를 26건으로 줄였고(한도 30), 색인 안내문을 갱신했다.
+- 기록: 첫 서명 키 도입(PR #75) 때 이전 개인 키를 이 PC에서 찾을 수 없어 공개 키를 도입 전에 교체했다(key_id `eab5d975...857c0f`). 서명은 2026-11-27부터 선택이다(PR #78); 쓰지 않는 개인 키가 이 PC에 남아 있다.
+
 ## 작업 트리 — attestation 서명을 선택으로 (브랜치 `chore/optional-attestation-signature-20261127`)
 
 - 소유자 결정(2026-11-27): 저장소를 혼자 쓰고 키를 두 PC에 두기 어려워 CI replay가 `--require-signature`를 더는 요구하지 않는다. 서명 코드(`attest --sign`, `attest-keygen`, 서명 검증)와 공개 키는 그대로이며, 서명이 있으면 여전히 검증한다. 서명이 없으면 "키 소유자가 attest했다"는 보증은 성립하지 않는다(테스트 재실행과 트리 비교는 그대로). 다시 요구하려면 `ci.yml`의 replay 명령에 `--require-signature`를 추가한다.

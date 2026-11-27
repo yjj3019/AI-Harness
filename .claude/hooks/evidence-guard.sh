@@ -69,7 +69,7 @@ strip_win32_tails() {
 # check by long name cannot see them, so a subagent may not write through any "~N" component.
 re_short_names='(^|/)[^/]*~[0-9]'
 # The attestation signing key: a subagent may neither write nor name it (reading it is signing).
-re_signing_key='(^|/)\.harness(/|$)|attest-ed25519|attest[-_]?key'
+re_signing_key='(^|/)\.harness(/|$)|attest-ed25519|attest[-_]keygen|attest[-_]?key[-_]?file|attest[-_]?key\.pem'
 
 # Any component that starts with ".phase-" is treated as the evidence directory: this also covers
 # trailing Win32 dots/spaces and NTFS stream suffixes (".phase-evidence." ".phase-evidence :$DATA").

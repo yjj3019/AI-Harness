@@ -157,6 +157,12 @@ ta coding 2 Bash command "echo x > .claude/attestation-public-key.pem"
 ta verify 2 Bash command "cat ~/.harness/attest-ed25519.pem"
 ta verify 2 PowerShell command 'Get-Content $HOME\.harness\attest-ed25519.pem'
 ta coding 2 Bash command "node .claude/workflows/phase-gate.js attest-keygen"
+ta coding 2 Write file_path "keys/attest_key.pem"
+ta coding 2 Bash command "node .claude/workflows/phase-gate.js attest_keygen"
+ta coding 2 Bash command "node .claude/workflows/phase-gate.js attest evidence-baseline --sign attest-keyfile"
+# Names that only resemble the key are ordinary files (the pattern is narrow on purpose).
+ta coding 0 Write file_path "docs/attest-key-rotation-notes.md"
+ta coding 0 Bash command "cat docs/attestkey-glossary.md"
 ta "" 0 Write file_path ".claude/attestation-public-key.pem"
 ta coding 0 Bash command "cat docs/attestations/phase-evidence-baseline.json"
 ta coding 0 Write file_path "docs/attestations-notes.md"
