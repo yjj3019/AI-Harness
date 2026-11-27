@@ -2,6 +2,10 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — attestation 서명을 선택으로 (브랜치 `chore/optional-attestation-signature-20261127`)
+
+- 소유자 결정(2026-11-27): 저장소를 혼자 쓰고 키를 두 PC에 두기 어려워 CI replay가 `--require-signature`를 더는 요구하지 않는다. 서명 코드(`attest --sign`, `attest-keygen`, 서명 검증)와 공개 키는 그대로이며, 서명이 있으면 여전히 검증한다. 서명이 없으면 "키 소유자가 attest했다"는 보증은 성립하지 않는다(테스트 재실행과 트리 비교는 그대로). 다시 요구하려면 `ci.yml`의 replay 명령에 `--require-signature`를 추가한다.
+
 ## 작업 트리 — 서명된 attestation (미병합, 브랜치 `feat/signed-attestations-20261123`)
 
 - `phase-gate.js attest-keygen [<개인키 파일>]`(Ed25519 키 쌍 생성, 기존 키 덮어쓰기 거부, 공개 키는 `.claude/attestation-public-key.pem`), `attest <phase> --sign [<개인키>]`(캐노니컬 JSON 서명, 커밋될 공개 키로 즉시 검증), `verify-attestation ... --require-signature`(서명 없음·키 불일치·변조 모두 실행 전에 거부; 서명이 있으면 플래그 없이도 검증). CI replay는 `--require-signature`와 `ATTEST_KEY_BASE_SHA`(PR 기준 커밋)로 돌아 PR이 공개 키를 바꿔치기할 수 없다.
