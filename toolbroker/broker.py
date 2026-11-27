@@ -117,12 +117,21 @@ class Broker:
                 nonce TEXT NOT NULL UNIQUE,
                 state TEXT NOT NULL CHECK(state IN ('IN_FLIGHT','UNKNOWN','COMPLETED')),
                 result_json TEXT,
-                created_at INTEGER NOT NULL
+                created_at INTEGER NOT NULL,
+                reconciled_by TEXT
               );
               CREATE TABLE IF NOT EXISTS counters (
                 resource TEXT PRIMARY KEY, value INTEGER NOT NULL
               );
             """)
+            # A ledger created before reconcile() recorded its operator lacks the column: add it in place.
+            # The column is nullable, existing rows are untouched and no CHECK or key changes.
+            if "reconciled_by" not in {row[1] for row in db.execute("PRAGMA table_info(requests)")}:
+                try:
+                    db.execute("ALTER TABLE requests ADD COLUMN reconciled_by TEXT")
+                except sqlite3.OperationalError as error:
+                    if "duplicate column" not in str(error):  # another process added it first
+                        raise
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -185,10 +194,10 @@ class Broker:
             try:
                 db.execute("BEGIN IMMEDIATE")
                 row = db.execute(
-                    "SELECT operation,payload_hash,nonce,state,result_json "
+                    "SELECT operation,payload_hash,nonce,state,result_json,reconciled_by "
                     "FROM requests WHERE request_id=?", (request_id,)).fetchone()
                 if row:
-                    old_op, old_hash, old_nonce, state, result = row
+                    old_op, old_hash, old_nonce, state, result, reconciled_by = row
                     # Constant-time comparison: hashes and nonces are approval material.
                     same = (hmac.compare_digest(old_op.encode(), operation.encode())
                             & hmac.compare_digest(old_hash.encode(), payload_hash.encode())
@@ -197,12 +206,16 @@ class Broker:
                         raise BrokerError(409, "REQUEST_ID_CONFLICT")
                     if state == "COMPLETED":
                         db.execute("COMMIT")
-                        return {"state": "COMPLETED", "replay": True,
-                                "result": json.loads(result)}
+                        replayed = {"state": "COMPLETED", "replay": True,
+                                    "result": json.loads(result)}
+                        if reconciled_by is not None:  # an operator-supplied result, not a provider reply
+                            replayed["reconciled_by"] = reconciled_by
+                        return replayed
                     raise BrokerError(409, "OUTCOME_UNKNOWN_RECONCILE" if state == "UNKNOWN"
                                       else "REQUEST_IN_FLIGHT")
                 try:
-                    db.execute("INSERT INTO requests VALUES (?,?,?,?,?,?,?)",
+                    db.execute("INSERT INTO requests (request_id,operation,payload_hash,nonce,state,result_json,created_at) "
+                               "VALUES (?,?,?,?,?,?,?)",
                                (request_id, operation, payload_hash, nonce,
                                 "IN_FLIGHT", None, now))
                 except sqlite3.IntegrityError:
@@ -329,12 +342,12 @@ class Broker:
             raise BrokerError(400, "INVALID_RESULT")
         with self._connect() as db:
             cursor = db.execute(
-                "UPDATE requests SET state='COMPLETED',result_json=? "
+                "UPDATE requests SET state='COMPLETED',result_json=?,reconciled_by=? "
                 "WHERE request_id=? AND state IN ('IN_FLIGHT','UNKNOWN')",
-                (result_json, request_id))
+                (result_json, operator.strip(), request_id))
             if cursor.rowcount != 1:
                 raise BrokerError(409, "NOTHING_TO_RECONCILE")
-        return {"state": "COMPLETED", "replay": False, "result": result, "reconciled_by": operator}
+        return {"state": "COMPLETED", "replay": False, "result": result, "reconciled_by": operator.strip()}
 
     def purge_completed(self, older_than_seconds: int, *, now: int | None = None) -> int:
         """Delete COMPLETED rows older than the cutoff and return how many were removed.
