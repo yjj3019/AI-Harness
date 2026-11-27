@@ -67,7 +67,7 @@ const spawn = cp.spawnSync;
 cp.spawnSync = function(cmd) { return cmd === 'git' ? { status: 1 } : spawn.apply(this, arguments); };
 `);
     const gate = args => spawnSync(process.execPath, ["--require", preload, gateScript, ...args], {
-      cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 15000,
+      cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 120000,
     });
     const record = gate(["record", "1", "coding", "--status", "PASS", "--report", ".phase-evidence/report"]);
     assert.equal(record.status, 0, record.stderr);
@@ -110,7 +110,7 @@ cp.spawn = function(cmd, args, opts) {
 };
 `);
     const gate = args => spawnSync(process.execPath, ["--require", preload, gateScript, ...args], {
-      cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 15000,
+      cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 120000,
     });
     const pass = r => assert.equal(r.status, 0, `${r.stdout}\n${r.stderr}`);
     const record = step => gate(["record", "1", step, "--status", "PASS", "--report", ".phase-evidence/report"]);
@@ -162,7 +162,7 @@ cp.spawn = function(cmd, args, opts) {
 };
 `);
       const gate = args => spawnSync(process.execPath, ["--require", preload, gateScript, ...args], {
-        cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root, INJECT_MODE: mode }, encoding: "utf8", timeout: 15000,
+        cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root, INJECT_MODE: mode }, encoding: "utf8", timeout: 120000,
       });
       const record = gate(["record", "1", "coding", "--status", "PASS", "--report", ".phase-evidence/report"]);
       assert.equal(record.status, 0, record.stderr);

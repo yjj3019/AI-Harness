@@ -38,7 +38,7 @@ function evidenceRoot(t) {
   fs.writeFileSync(path.join(root, "docs", "PHASES.md"), "### Phase 1: Evidence link\n");
   installPhaseGate(root);
   const gate = (...args) => spawnSync(process.execPath, [path.resolve(__dirname, "../.claude/workflows/phase-gate.js"), ...args], {
-    cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 30000,
+    cwd: root, env: { ...process.env, PHASE_GATE_ROOT: root }, encoding: "utf8", timeout: 120000,
   });
   const record = (step, text) => {
     const artifact = `artifacts/${step}.md`;

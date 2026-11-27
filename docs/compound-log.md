@@ -4,55 +4,6 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 
 ## Entries
 
-### [2026-11-02] Multi-agent planning - Keep coordination separate from evidence
-
-- **Issue/Risk**: A Team completion, a conflict-free label check, or an inventory presence check can be mistaken for verified safe execution.
-- **Root Cause**: Advisory declarations and task state were confused with host enforcement, effect reconciliation, and independent Phase evidence.
-- **Resolution/Pattern**: Keep labels and Team scopes advisory, offer a no-replay inventory preflight explicitly marked unverified, and separately check the pinned test command and read-tracker availability. Reject sparse programmatic arrays that bypass element validation. Review actual permissions and independently verify results before recording a Phase.
-
-### [2026-11-02] Benchmark comparisons - Count matched declarations, not claimed gains
-
-- **Issue/Risk**: Aggregate pass rates, repeated selection on a holdout, missing context or an all-fail tie can be mistaken for an independently established improvement.
-- **Root Cause**: Pair membership, context, incompleteness and the separation between selection and final assessment were not made explicit.
-- **Resolution/Pattern**: Report all four paired verdict cells plus unknown and NA counts; keep incompatible or missing declared context inconclusive, reject missing planned results, and preserve original attempts. Snapshot programmatic inputs before validation and classification. Matching labels and these arithmetic counts remain unverified claims, not a sandbox, proof of preregistration, independent evaluation or authorization to promote.
-
-### [2026-11-08] Session handoff - A clean tree is not a synced tree
-
-- **Issue/Risk**: An earlier session-state read reported `git rev-list --left-right --count origin/main...HEAD` as `0 0` and the working tree clean, which was taken to mean local and remote matched. Both were true of a stale local ref: `origin/main` had not been fetched, and four commits (PR #34, #35 and their fixes) existed only on the remote.
-- **Root Cause**: Local cleanliness and local comparison against a cached remote ref were treated as evidence of synchronization. `git status` and a remote-count read do not fetch.
-- **Resolution/Pattern**: Run `git fetch` before any ahead/behind or branch-divergence claim, and quote the fetched commit IDs on both sides. Report CI/remote state as `[unverified]` until a fetch or API read succeeds. A clean worktree only means no uncommitted local changes.
-
-### [2026-11-08] Documentation edits - Verify the anchor text before replacing
-
-- **Issue/Risk**: Two edits to `docs/HANDOFF.md` and `docs/PHASES.md` were applied at a wrong location because the search text in the tool call did not match the file exactly; the first edit silently rewrote a sentence with different content, and the second inserted a section at a fabricated marker.
-- **Root Cause**: The replacement anchor was reconstructed rather than copied from a fresh read, and the edit result was not diffed against the file before continuing.
-- **Resolution/Pattern**: Copy anchors verbatim from a `Read` in the same turn, diff immediately after every documentation edit (`git diff -- <file>`), and revert with `git checkout -- <file>` rather than layering a second edit over a bad one. Prefer a failure-visible replacement (assert the marker exists) for multi-line insertions.
-
-### [2026-11-08] Test invocation - A directory argument is not a suite
-
-- **Issue/Risk**: `node --test tests/toolbroker/` failed with `MODULE_NOT_FOUND`, which read as a red test suite rather than an invocation error.
-- **Root Cause**: `run-all.sh` expands `tests/*.test.js` to files and never passes a directory; the direct invocation copied the directory form.
-- **Resolution/Pattern**: Run the same command shape the entry point uses (`node --test tests/*.test.js`). Read the failure text before attributing it to the code under test; an invocation error and a test failure are both `exit != 0` but need different responses.
-
-### [2026-11-08] Codex port - A renamed hook is not a ported hook
-
-- **Issue/Risk**: `.codex/` (commit `18bf75f`) copies the `.claude` hooks verbatim except for the error-message prefix, and the commit states both harnesses "share the same guardrails" with "guardrail semantics unchanged". Codex does not use Claude's tool names: edits arrive as `tool_name: "apply_patch"` and there is no `Read` tool at all. `evidence-guard.sh` matches only `Write|Edit|MultiEdit|NotebookEdit`, and `read-tracker.sh` exits unless `tool_name == "Read"`. So the evidence guard never fires for a Codex edit, and the read tracker never records a evidence read, which permanently refuses verify PASS.
-- **Root Cause**: The port was validated by diffing the two script copies against each other (they differ by one string), which proves byte-fidelity but not host behavior. No probe exercised the scripts with the *target host's* documented hook payload.
-- **Resolution/Pattern**: A cross-host port needs a payload probe per host, not a source diff. Feed each hook the documented input shape of the host it will run under (`apply_patch` for Codex) and assert the deny path still returns 2. A script that is identical on both sides of a port is evidence of copy fidelity only.
-- **Open defects (unfixed as of 2026-11-08)**: `apply_patch` bypasses `evidence-guard` (exit 0 where `Write` exits 2); `read-tracker` cannot fire under Codex; `.codex/agents/test.toml:13` points at a nonexistent `.Codex/workflows/phase-gate.js`; all five agent TOMLs carry literal `\r` escapes inside `developer_instructions`; `tests/` has zero `.codex` references.
-
-### [2026-11-08] Guardrail parsing - A dead branch hid a Windows deletion bypass
-
-- **Issue/Risk**: `block-destructive.sh` allows `rm -rf C:\Users` and `rm -rf C:\*` (exit 0) while blocking the forward-slash form `rm -rf C:/Users` (exit 2). `Remove-Item -Recurse -Force` and `cmd /c del /s /q` are not covered at all. Found independently by an external reviewer and reproduced here.
-- **Root Cause**: In the word-splitting loop the unquoted-backslash handler (`escaped=1; continue`) consumes `\` before the drive-path rewrite can see it, so the `"$char" == '\' && "$word" =~ ^[A-Za-z]:` branch is unreachable dead code. The lexer also only inspects a command whose first word is `rm` or `chmod`, so native Windows deletion verbs are never in scope. The same defect exists unchanged in `.claude/hooks/block-destructive.sh`; the port reproduced it faithfully rather than introducing it.
-- **Resolution/Pattern**: Reachability of a guard branch must be tested, not read: assert that the intended input shape actually hits the branch (here, that `C:\Users` is denied). A guardrail copied between hosts inherits every gap, so a faithful port is not a fixed port. Do not describe a lexical guard as shared protection without a deny-path probe per platform.
-
-### [2026-11-11] 외부 조사 반영 - README 실측 후 패턴만 반영
-
-- **Issue/Risk**: 외부 생성 스킬 후보 조회(추천도라는 주관 평가가 포함됨)를 '사실'로 받고 도입 범위를 정하면 출처 검증 규율과 충돌하고, 문체 개선이 증거 검증·게이트 승인처럼 오독될 수 있다.
-- **Root Cause**: 후보 요약표에 주관(추천도)과 사실(기능·라이선스)이 섞여 있고, '탐지 회피'로 취급하면 evidence-first 규율과 용도가 합쳐질 수 있다.
-- **Resolution/Pattern**: 후보마다 GitHub raw README를 직접 취득해 사실(기능·라이선스·명시 한계)만 채택하고 주관은 의견으로 표기, 탐지 회피·저자 판정 목적 금지를 선언하며, third-party 실행 없이 패턴만 반영 기록으로 남긴다. README 실측은 자료 실측이며 실행 테스트·보안 감사·무결점이 아니다.
-
 ### [2026-11-11] 외부 소스 도입 - 라이선스 안전 규율
 
 - **Issue/Risk**: 외부 소스가 라이선스 미표기·불명확·바이러스성(예: canvas-design 프론트매터 `license: Complete terms in LICENSE.txt`처럼 라이선스 파일을 판독하기 전에는 판정 불가)일 때 원문을 복사하면 배포·라이선스 충돌이 발생할 수 있다.
@@ -210,6 +161,12 @@ This file maintains a history of bugs, operational mistakes, and effective solut
 - **Issue/Risk**: (1) The owner made the attestation signature optional in CI after the signing key proved unusable. (2) After that change the verifier found two policy sentences that still required signatures; fixing them changed the tree and voided the test evidence, forcing a full rerun. (3) A host file-encryption agent re-encrypted tracked Office/PDF files during the long test, and the gate recorded FAIL ("code changed during test"). (4) Reports offered statuses other than PASS or FAIL. (5) The log Entries section exceeds the 30-entry limit.
 - **Root Cause**: (1) The key-based control was added without asking how many machines and maintainers exist: with a single maintainer the private key cannot live on two machines, and a second key would not match the committed public key, because base-commit trust allows only one introduction. (2) The old requirement was not searched for across all documents when the control was removed; contradictory policy text is a defect. (3) The host agent rewrites files outside the harness's control; the gate correctly refused a changed tree. (4) The gate accepts only PASS or FAIL as record statuses. (5) Cleanup cannot happen inside a Phase because the archive and index are tree-bound.
 - **Resolution/Pattern**: (1) Ask about the deployment shape (machines, maintainers) before adding a key-based control, and make the decision with the owner. (2) When removing or relaxing a control, grep every document, script and test for the old requirement before the test step, and diff the wording. (3) Restore the affected files from the index, check their headers, and rerun; the gate refusing was correct and its evidence must not be forced. (4) Record only PASS or FAIL. (5) Open: archive the oldest entries to `docs/compound-log.archive.md` and regenerate the index in the next change, outside a Phase.
+
+### [2026-11-28] Phase evidence-baseline runs 16-18 - Test fixtures, duplicated guards, evidence cost
+
+- **Issue/Risk**: (1) Full-suite test run failed twice on fixture subprocesses with fixed 30s/15s timeouts on a slow machine under a ~45 minute load. (2) A reviewer found the narrowed signing-key regex was applied only to the Claude hook, not the Codex hook. (3) Each edit to a bound file after the test voided the evidence and forced a ~45 minute rerun. (4) A moved-archive entry set could not be checked for byte-identity against main by the read-only verifier and reviewer.
+- **Root Cause**: (1) Fixed timeouts tuned for a fast machine, not for load. (2) A guard exists in two host copies and no test or drift check covers the Codex key regex (open NIT: hooks.test.sh and the drift check skip it). (3) Review fixes were applied piecemeal after the test. (4) No documented byte-identity diff step for archive moves.
+- **Resolution/Pattern**: (1) The same failure repeating twice is the stop signal: find the root cause instead of a third retry; raise fixture timeouts to 120000 ms with assertions unchanged so a real hang still fails. (2) When a guard has two host copies, change both and add a test or drift check for the shared regex; close the open NIT. (3) Batch all review-requested fixes into a single edit before the final test run. (4) Diff a moved archive entry set against main for byte-identity (orchestrator, with write/git access) before attesting.
 
 ## Template for New Entries
 
