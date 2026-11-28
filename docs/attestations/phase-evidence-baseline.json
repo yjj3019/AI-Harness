@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "phase": "evidence-baseline",
-  "tree": "4bb1a9f2197f00ae9f758fc67773bd28839a7a364175b6fe3268d97f5e3d2bc2",
+  "tree": "96676ba7e109ad96a2105d4e0f8fec9794a8f645df2f0d44c95656153c0aa5a4",
   "argv": [
     "bash",
     "tests/run-all.sh"
   ],
   "require_test_summary": true,
   "require_read_proof": true,
-  "evidence_chain_sha256": "27927269224506973be0d9a4bbbf8c2b320477d0698c31082eda7492159a6820",
-  "attested_at": "2026-11-27T17:54:24.247Z"
+  "evidence_chain_sha256": "79bdb8793baf8a8e0b0d4140b6ec4286ad273613039ab0e1d39f640a251d3197",
+  "attested_at": "2026-11-28T00:48:29.030Z"
 }
