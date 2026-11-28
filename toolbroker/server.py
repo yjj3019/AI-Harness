@@ -165,8 +165,8 @@ class Handler(BaseHTTPRequestHandler):
         expected = os.environ.get("TOOLBROKER_TOKEN", "")
         got = self.headers.get("X-Toolbroker-Token", "")
         # Constant-time comparison on bytes: the token is a credential, and a header may hold non-ASCII text.
-        if not expected or not hmac.compare_digest(got.encode("utf-8", "surrogateescape"),
-                                                   expected.encode("utf-8", "surrogateescape")):
+        if not expected or not hmac.compare_digest(got.encode("utf-8", "replace"),
+                                                   expected.encode("utf-8", "surrogatepass")):
             self.drain_body()
             self.respond(401, {"error": "UNAUTHORIZED"})
             return

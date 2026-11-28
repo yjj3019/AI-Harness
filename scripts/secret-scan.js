@@ -95,6 +95,9 @@ function readText(file) {
       got += n;
     }
     const data = buf.subarray(0, got);
+    // UTF-16 with a byte-order mark (the default of some shells' redirection) is text, although it holds NUL bytes.
+    if (got >= 2 && data[0] === 0xff && data[1] === 0xfe) return data.subarray(2).toString("utf16le");
+    if (got >= 2 && data[0] === 0xfe && data[1] === 0xff) return Buffer.from(data.subarray(2, 2 + ((got - 2) & ~1))).swap16().toString("utf16le");
     return data.subarray(0, SNIFF_BYTES).includes(0) ? null : data.toString("utf8");
   } finally { fs.closeSync(fd); }
 }
@@ -102,32 +105,40 @@ function readText(file) {
 function scan(root) {
   const findings = [], errors = [];
   const everyFile = [];
+  const terms = loadLocalTerms(root);
+  // The name printed for a path. When the path itself holds a local term, every line about it (a finding of any
+  // kind, or a read error) prints the directory only, so the term never reaches the output through the path.
+  const shown = (rel) => {
+    const posix = (rel || ".").split(path.sep).join("/");
+    const lower = posix.toLowerCase();
+    if (!terms.some(({ term }) => lower.includes(term))) return rel || ".";
+    const dir = path.posix.dirname(posix);
+    return `${terms.some(({ term }) => dir.toLowerCase().includes(term)) ? "." : dir}/<name withheld>`;
+  };
   function walk(dir) {
     let names;
     try { names = fs.readdirSync(dir); }
-    catch (error) { errors.push(`${path.relative(root, dir) || "."}: cannot list path (${error.code || error.message})`); return; }
+    catch (error) { errors.push(`${shown(path.relative(root, dir))}: cannot list path (${error.code || error.message})`); return; }
     for (const name of names) {
       const p = path.join(dir, name);
       // SKIP holds names and repo-relative paths (docs/attestations); a bare name never matched a nested path.
       if (SKIP.has(name) || SKIP.has(path.relative(root, p).split(path.sep).join("/"))) continue;
       let st;
       try { st = fs.lstatSync(p); }
-      catch (error) { errors.push(`${path.relative(root, p)}: cannot inspect path (${error.code || error.message})`); continue; }
+      catch (error) { errors.push(`${shown(path.relative(root, p))}: cannot inspect path (${error.code || error.message})`); continue; }
       if (st.isSymbolicLink()) continue; // never follow links: a link to an ancestor would recurse without bound
       if (st.isDirectory()) walk(p);
       else if (st.isFile()) everyFile.push(p);
     }
   }
   walk(root);
-  const terms = loadLocalTerms(root);
   for (const file of everyFile) {
-    const rel = path.relative(root, file);
-    const relPosix = rel.split(path.sep).join("/");
+    const relPosix = path.relative(root, file).split(path.sep).join("/");
+    const rel = shown(path.relative(root, file));
     try { if (hasDrmHeader(file)) findings.push({ file: rel, why: "DRM-encrypted file (must not be committed)" }); }
     catch (error) { errors.push(`${rel}: cannot read file header (${error.code || error.message})`); continue; }
     for (const { term, line } of terms) {
-      // The path itself holds the term, so only its directory is printed.
-      if (relPosix.toLowerCase().includes(term)) findings.push({ file: `${path.dirname(relPosix).toLowerCase().includes(term) ? "." : path.dirname(relPosix)}/<name withheld>`, why: `local sensitive term #${line} in a path` });
+      if (relPosix.toLowerCase().includes(term)) findings.push({ file: rel, why: `local sensitive term #${line} in a path` });
     }
     if (relPosix === "scripts/secret-scan.js") continue;
     let text;

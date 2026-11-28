@@ -20,7 +20,7 @@ const PATTERNS = require("./secret-scan.js").TOKEN_PATTERNS.map(({ re, why }) =>
 function scan(text) {
   const hits = [];
   for (const { re, label } of PATTERNS) {
-    for (const m of text.matchAll(re)) hits.push({ label, sample: m[0].replace(/[A-Za-z0-9_-]{8,}$/, "...<redacted>") });
+    for (const m of text.matchAll(re)) hits.push({ label, sample: m[0].slice(0, 6) + "...<redacted>" });
   }
   return hits;
 }

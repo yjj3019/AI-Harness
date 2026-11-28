@@ -70,7 +70,9 @@ command_index() {
         while [[ "${words[$i]:-}" == -* ]]; do
           case "${words[$i]}" in
             --) i=$((i + 1)); break ;;
-            -u|-g|-h|-p|-C|-D|-R|-T|-U|-r|-t) i=$((i + 2)) ;;
+            --user|--group|--host|--prompt|--chdir|--chroot|--role|--type|--other-user|--close-from|--command-timeout) i=$((i + 2)) ;;
+            --*) i=$((i + 1)) ;;
+            -*[ughpCDRTUrt]) i=$((i + 2)) ;;   # also a bundle that ends in a value option: -nu root
             *) i=$((i + 1)) ;;
           esac
         done ;;
@@ -87,10 +89,15 @@ command_index() {
       timeout)
         i=$((i + 1))
         while [[ "${words[$i]:-}" == -* ]]; do
-          case "${words[$i]}" in -s|-k) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+          case "${words[$i]}" in -s|-k|--signal|--kill-after) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
         done
         i=$((i + 1)) ;;   # the duration
-      command|builtin|exec|nohup|time|setsid)
+      time)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* ]]; do
+          case "${words[$i]}" in -o|-f|--output|--format) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+        done ;;
+      command|builtin|exec|nohup|setsid)
         i=$((i + 1))
         while [[ "${words[$i]:-}" == -* ]]; do
           case "${words[$i]}" in -a) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
@@ -157,6 +164,7 @@ check_simple_command() {
       for ((i=i + 1; i<${#words[@]}; i++)); do
         word=${words[$i]}
         case "$word" in
+          --) break ;;   # pathspecs follow; `-notes` after it is a path, not a dry-run flag
           --force) clean_force=1 ;;
           --dry-run) clean_dry=1 ;;
           --*) ;;
@@ -253,9 +261,9 @@ check_simple_command
 # cannot turn a deny into an allow.
 re_push_force='git[[:space:]]+push([[:space:]]+[^;&|]*)?[[:space:]](--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)'
 re_reset_hard='git[[:space:]]+(-[^[:space:]]+[[:space:]]+([^-[:space:]][^[:space:]]*[[:space:]]+)?)*reset[[:space:]]+(.*[[:space:]])?--hard'
-re_curl_sh='(curl|wget)[^|;]*\|[[:space:]]*(sudo([[:space:]]+-[^[:space:]]+)*[[:space:]]+)?(ba|z|da|k)?sh([[:space:]]|$|[;&)])'
+re_curl_sh='(curl|wget)[^|;]*\|[[:space:]]*((sudo|env)([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+)?(ba|z|da|k)?sh([[:space:]]|$|[;&)])'
 # The same download run through a substitution: `bash <(curl ...)`, `sh -c "$(curl ...)"`, `eval "$(wget ...)"`.
-re_sh_subst='(^|[[:space:];&|(])((ba|z|da|k)?sh|source|eval)[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*["'"'"']?(<\(|\$\()[[:space:]]*(curl|wget)[[:space:]]'
+re_sh_subst='(^|[[:space:];&|(])((ba|z|da|k)?sh|source|eval|\.)[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*["'"'"']?(<\(|\$\()[[:space:]]*(curl|wget)[[:space:]]'
 re_disk='(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(shred[[:space:]]|mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'
 # git push --force / -f (--force-with-lease is allowed)
 if [[ $cmd =~ $re_push_force ]]; then deny "git force push"; fi

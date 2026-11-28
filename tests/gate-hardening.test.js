@@ -482,12 +482,22 @@ test("secret-scan reads every text file and flags new token shapes, mailboxes an
     const terms = path.join(aside, "terms.txt");
     fs.writeFileSync(terms, "# people and customers\n\nSecretPerson\n");
     put("a.md", "written by secretperson\n");
-    put("docs/SecretPerson-notes.md", "x\n");
+    // This file has the term in its name and three other findings: none of their lines may print the name.
+    put("docs/SecretPerson-notes.md", "by secretperson, " + token + ", someone" + at + "mail-provider.co.kr\n");
+    // UTF-16 text with a byte-order mark is read, although it holds NUL bytes.
+    put("wide.txt", Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from("x secretperson\n", "utf16le")]));
     const local = scan({ HARNESS_SENSITIVE_TERMS_FILE: terms });
     assert.equal(local.status, 1);
     assert.match(local.stderr, /a\.md: local sensitive term #3/);
     assert.match(local.stderr, /docs\/<name withheld>: local sensitive term #3 in a path/);
+    assert.match(local.stderr, /docs\/<name withheld>: github token/);
+    assert.match(local.stderr, /docs\/<name withheld>: email address/);
+    assert.match(local.stderr, /docs\/<name withheld>: local sensitive term #3\n/);
+    assert.match(local.stderr, /wide\.txt: local sensitive term #3/);
     assert.doesNotMatch(local.stdout + local.stderr, /secretperson/i);
+    fs.rmSync(path.join(root, "docs"), { recursive: true });
+    fs.rmSync(path.join(root, "wide.txt"));
+    fs.rmSync(path.join(root, "a.md"));
     assert.equal(scan().status, 0, "without the list the same tree is clean");
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
@@ -499,4 +509,29 @@ test("secret-scan can be required without running or exiting", () => {
   const probe = spawnSync(process.execPath, ["-e", "const s=require(process.argv[1]);console.log(typeof s.scan, s.TOKEN_PATTERNS.length>10)", path.join(REPO, "scripts/secret-scan.js")], { encoding: "utf8" });
   assert.equal(probe.status, 0, probe.stderr);
   assert.equal(probe.stdout.trim(), "function true");
+});
+
+test("phase-gate rejects an out-of-range PHASE_GATE_DOCTOR_TIMEOUT_MS", () => {
+  const gate = path.join(REPO, ".claude/workflows/phase-gate.js");
+  for (const value of ["-5", "0", "abc", "600001", "1.5"]) {
+    const result = spawnSync(process.execPath, [gate, "doctor"], { encoding: "utf8", env: { ...process.env, PHASE_GATE_DOCTOR_TIMEOUT_MS: value } });
+    assert.equal(result.status, 1, value);
+    assert.match(result.stderr, /PHASE_GATE_DOCTOR_TIMEOUT_MS must be an integer from 1 to 600000/);
+  }
+});
+
+// The toolbroker suite is Python. Running it here puts it inside the bound Phase test command, so its
+// result is part of the Phase evidence and not only of the separate CI job.
+test("toolbroker unittest suite passes", (t) => {
+  const python = ["python", "python3"].find((name) => {
+    const probe = spawnSync(name, ["--version"], { encoding: "utf8" });
+    return probe.status === 0 && /Python 3\./.test(probe.stdout + probe.stderr);
+  });
+  if (!python) return t.skip("python 3 is not installed");
+  const result = spawnSync(python, ["-m", "unittest", "discover", "-s", "tests/toolbroker"], { cwd: REPO, encoding: "utf8", timeout: 10 * 60 * 1000 });
+  const output = result.stdout + result.stderr;
+  assert.equal(result.status, 0, output.slice(-2000));
+  const ran = /Ran (\d+) tests?/.exec(output);
+  assert.ok(ran && Number(ran[1]) >= 38, "expected at least 38 tests: " + output.slice(-300));
+  assert.match(output, /\nOK\b/);
 });
