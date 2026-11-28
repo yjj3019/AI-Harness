@@ -64,3 +64,7 @@ CI 검사는 실제 네트워크 외부 호출이나 운영 DB 쓰기를 수행�
 GitHub `main` 보호가 아직 비활성 상태라면 운영자 계정으로 GitHub Rulesets에서 필수 상태 검사와 승인 규칙을 설정해야 한다. 이 저장소의 코드를 변경하는 것만으로 GitHub의 보호 정책이 활성화되지는 않는다.
 
 추가 체크리스트: [성숙도 수용 기준](../docs/maturity/ACCEPTANCE-2026-10-26.md). 실행 완료 표시에는 CI run ID와 실제 검사 출력을 사용하며 로컬 통과만으로 운영 보안을 완료 처리하지 않는다.
+
+## Refusals and the request token
+
+The HTTP endpoint compares `X-Toolbroker-Token` in constant time and refuses when `TOOLBROKER_TOKEN` is unset. Before a 401 or 404 it reads the declared body (at most 8192 bytes, inside the request deadline), so a client that is still uploading receives the status instead of a reset connection. If a provider reply cannot be stored and the ledger holds no confirmed result, `execute()` raises `OUTCOME_UNKNOWN_RECONCILE` rather than report an outcome the ledger does not have.

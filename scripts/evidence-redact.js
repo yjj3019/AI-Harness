@@ -14,17 +14,8 @@
 "use strict";
 const fs = require("fs");
 
-const PATTERNS = [
-  { re: /AKIA[0-9A-Z]{16}/g, label: "AWS access key" },
-  { re: /-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----/g, label: "private key" },
-  { re: /ghp_[A-Za-z0-9]{30,}/g, label: "GitHub PAT (ghp_)" },
-  { re: /github_pat_[A-Za-z0-9_]{40,}/g, label: "GitHub PAT (github_pat_)" },
-  { re: /glpat-[A-Za-z0-9_-]{20,}/g, label: "GitLab PAT" },
-  { re: /xox[baprs]-[A-Za-z0-9-]{10,}/g, label: "Slack token" },
-  { re: /sk-[A-Za-z0-9]{16,}/g, label: "OpenAI-style key" },
-  { re: /AIza[0-9A-Za-z_-]{30,}/g, label: "Google API key" },
-  { re: /npm_[A-Za-z0-9]{20,}/g, label: "npm token" },
-];
+// One list for both tools (imported, not copied): a token family added to the repository scan is refused here too.
+const PATTERNS = require("./secret-scan.js").TOKEN_PATTERNS.map(({ re, why }) => ({ re: new RegExp(re.source, "g"), label: why }));
 
 function scan(text) {
   const hits = [];

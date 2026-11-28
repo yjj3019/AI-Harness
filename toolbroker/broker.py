@@ -268,6 +268,9 @@ class Broker:
             reconciled = self._reconciled_result(request_id)
             if reconciled is not None:
                 return reconciled
+            # The row is neither IN_FLIGHT nor COMPLETED with a result (not reachable through this class
+            # today). The provider reply was not persisted, so it must not be reported as the outcome.
+            raise BrokerError(409, "OUTCOME_UNKNOWN_RECONCILE")
         return {"state": "COMPLETED", "replay": False, "result": result}
 
     def _reconciled_result(self, request_id: str) -> dict | None:
@@ -360,7 +363,7 @@ class Broker:
             result_json = canon(result).decode()
         except (TypeError, ValueError, OverflowError):
             raise BrokerError(400, "INVALID_RESULT") from None
-        if len(result_json) > MAX_BODY:
+        if len(result_json.encode("utf-8")) > MAX_BODY:  # bytes, like the payload limit in _verify
             raise BrokerError(400, "INVALID_RESULT")
         with self._connect() as db:
             cursor = db.execute(

@@ -553,6 +553,81 @@ class BrokerTests(unittest.TestCase):
             send.assert_not_called()
         self.assertEqual(again["result"], {"ok": "operator"})
 
+    def test_reconcile_during_a_send_with_an_unknown_outcome_returns_the_ledger_result(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+
+        def reconcile_then_fail(body, request_id):
+            b.reconcile(request_id, {"ok": "operator"}, operator="ops-3")
+            return None  # the adapter could not confirm the provider outcome
+
+        with patch.object(b, "_send_http", side_effect=reconcile_then_fail):
+            outcome = self.send(b, op="fixture.http.post", payload={"value": "x"})
+        self.assertEqual(outcome, {"state": "COMPLETED", "replay": True, "result": {"ok": "operator"},
+                                   "reconciled_by": "ops-3"})
+        self.assertEqual(b.get_state("request_0001"), "COMPLETED")
+
+    def test_a_provider_reply_that_could_not_be_persisted_is_not_reported_as_the_outcome(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+
+        def send_while_the_row_disappears(body, request_id):
+            with contextlib.closing(sqlite3.connect(b.database, isolation_level=None)) as db:
+                db.execute("DELETE FROM requests WHERE request_id=?", (request_id,))
+            return {"ok": "provider"}
+
+        with patch.object(b, "_send_http", side_effect=send_while_the_row_disappears):
+            with self.assertRaises(BrokerError) as error:
+                self.send(b, op="fixture.http.post", payload={"value": "x"})
+        self.assertEqual(error.exception.code, "OUTCOME_UNKNOWN_RECONCILE")
+
+    def test_reconcile_limits_the_result_in_bytes_like_the_payload(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+        self.strand(b, "IN_FLIGHT")
+        wide = {"v": "가" * 2000}  # about 2000 characters, about 6000 UTF-8 bytes
+        self.assertLess(len(canon(wide).decode()), 4096)
+        with self.assertRaises(BrokerError) as error:
+            b.reconcile("request_0001", wide, operator="ops-4")
+        self.assertEqual(error.exception.code, "INVALID_RESULT")
+        self.assertEqual(b.get_state("request_0001"), "IN_FLIGHT")
+
+    def test_http_server_refuses_a_wrong_missing_or_non_ascii_token(self):
+        b = self.broker(["fixture.db.increment"])
+        fields = {"operation": "fixture.db.increment", "request_id": "request_0001", "payload": {"amount": 1}}
+        fields["approval"] = approval(fields["operation"], fields["request_id"], fields["payload"])
+
+        def status(headers, environment):
+            with patch.dict(os.environ, environment):
+                os.environ.pop("TOOLBROKER_TOKEN", None) if "TOOLBROKER_TOKEN" not in environment else None
+                server = serve(b)
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    url = "http://127.0.0.1:" + str(server.server_address[1]) + "/v1/tools/execute"
+                    request = urllib.request.Request(url, data=canon(fields), method="POST",
+                                                     headers={"Content-Type": "application/json", **headers})
+                    try:
+                        with urllib.request.urlopen(request, timeout=2) as result:
+                            return result.status
+                    except urllib.error.HTTPError as error:
+                        try:
+                            return error.code
+                        finally:
+                            error.close()
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    thread.join(2)
+
+        configured = {"TOOLBROKER_TOKEN": TOKEN}
+        self.assertEqual(status({"X-Toolbroker-Token": TOKEN + "x"}, configured), 401)
+        self.assertEqual(status({"X-Toolbroker-Token": TOKEN[:-1]}, configured), 401)
+        self.assertEqual(status({}, configured), 401)
+        self.assertEqual(status({"X-Toolbroker-Token": "stüb"}, configured), 401)
+        # No configured token never means "open": an empty header must not match an empty expectation.
+        self.assertEqual(status({"X-Toolbroker-Token": ""}, {}), 401)
+        self.assertEqual(b.get_counter(), 0)
+        self.assertEqual(status({"X-Toolbroker-Token": TOKEN}, configured), 200)
+        self.assertEqual(b.get_counter(), 1)
+
     def test_a_ledger_created_before_the_operator_column_is_migrated_in_place(self):
         old_schema = """
           CREATE TABLE requests (

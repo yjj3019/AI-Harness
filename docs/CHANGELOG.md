@@ -2,6 +2,34 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — 전체 소스 점검과 보강 (브랜치 `fix/audit-hardening-20261128`)
+
+전체 소스를 다시 읽고, 의심 가는 입력을 훅에 직접 넣어 확인한 결과다.
+
+- 훅 `block-destructive.sh`(Claude·Codex 동일):
+  - 명령 앞의 래퍼를 건너뛰고 실제 명령을 검사한다: `sudo -n`, `sudo -u root`, `env A=1`, `A=1`(대입 접두), `time`, `nohup`, `nice -n 5`, `timeout 5`, `exec`. 이전에는 `sudo -n rm -rf /`, `env rm -rf /`, `time rm -rf /`, `env cat .env`가 통과했다.
+  - `rm -rf .git`(과 `./.git`)을 넓은 대상으로 본다.
+  - `git clean -f`(시험 실행 `-n`은 허용)와 `git push --mirror`를 막는다.
+  - 내려받은 것을 바로 실행하는 다른 모양을 막는다: `curl … | sudo -E bash`, `bash <(curl …)`, `sh -c "$(curl …)"`, `eval "$(wget …)"`.
+  - `.env` 읽기 가드에 `mv`, `ln`을 더했다.
+  - 여전히 문자열 검사다. `xargs`, 별칭, 변수, `sh -c` 안의 문자열은 잡지 못한다.
+- 훅 `evidence-guard.sh`(Claude·Codex 동일): 서브에이전트가 `docs/attestations/`를 쓰지 못한다. 증명서는 `phase-gate.js attest`만 쓴다(읽기와 `git diff`는 허용).
+- `scripts/secret-scan.js`:
+  - 확장자 목록을 없애고 모든 텍스트 파일을 읽는다. 이전에는 HTML, `.cjs`, `.log`, `.example`, 확장자 없는 파일을 읽지 않았다.
+  - 토큰 모양을 늘렸다: `sk-ant-`/`sk-proj-` 계열, `gho_`·`ghu_`·`ghs_`·`ghr_`, `ASIA…`, `ENCRYPTED`·`DSA`·`PGP` 개인 키, 결제·모델 허브 키, 채팅 웹훅 주소.
+  - 사서함 주소를 찾는다. `example.invalid` 같은 예약 도메인, 호스트의 noreply 주소, URL의 `user:pw@host`는 통과한다.
+  - 로컬 금지어 목록 `.git/info/sensitive-terms.txt`(한 줄에 한 단어)를 읽는다. `.git` 안에 있어 커밋되지 않고 트리 해시에도 들지 않는다. 걸리면 목록의 줄 번호만 알리고 단어는 출력하지 않는다. CI에는 이 파일이 없으므로 로컬에서만 동작한다.
+  - `require`해도 실행되지 않는다. `scripts/evidence-redact.js`가 같은 토큰 목록을 가져다 쓰므로 두 목록이 어긋날 수 없다.
+- toolbroker:
+  - HTTP 서버가 토큰을 상수 시간으로 비교한다(`hmac.compare_digest`). 거절(401, 404)을 보내기 전에 선언된 본문을 한도 안에서 읽는다. 이전에는 Windows에서 클라이언트가 상태 코드 대신 연결 중단을 볼 수 있었다.
+  - `execute()`가 공급자 응답을 원장에 저장하지 못했고 원장에 확정된 결과도 없으면 `OUTCOME_UNKNOWN_RECONCILE`을 낸다. 이전에는 저장되지 않은 응답을 완료로 돌려줬다(현재 코드로는 도달하지 않는 가지).
+  - `reconcile()`의 결과 크기 한도를 글자 수가 아니라 바이트로 잰다(요청 한도와 같은 기준).
+  - 테스트 4건 추가(총 38건): 결과를 알 수 없는 전송 중의 reconcile, 저장되지 않은 응답, 바이트 한도, 틀린·빈·비 ASCII 토큰.
+- `phase-gate.js`: `PHASE_GATE_DOCTOR_TIMEOUT_MS`를 1~600000 정수로 검증한다(이전에는 음수가 그대로 전달됐다). 서명 관련 낡은 주석 한 줄을 고쳤다. 게이트 판정은 바꾸지 않았다.
+- 훅 테스트: 위 차단·허용 사례, 증명서 쓰기 사례(두 사본), 두 사본의 패턴 네 줄 비교(빈 줄이면 실패)를 추가했다.
+- 이력: `main`과 태그 16개의 옛 커밋 작성자·커미터에 남아 있던 실명과 개인 사서함을 호스트의 noreply 신원으로 바꿔 다시 만들었다(소유자 결정, 2026-11-28). 트리·날짜·메시지는 그대로이고 커밋 ID만 바뀌었다. 자세한 내용은 `docs/sensitivity-audit-2026-11-15.md` 7절.
+- 검토 결과 바꾸지 않은 것: `git push --delete`와 `git branch -D`는 막지 않는다(브랜치 정리에 쓰는 정상 명령). 서브에이전트의 테스트 파일 쓰기도 그대로 둔다(구현 단계가 테스트를 써야 한다).
+
 ## 작업 트리 — 후속 정리 (브랜치 `chore/followups-license-revert-20261128`)
 
 - LICENSE: 저작권자를 `yjj3019`로 되돌렸다(바로 아래 항목 참고).
