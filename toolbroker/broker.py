@@ -251,14 +251,36 @@ class Broker:
             result = None
         if result is None:
             with self._connect() as db:
-                db.execute("UPDATE requests SET state='UNKNOWN' "
-                           "WHERE request_id=? AND state='IN_FLIGHT'", (request_id,))
+                moved = db.execute("UPDATE requests SET state='UNKNOWN' "
+                                   "WHERE request_id=? AND state='IN_FLIGHT'", (request_id,)).rowcount
+            if moved != 1:
+                reconciled = self._reconciled_result(request_id)
+                if reconciled is not None:
+                    return reconciled
             raise BrokerError(409, "OUTCOME_UNKNOWN_RECONCILE")
         with self._connect() as db:
-            db.execute("UPDATE requests SET state='COMPLETED',result_json=? "
-                       "WHERE request_id=? AND state='IN_FLIGHT'",
-                       (result_json, request_id))
+            done = db.execute("UPDATE requests SET state='COMPLETED',result_json=? "
+                              "WHERE request_id=? AND state='IN_FLIGHT'",
+                              (result_json, request_id)).rowcount
+        if done != 1:
+            # An operator reconciled this request while it was being sent. The ledger keeps the
+            # operator's result, so the caller must see that one, not a different provider reply.
+            reconciled = self._reconciled_result(request_id)
+            if reconciled is not None:
+                return reconciled
         return {"state": "COMPLETED", "replay": False, "result": result}
+
+    def _reconciled_result(self, request_id: str) -> dict | None:
+        """The ledger's COMPLETED outcome of a request, in the shape of a replay, or None."""
+        with self._connect() as db:
+            row = db.execute("SELECT state,result_json,reconciled_by FROM requests WHERE request_id=?",
+                             (request_id,)).fetchone()
+        if not row or row[0] != "COMPLETED" or row[1] is None:
+            return None
+        outcome = {"state": "COMPLETED", "replay": True, "result": json.loads(row[1])}
+        if row[2] is not None:
+            outcome["reconciled_by"] = row[2]
+        return outcome
 
     def _send_http(self, payload: dict, request_id: str) -> dict | None:
         url = urllib.parse.urlsplit(self.destination)

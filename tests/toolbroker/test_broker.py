@@ -535,6 +535,24 @@ class BrokerTests(unittest.TestCase):
         self.assertTrue(plain["replay"])
         self.assertNotIn("reconciled_by", plain)
 
+    def test_reconcile_during_a_send_wins_and_the_caller_sees_the_ledger_result(self):
+        b = self.broker(["fixture.http.post"], url="http://127.0.0.1:9/write")
+        payload = {"value": "x"}
+
+        def send_then_reconcile(body, request_id):
+            b.reconcile(request_id, {"ok": "operator"}, operator="ops-2")
+            return {"ok": "provider"}
+
+        with patch.object(b, "_send_http", side_effect=send_then_reconcile):
+            outcome = self.send(b, op="fixture.http.post", payload=payload)
+        self.assertEqual(outcome["result"], {"ok": "operator"})
+        self.assertEqual(outcome["reconciled_by"], "ops-2")
+        self.assertEqual(b.get_state("request_0001"), "COMPLETED")
+        with patch.object(b, "_send_http") as send:
+            again = self.send(b, op="fixture.http.post", payload=payload)
+            send.assert_not_called()
+        self.assertEqual(again["result"], {"ok": "operator"})
+
     def test_a_ledger_created_before_the_operator_column_is_migrated_in_place(self):
         old_schema = """
           CREATE TABLE requests (
@@ -590,7 +608,7 @@ class BrokerTests(unittest.TestCase):
         self.send(b)
         with patch("toolbroker.broker.hmac.compare_digest", wraps=hmac.compare_digest) as cmp:
             self.send(b)
-        self.assertGreaterEqual(cmp.call_count, 5)  # approval checks plus three ledger fields
+        self.assertEqual(cmp.call_count, 5)  # two approval checks plus three ledger fields
 
     def test_no_arbitrary_destinations_or_user_urls(self):
         for url in ("https://example.com/write", "http://localhost:9001/write",

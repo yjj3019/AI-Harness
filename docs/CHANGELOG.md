@@ -2,9 +2,18 @@
 
 이 저장소의 버전 기록. 규칙: `docs/VERSIONING.md`.
 
+## 작업 트리 — 후속 정리 (브랜치 `chore/followups-license-revert-20261128`)
+
+- LICENSE: 저작권자를 `yjj3019`로 되돌렸다(바로 아래 항목 참고).
+- toolbroker: `execute()`가 전송하는 동안 운영자가 `reconcile()`로 같은 요청을 확정하면, 호출자는 공급자 응답이 아니라 원장에 남은 운영자 결과(`reconciled_by` 포함, `replay: True`)를 받는다. 이전에는 호출자가 공급자 응답을 받았지만 원장에는 운영자 결과가 남았다. 테스트 1건 추가(34건), 상수 시간 비교 테스트의 단언을 `>= 5`에서 정확히 5(승인 검사 2 + 원장 필드 3)로 좁혔다.
+- 훅 테스트: 서명 키 가드 패턴을 Codex 훅 사본에도 시험하는 5건(3 차단, 2 허용)과, 두 훅의 `re_signing_key` 줄이 같은지 확인하는 사본 비교를 추가했다.
+- `phase-gate.js`: 공개 키가 커밋돼 있다고 말하던 주석과 `attest-keygen` 사용법 문구를 현재 상태(키 없음, 검토되는 변경으로 도입, CI는 한 번 신뢰)에 맞췄다. 동작은 바꾸지 않았다.
+- 테스트 시간 제한: 느린 PC에서 같은 테스트가 반복 실패해 phase-gate를 하위 프로세스로 부르는 세 테스트 파일(`task-graph-evidence`, `phase-gate-meta`, `phase-gate-log-links`)의 제한을 120000ms로 늘렸다. 검증 내용은 그대로이고 실제로 멈추면 여전히 실패한다.
+- 검토 결과 변경하지 않은 것: CI replay에 `--require-strict-evidence`를 추가하지 않는다. `evidence-baseline`은 필수 Phase라 `phase-gate.js`가 이미 엄격 증거를 적용한다(`isRequiredPhase`).
+
 ## 작업 트리 — 라이선스 표기, 쓰지 않는 키 삭제, 문서만 바뀐 PR 정책 (브랜치 `chore/license-holder-remove-unused-key-20261128`)
 
-- LICENSE: 저작권자 표기에 관한 소유자 결정을 반영했다(MIT 본문은 그대로).
+- LICENSE: 저작권자 표기는 `yjj3019`로 유지한다(소유자 결정; 한때 다른 표기로 바꿨다가 되돌렸다. MIT 본문은 그대로).
 - 쓰지 않는 서명 키 삭제: 커밋된 공개 키 `.claude/attestation-public-key.pem`을 지웠다. 이 경로는 신뢰 집합(훅)과 CODEOWNERS에 그대로 남는다. 개인 키는 소유자의 PC에서 삭제한다. 서명을 다시 쓰려면 `attest-keygen`으로 새 키 쌍을 만들고 새 공개 키를 검토되는 PR로 도입한다(기준에 키가 없으므로 최초 도입으로 한 번 신뢰).
 - 문서만 바뀐 PR의 CI 범위(소유자 결정: 권장 범위 안에서): 증거 흐름을 완화하지 않는다. 트리 해시 범위(`TREE_EXCLUDE`)와 CI 필수 검사는 그대로이고, 문서 수정도 추적되는 파일이면 새 증거가 필요하다. 비용은 수정을 한 Phase로 모아 줄인다. 자세한 내용은 `docs/merge-policy.md`.
 
@@ -21,7 +30,7 @@
 
 ## 작업 트리 — 서명된 attestation (미병합, 브랜치 `feat/signed-attestations-20261123`)
 
-- `phase-gate.js attest-keygen [<개인키 파일>]`(Ed25519 키 쌍 생성, 기존 키 덮어쓰기 거부, 공개 키는 `.claude/attestation-public-key.pem`), `attest <phase> --sign [<개인키>]`(캐노니컬 JSON 서명, 커밋될 공개 키로 즉시 검증), `verify-attestation ... --require-signature`(서명 없음·키 불일치·변조 모두 실행 전에 거부; 서명이 있으면 플래그 없이도 검증). CI replay는 `--require-signature`와 `ATTEST_KEY_BASE_SHA`(PR 기준 커밋)로 돌아 PR이 공개 키를 바꿔치기할 수 없다.
+- `phase-gate.js attest-keygen [<개인키 파일>]`(Ed25519 키 쌍 생성, 기존 키 덮어쓰기 거부, 공개 키는 `.claude/attestation-public-key.pem`), `attest <phase> --sign [<개인키>]`(캐노니컬 JSON 서명, 커밋될 공개 키로 즉시 검증), `verify-attestation ... --require-signature`(서명 없음·키 불일치·변조 모두 실행 전에 거부; 서명이 있으면 플래그 없이도 검증). CI replay는 `--require-signature`와 `ATTEST_KEY_BASE_SHA`(PR 기준 커밋)로 돌아 PR이 공개 키를 바꿔치기할 수 없다. (대체됨: 2026-11-27부터 CI는 `--require-signature`를 요구하지 않고, 2026-11-28에 공개 키 파일을 지웠다. 위 두 항목과 `docs/merge-policy.md` 참고.)
 - 훅: 공개 키 파일은 게이트 신뢰 집합, 개인 키 경로·이름(`.harness/`, `attest-ed25519`)은 서브에이전트가 쓰거나 언급할 수 없고, `Read(~/.harness/**)`는 settings에서 거부된다. CODEOWNERS에 공개 키 추가.
 - 한계: 서명은 누가 attest했는지만 증명한다. 개인 키가 있는 머신에서 유지자 권한으로 도는 프로세스는 서명할 수 있고, verify·review의 독립성은 여전히 증명되지 않는다.
 
