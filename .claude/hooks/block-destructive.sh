@@ -72,8 +72,10 @@ command_index() {
             --) i=$((i + 1)); break ;;
             --user|--group|--host|--prompt|--chdir|--chroot|--role|--type|--other-user|--close-from|--command-timeout) i=$((i + 2)) ;;
             --*) i=$((i + 1)) ;;
-            -*[ughpCDRTUrt]) i=$((i + 2)) ;;   # also a bundle that ends in a value option: -nu root
-            *) i=$((i + 1)) ;;
+            -[ughpCDRTUrt]) i=$((i + 2)) ;;
+            *) # A bundle of flags that ends in a value option takes the next word (-nu root); an attached
+               # value (-uroot) does not.
+               if [[ "${words[$i]}" =~ ^-[AbBEeHiKklnNPSsVv]+[ughpCDRTUrt]$ ]]; then i=$((i + 2)); else i=$((i + 1)); fi ;;
           esac
         done ;;
       env)

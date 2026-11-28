@@ -30,8 +30,8 @@
 - 이력: `main`과 태그 16개의 옛 커밋 작성자·커미터에 남아 있던 실명과 개인 사서함을 호스트의 noreply 신원으로 바꿔 다시 만들었다(소유자 결정, 2026-11-28). 트리·날짜·메시지는 그대로이고 커밋 ID만 바뀌었다. 자세한 내용은 `docs/sensitivity-audit-2026-11-15.md` 7절.
 - 리뷰 단계에서 나온 지적을 같은 브랜치에서 고쳤다:
   - `secret-scan.js`: 금지어가 든 파일 경로는 그 파일의 모든 탐지·오류 줄에서 디렉터리만 출력한다. 이전에는 "경로에 금지어" 줄만 이름을 가렸고, 같은 파일의 토큰·사서함 탐지 줄에는 경로가 그대로 나왔다. 바이트 순서 표시가 있는 UTF-16 텍스트도 읽는다(이전에는 바이너리로 보고 건너뛰었다).
-  - `evidence-redact.js`: 미리보기는 탐지된 문자열의 앞 6글자만 보인다(웹훅 주소가 통째로 나올 수 있었다).
-  - `block-destructive.sh`: `sudo --user root`, `sudo -nu root`, `timeout --signal KILL 5`, `timeout --kill-after 1 5`, `time -o f` 뒤의 명령도 찾는다. `git clean -f -- -notes`에서 `--` 뒤의 경로를 시험 실행 옵션으로 읽지 않는다. `curl … | sudo -u root bash`, `curl … | env bash`, `. <(curl …)`를 막는다.
+  - `evidence-redact.js`: 미리보기는 탐지된 문자열의 앞 4글자만 보인다(웹훅 주소가 통째로 나올 수 있었다).
+  - `block-destructive.sh`: `sudo --user root`, `sudo -nu root`(붙여 쓴 `-uroot`도 그대로 잡는다), `timeout --signal KILL 5`, `timeout --kill-after 1 5`, `time -o f` 뒤의 명령도 찾는다. `git clean -f -- -notes`에서 `--` 뒤의 경로를 시험 실행 옵션으로 읽지 않는다. `curl … | sudo -u root bash`, `curl … | env bash`, `. <(curl …)`를 막는다.
   - toolbroker 서버: 환경변수 토큰에 짝 없는 서러게이트가 있어도 예외 없이 401로 거절한다.
   - 테스트: 게이트의 `PHASE_GATE_DOCTOR_TIMEOUT_MS` 검증 테스트를 추가했다. toolbroker의 Python 테스트를 Node 테스트 하나가 실행하므로 Phase 테스트 명령의 증거에 포함된다(이전에는 별도 CI 작업에서만 돌았다).
 - 검토 결과 바꾸지 않은 것: `git push --delete`와 `git branch -D`는 막지 않는다(브랜치 정리에 쓰는 정상 명령). 서브에이전트의 테스트 파일 쓰기도 그대로 둔다(구현 단계가 테스트를 써야 한다).
