@@ -1,5 +1,6 @@
 """Opt-in loopback-only HTTP tool endpoint. No approval-signing API is exposed."""
 import argparse
+import hmac
 import io
 import json
 import math
@@ -144,14 +145,29 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.respond(404, {"error": "NOT_FOUND"})
 
+    def drain_body(self):
+        # A refusal sent while the client is still uploading makes some stacks reset the connection, and the
+        # client then sees an abort where it should see the status. Read the declared body first, within the
+        # same size and deadline limits as an accepted request; anything larger is not waited for.
+        try:
+            size = int(self.headers.get("Content-Length", "0"))
+            if 0 < size <= 8192:
+                self.rfile.read(size)
+        except (ValueError, OSError):
+            pass
+
     def do_POST(self):
         if self.path != "/v1/tools/execute":
+            self.drain_body()
             self.respond(404, {"error": "NOT_FOUND"})
             return
         # Token always required. No unauthenticated bypass.
         expected = os.environ.get("TOOLBROKER_TOKEN", "")
         got = self.headers.get("X-Toolbroker-Token", "")
-        if not expected or got != expected:
+        # Constant-time comparison on bytes: the token is a credential, and a header may hold non-ASCII text.
+        if not expected or not hmac.compare_digest(got.encode("utf-8", "replace"),
+                                                   expected.encode("utf-8", "surrogatepass")):
+            self.drain_body()
             self.respond(401, {"error": "UNAUTHORIZED"})
             return
         try:

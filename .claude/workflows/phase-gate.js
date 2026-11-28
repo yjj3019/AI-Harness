@@ -61,7 +61,13 @@ if (!Number.isSafeInteger(TEST_TIMEOUT_MS) || TEST_TIMEOUT_MS < 1 || TEST_TIMEOU
   console.error("ERROR: PHASE_GATE_TEST_TIMEOUT_MS must be an integer from 1 to 86400000");
   process.exit(1);
 }
-const DOCTOR_TIMEOUT_MS = Number(process.env.PHASE_GATE_DOCTOR_TIMEOUT_MS) || 60 * 1000;
+// Validated like the test timeout: a negative or non-numeric value used to reach spawnSync unchecked.
+const DOCTOR_RAW = process.env.PHASE_GATE_DOCTOR_TIMEOUT_MS;
+const DOCTOR_TIMEOUT_MS = DOCTOR_RAW === undefined || DOCTOR_RAW === "" ? 60 * 1000 : Number(DOCTOR_RAW);
+if (!Number.isSafeInteger(DOCTOR_TIMEOUT_MS) || DOCTOR_TIMEOUT_MS < 1 || DOCTOR_TIMEOUT_MS > 10 * 60 * 1000) {
+  console.error("ERROR: PHASE_GATE_DOCTOR_TIMEOUT_MS must be an integer from 1 to 600000");
+  process.exit(1);
+}
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const outputLimit = Number(process.env.PHASE_GATE_MAX_OUTPUT_BYTES ?? MAX_OUTPUT_BYTES);
 if (!Number.isSafeInteger(outputLimit) || outputLimit < 1 || outputLimit > MAX_OUTPUT_BYTES) {
@@ -1202,7 +1208,7 @@ async function cmdVerifyAttestation(args) {
   }
   if (!Array.isArray(att.argv) || att.argv.length === 0 || !att.argv.every((x) => typeof x === "string")) bad("argv is missing");
   if (typeof att.tree !== "string") bad("tree hash is missing");
-  // CI passes --require-signature: an unsigned attestation, or one that does not verify against the trusted
+  // With --require-signature (optional since 2026-11-27; CI does not pass it) an unsigned attestation, or one that does not verify against the trusted
   // public key, is refused before anything is executed.
   if (requireSignature) {
     const problem = checkAttestationSignature(att, loadTrustedPublicKey(bad, keyBaseSha));

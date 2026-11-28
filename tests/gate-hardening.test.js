@@ -426,3 +426,112 @@ test("CI takes the public key from the base commit, so a change cannot swap the 
     assert.match(malformed.stderr, /40-character commit id/);
   });
 });
+
+test("secret-scan reads every text file and flags new token shapes, mailboxes and local sensitive terms", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "secret-scan-wide-"));
+  const aside = fs.mkdtempSync(path.join(os.tmpdir(), "secret-scan-terms-"));
+  try {
+    const script = path.join(REPO, "scripts/secret-scan.js");
+    const scan = (env = {}) => spawnSync(process.execPath, [script, root], { encoding: "utf8", env: { ...process.env, HARNESS_SENSITIVE_TERMS_FILE: path.join(aside, "none.txt"), ...env } });
+    const put = (rel, data) => {
+      const file = path.join(root, rel);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, data);
+      return file;
+    };
+    // Shapes are assembled at run time so this file holds no literal credential or mailbox.
+    const token = "gh" + "o_" + "a".repeat(36);
+    for (const rel of ["page.html", "tool.cjs", "run.log", "notes", "config.example", "deep/dir/style.css"]) {
+      const file = put(rel, "x " + token + "\n");
+      const result = scan();
+      assert.equal(result.status, 1, rel + " must be read: " + result.stdout + result.stderr);
+      assert.match(result.stderr, /github token/);
+      fs.rmSync(file);
+    }
+    const shapes = [
+      "sk-" + "ant-" + "a".repeat(24), "sk-" + "proj-" + "b".repeat(24), "AS" + "IA" + "A".repeat(16),
+      "-----BEGIN ENCRYPTED " + "PRIVATE KEY-----", "-----BEGIN PGP " + "PRIVATE KEY BLOCK-----",
+      "-----BEGIN DSA " + "PRIVATE KEY-----", "hf" + "_" + "a".repeat(32), "sk" + "_live_" + "a".repeat(20),
+    ];
+    for (const shape of shapes) {
+      const file = put("a.md", "value: " + shape + "\n");
+      assert.equal(scan().status, 1, "shape must be flagged: " + shape.slice(0, 12));
+      const redact = spawnSync(process.execPath, [path.join(REPO, "scripts/evidence-redact.js"), file], { encoding: "utf8" });
+      assert.equal(redact.status, 1, "evidence-redact shares the list: " + shape.slice(0, 12));
+      fs.rmSync(file);
+    }
+    // A binary file is not decoded as text.
+    const blob = put("blob.bin", Buffer.concat([Buffer.from([0, 1, 2]), Buffer.from(token)]));
+    assert.equal(scan().status, 0);
+    fs.rmSync(blob);
+
+    const at = "@";
+    const mailbox = put("a.md", "contact someone" + at + "mail-provider.co.kr for access\n");
+    const flagged = scan();
+    assert.equal(flagged.status, 1);
+    assert.match(flagged.stderr, /email address \(1\)/);
+    fs.rmSync(mailbox);
+    const harmless = ["t" + at + "example.invalid", "1+name" + at + "users.noreply.github.com", "noreply" + at + "anthropic.com",
+      "https://user:pw" + at + "host.internal-corp.io/x", "pkg" + at + "1.2.3", "actions/checkout" + at + "v4", "a " + at + " b"];
+    const safe = put("a.md", harmless.join("\n") + "\n");
+    const safeResult = scan();
+    assert.equal(safeResult.status, 0, safeResult.stderr);
+    fs.rmSync(safe);
+
+    // The private term list: a hit names the line of the list, never the term or a path that holds it.
+    const terms = path.join(aside, "terms.txt");
+    fs.writeFileSync(terms, "# people and customers\n\nSecretPerson\n");
+    put("a.md", "written by secretperson\n");
+    // This file has the term in its name and three other findings: none of their lines may print the name.
+    put("docs/SecretPerson-notes.md", "by secretperson, " + token + ", someone" + at + "mail-provider.co.kr\n");
+    // UTF-16 text with a byte-order mark is read, although it holds NUL bytes.
+    put("wide.txt", Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from("x secretperson\n", "utf16le")]));
+    const local = scan({ HARNESS_SENSITIVE_TERMS_FILE: terms });
+    assert.equal(local.status, 1);
+    assert.match(local.stderr, /a\.md: local sensitive term #3/);
+    assert.match(local.stderr, /docs\/<name withheld>: local sensitive term #3 in a path/);
+    assert.match(local.stderr, /docs\/<name withheld>: github token/);
+    assert.match(local.stderr, /docs\/<name withheld>: email address/);
+    assert.match(local.stderr, /docs\/<name withheld>: local sensitive term #3\n/);
+    assert.match(local.stderr, /wide\.txt: local sensitive term #3/);
+    assert.doesNotMatch(local.stdout + local.stderr, /secretperson/i);
+    fs.rmSync(path.join(root, "docs"), { recursive: true });
+    fs.rmSync(path.join(root, "wide.txt"));
+    fs.rmSync(path.join(root, "a.md"));
+    assert.equal(scan().status, 0, "without the list the same tree is clean");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(aside, { recursive: true, force: true });
+  }
+});
+
+test("secret-scan can be required without running or exiting", () => {
+  const probe = spawnSync(process.execPath, ["-e", "const s=require(process.argv[1]);console.log(typeof s.scan, s.TOKEN_PATTERNS.length>10)", path.join(REPO, "scripts/secret-scan.js")], { encoding: "utf8" });
+  assert.equal(probe.status, 0, probe.stderr);
+  assert.equal(probe.stdout.trim(), "function true");
+});
+
+test("phase-gate rejects an out-of-range PHASE_GATE_DOCTOR_TIMEOUT_MS", () => {
+  const gate = path.join(REPO, ".claude/workflows/phase-gate.js");
+  for (const value of ["-5", "0", "abc", "600001", "1.5"]) {
+    const result = spawnSync(process.execPath, [gate, "doctor"], { encoding: "utf8", env: { ...process.env, PHASE_GATE_DOCTOR_TIMEOUT_MS: value } });
+    assert.equal(result.status, 1, value);
+    assert.match(result.stderr, /PHASE_GATE_DOCTOR_TIMEOUT_MS must be an integer from 1 to 600000/);
+  }
+});
+
+// The toolbroker suite is Python. Running it here puts it inside the bound Phase test command, so its
+// result is part of the Phase evidence and not only of the separate CI job.
+test("toolbroker unittest suite passes", (t) => {
+  const python = ["python", "python3"].find((name) => {
+    const probe = spawnSync(name, ["--version"], { encoding: "utf8" });
+    return probe.status === 0 && /Python 3\./.test(probe.stdout + probe.stderr);
+  });
+  if (!python) return t.skip("python 3 is not installed");
+  const result = spawnSync(python, ["-m", "unittest", "discover", "-s", "tests/toolbroker"], { cwd: REPO, encoding: "utf8", timeout: 10 * 60 * 1000 });
+  const output = result.stdout + result.stderr;
+  assert.equal(result.status, 0, output.slice(-2000));
+  const ran = /Ran (\d+) tests?/.exec(output);
+  assert.ok(ran && Number(ran[1]) >= 38, "expected at least 38 tests: " + output.slice(-300));
+  assert.match(output, /\nOK\b/);
+});

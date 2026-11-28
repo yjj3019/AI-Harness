@@ -37,6 +37,8 @@ protected_rm_target() {
   done
   case "$target" in
     /|/\*|'~'|'$HOME'|'${HOME}'|'$PWD'|'${PWD}'|.|..|\*) return 0 ;;
+    # The repository's own history and configuration (`rm -rf .git`, `rm -rf ./.git`).
+    .git) return 0 ;;
     '~/'*|'$HOME/'*|'${HOME}/'*|'$PWD/'*|'${PWD}/'*|'$USERPROFILE'|'${USERPROFILE}'|'$USERPROFILE/'*|'${USERPROFILE}/'*) return 0 ;;
     # Windows user profiles as written on native Windows and through MSYS drive mounts.
     [A-Za-z]:|[A-Za-z]:/*|[A-Za-z]:/Windows|[A-Za-z]:/Windows/*|[A-Za-z]:/Program\ Files|[A-Za-z]:/Program\ Files/*|[A-Za-z]:/ProgramData|[A-Za-z]:/ProgramData/*) return 0 ;;
@@ -51,14 +53,70 @@ protected_rm_target() {
 # `cat .env` was an open path to the same bytes. Lexical guard: a reader/copy command whose argument is a
 # `.env` or `.env.<name>` path (templates such as .env.example are fine). Variables, aliases, globs and
 # wrappers can evade it; it narrows the easy path, host permissions remain the real boundary.
+# Index (cmd_i) of the command word after literal wrappers and their options: `sudo -n rm`, `env A=1 rm`,
+# `A=1 rm`, `time rm`, `nohup rm`, `nice -n 5 rm`, `timeout 5 rm`. Without this a wrapper in front of rm, git or
+# cat hid the command from every check below. Lexical only: the value of an option is skipped for the common
+# options listed here; other wrappers (xargs, a shell -c string, aliases) still evade it.
+cmd_i=0
+command_index() {
+  local i=0 w re_assign='^[A-Za-z_][A-Za-z0-9_]*='
+  while :; do
+    w=${words[$i]:-}
+    if [[ "$w" =~ $re_assign ]]; then i=$((i + 1)); continue; fi   # NAME=value prefix
+    w=${w##*/}
+    case "$w" in
+      sudo|doas)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* ]]; do
+          case "${words[$i]}" in
+            --) i=$((i + 1)); break ;;
+            --user|--group|--host|--prompt|--chdir|--chroot|--role|--type|--other-user|--close-from|--command-timeout) i=$((i + 2)) ;;
+            --*) i=$((i + 1)) ;;
+            -[ughpCDRTUrt]) i=$((i + 2)) ;;
+            *) # A bundle of flags that ends in a value option takes the next word (-nu root); an attached
+               # value (-uroot) does not.
+               if [[ "${words[$i]}" =~ ^-[AbBEeHiKklnNPSsVv]+[ughpCDRTUrt]$ ]]; then i=$((i + 2)); else i=$((i + 1)); fi ;;
+          esac
+        done ;;
+      env)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* || "${words[$i]:-}" =~ $re_assign ]]; do
+          case "${words[$i]}" in -u|-C|-S) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+        done ;;
+      nice|ionice)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* ]]; do
+          case "${words[$i]}" in -n|-c|-p) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+        done ;;
+      timeout)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* ]]; do
+          case "${words[$i]}" in -s|-k|--signal|--kill-after) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+        done
+        i=$((i + 1)) ;;   # the duration
+      time)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* ]]; do
+          case "${words[$i]}" in -o|-f|--output|--format) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+        done ;;
+      command|builtin|exec|nohup|setsid)
+        i=$((i + 1))
+        while [[ "${words[$i]:-}" == -* ]]; do
+          case "${words[$i]}" in -a) i=$((i + 2)) ;; *) i=$((i + 1)) ;; esac
+        done ;;
+      *) break ;;
+    esac
+  done
+  cmd_i=$i
+}
 env_read_guard() {
   local i=0 name word first tail
   [ "${#words[@]}" -gt 0 ] || return 0
-  while [[ "${words[$i]:-}" == sudo || "${words[$i]:-}" == command ]]; do i=$((i + 1)); done
+  command_index; i=$cmd_i
   name=${words[$i]:-}; name=${name##*/}
   shopt -s nocasematch
   case "$name" in
-    cat|bat|less|more|head|tail|grep|egrep|fgrep|rg|sed|awk|gawk|cut|sort|uniq|tr|od|xxd|hexdump|strings|base64|nl|tac|rev|diff|cmp|source|.|cp|copy|type|gc|get-content|select-string|sls|more.com) ;;
+    cat|bat|less|more|head|tail|grep|egrep|fgrep|rg|sed|awk|gawk|cut|sort|uniq|tr|od|xxd|hexdump|strings|base64|nl|tac|rev|diff|cmp|source|.|cp|mv|ln|copy|type|gc|get-content|select-string|sls|more.com) ;;
     *) shopt -u nocasematch; return 0 ;;
   esac
   for ((i=i + 1; i<${#words[@]}; i++)); do
@@ -80,8 +138,8 @@ check_simple_command() {
   local i=0 name recursive=0 broad=0 end_options=0 mode='' word git_subcommand='' skip_value=0 push_option=0
   [ "${#words[@]}" -gt 0 ] || return 0
   env_read_guard
-  # Common literal wrappers only; wrapper options are intentionally not interpreted.
-  while [[ "${words[$i]:-}" == sudo || "${words[$i]:-}" == command ]]; do i=$((i + 1)); done
+  # Literal wrappers and their common options are skipped (see command_index).
+  command_index; i=$cmd_i
   name=${words[$i]:-}; name=${name##*/}
   if [[ "$name" == git ]]; then
     # Recognize git global options that precede subcommand, including `git -C dir push`.
@@ -102,6 +160,21 @@ check_simple_command() {
         [[ "${words[$i]}" == --hard ]] && deny "git reset --hard"
       done
     fi
+    if [[ "$git_subcommand" == clean ]]; then
+      # `git clean -f` deletes untracked files for good (local notes, unstaged work). A dry run stays allowed.
+      local clean_force=0 clean_dry=0
+      for ((i=i + 1; i<${#words[@]}; i++)); do
+        word=${words[$i]}
+        case "$word" in
+          --) break ;;   # pathspecs follow; `-notes` after it is a path, not a dry-run flag
+          --force) clean_force=1 ;;
+          --dry-run) clean_dry=1 ;;
+          --*) ;;
+          -*) [[ "$word" == *f* ]] && clean_force=1; [[ "$word" == *n* ]] && clean_dry=1 ;;
+        esac
+      done
+      if [[ "$clean_force" -eq 1 && "$clean_dry" -eq 0 ]]; then deny "git clean -f (deletes untracked files)"; fi
+    fi
     if [[ "$git_subcommand" == push ]]; then
       push_option=1
       for ((i=i + 1; i<${#words[@]}; i++)); do
@@ -109,6 +182,7 @@ check_simple_command() {
         case "$word" in
           --) push_option=0; continue ;;
           --force|-f) deny "git force push" ;;
+          --mirror) deny "git push --mirror (overwrites and deletes remote refs)" ;;
           --force-with-lease*) continue ;;
           --*) continue ;;
           -*) [[ "$word" == *f* || "$word" == *F* ]] && deny "git force push" ;;
@@ -189,7 +263,9 @@ check_simple_command
 # cannot turn a deny into an allow.
 re_push_force='git[[:space:]]+push([[:space:]]+[^;&|]*)?[[:space:]](--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)'
 re_reset_hard='git[[:space:]]+(-[^[:space:]]+[[:space:]]+([^-[:space:]][^[:space:]]*[[:space:]]+)?)*reset[[:space:]]+(.*[[:space:]])?--hard'
-re_curl_sh='(curl|wget)[^|;]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$|[;&)])'
+re_curl_sh='(curl|wget)[^|;]*\|[[:space:]]*((sudo|env)([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+)?(ba|z|da|k)?sh([[:space:]]|$|[;&)])'
+# The same download run through a substitution: `bash <(curl ...)`, `sh -c "$(curl ...)"`, `eval "$(wget ...)"`.
+re_sh_subst='(^|[[:space:];&|(])((ba|z|da|k)?sh|source|eval|\.)[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*["'"'"']?(<\(|\$\()[[:space:]]*(curl|wget)[[:space:]]'
 re_disk='(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?(shred[[:space:]]|mkfs[.a-z0-9]*|dd[[:space:]]+[^;&|]*of=/dev/(sd|hd|vd|xvd|nvme|mmcblk|loop|md|dm-|mapper|sr))'
 # git push --force / -f (--force-with-lease is allowed)
 if [[ $cmd =~ $re_push_force ]]; then deny "git force push"; fi
@@ -197,6 +273,7 @@ if [[ $cmd =~ $re_push_force ]]; then deny "git force push"; fi
 if [[ $cmd =~ $re_reset_hard ]]; then deny "git reset --hard"; fi
 # piping a download straight into a shell
 if [[ $cmd =~ $re_curl_sh ]]; then deny "download piped into a shell"; fi
+if [[ $cmd =~ $re_sh_subst ]]; then deny "download run by a shell through a substitution"; fi
 if [[ $cmd =~ $re_disk ]]; then deny "raw disk write or filesystem creation"; fi
 
 # PowerShell/cmd-style recursive deletes (Remove-Item, ri, del, erase, rd, rmdir) on a broad target.

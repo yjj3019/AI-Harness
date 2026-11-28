@@ -78,7 +78,8 @@ re_evidence_component='(^|/)(\.phase-|phase-~[0-9])'
 # A dot-prefixed component that contains a glob character can expand to the evidence directory.
 re_dot_glob_path='(^|/)\.[^/]*[*?\[{]'
 # The gate's trust base: files whose content decides what a PASS means. Subagents may not edit them.
-re_trust_set='(^|/)(\.claude/(workflows/|hooks/|settings[^/]*\.json$|required-test-command\.json$|attestation-public-key\.pem$)|\.codex/(hooks/|hooks\.json$|config\.toml$)|\.github/(workflows/|required-phases\.json$|CODEOWNERS$)|CODEOWNERS$|tests/run-all\.sh$|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js$)|(^|/)phase-gate\.js[.\ ]*(:[^/]*)?$'
+# docs/attestations/ is written by `phase-gate.js attest` only: a hand-edited attestation is not evidence.
+re_trust_set='(^|/)(\.claude/(workflows/|hooks/|settings[^/]*\.json$|required-test-command\.json$|attestation-public-key\.pem$)|\.codex/(hooks/|hooks\.json$|config\.toml$)|\.github/(workflows/|required-phases\.json$|CODEOWNERS$)|CODEOWNERS$|docs/attestations/|tests/run-all\.sh$|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js$)|(^|/)phase-gate\.js[.\ ]*(:[^/]*)?$'
 
 check_write_path() { # check_write_path <raw path>
   local raw=$1 norm real
@@ -112,7 +113,7 @@ check_command() { # check_command <command text> (Bash and PowerShell)
   # node -e writers evade it. Backslashes are read as slashes, and the path may carry any prefix (absolute, ../,
   # $CLAUDE_PROJECT_DIR/ ...), so the match is not anchored to the start of a word.
   local cmd_n=${cmd//\\//}
-  local re_cmd_trust='(\.claude/(workflows|hooks)(/|[[:space:]"'"'"';&|)]|$)|\.claude/(settings[^[:space:]/]*\.json|required-test-command\.json|attestation-public-key\.pem)|\.codex/(hooks(/|[[:space:]"'"'"';&|)]|$)|hooks\.json|config\.toml)|\.github/(workflows(/|[[:space:]"'"'"';&|)]|$)|required-phases\.json|CODEOWNERS)|(^|[^A-Za-z0-9_.-])CODEOWNERS|tests/run-all\.sh|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js)'
+  local re_cmd_trust='(\.claude/(workflows|hooks)(/|[[:space:]"'"'"';&|)]|$)|\.claude/(settings[^[:space:]/]*\.json|required-test-command\.json|attestation-public-key\.pem)|\.codex/(hooks(/|[[:space:]"'"'"';&|)]|$)|hooks\.json|config\.toml)|\.github/(workflows(/|[[:space:]"'"'"';&|)]|$)|required-phases\.json|CODEOWNERS)|(^|[^A-Za-z0-9_.-])CODEOWNERS|docs/attestations(/|[[:space:]"'"'"';&|)]|$)|tests/run-all\.sh|scripts/(phase-definition|context-contract|tree-exclude-check|merge-guard|verify-attestation-inventory|test-summary-gate|secret-scan|source-adoption-check)\.js)'
   local re_cmd_write='(sed|perl)([[:space:]]+-[^[:space:]]+)*[[:space:]]+-[a-zA-Z]*i|--in-place|(^|[[:space:];&|(])(tee|cp|mv|rm|install|truncate|ln|patch|chmod|chown|dd|sponge|touch|unlink|rsync|curl|wget)[[:space:]]|git[[:space:]]+(apply|checkout|restore|reset|stash|rm|mv|clean)|find[[:space:]].*-delete|(Set|Add|Out|New|Remove|Move|Copy|Rename)-(Content|Item|File)'
   # Redirects: drop the harmless ones (to /dev/null, and fd duplication such as 2>&1), then any ">" left is a write,
   # including 1>, &> and >>.
