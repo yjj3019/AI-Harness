@@ -230,7 +230,7 @@ function usage() {
       "  node phase-gate.js unlock <phase>   (remove a lock whose owner process is gone)",
       "  node phase-gate.js doctor [--host claude|codex]",
       "  node phase-gate.js attest <phase> [--require-strict-evidence] [--sign [<private-key-file>]]",
-      "  node phase-gate.js attest-keygen [<private-key-file>]   (writes the private key outside the repo and the public key to .claude/attestation-public-key.pem)",
+      "  node phase-gate.js attest-keygen [<private-key-file>]   (writes the private key outside the repo and the public key to .claude/attestation-public-key.pem; the file is absent until a key is introduced through a reviewed change, and CI trusts a new key once)",
       "  node phase-gate.js verify-attestation <phase> [--require-strict-evidence] [--require-pinned-command] [--require-signature] [-- <expected command...>]",
       `Steps: ${STEPS.join(", ")}`,
     ].join("\n")
@@ -1012,9 +1012,9 @@ function attestationFile(phase) {
 // ---- Attestation signatures (Ed25519) -------------------------------------------------------------------
 // The signature covers the canonical JSON of the attestation without its "signature" field, so changing the tree,
 // the command, the flags or the evidence-chain digest invalidates it. The private key stays outside the repository
-// (default ~/.harness/attest-ed25519.pem); the public key is committed at .claude/attestation-public-key.pem and is
-// part of the gate's trust set. CI reads the public key from the PR base commit (ATTEST_KEY_BASE_SHA), so a pull
-// request cannot swap the key it is verified against. A signature proves that the holder of the private key attested
+// (default ~/.harness/attest-ed25519.pem); the public key lives at .claude/attestation-public-key.pem when signing is in use (it was
+// removed on 2026-11-28 while unused; a new key is introduced through a reviewed change) and is part of the gate's trust set.
+// CI reads the public key from the PR base commit (ATTEST_KEY_BASE_SHA), so a pull request cannot swap the key it is verified against. A signature proves that the holder of the private key attested
 // this exact payload; it does not prove that the verify and review steps were independent.
 const ATTEST_PUBKEY_REL = ".claude/attestation-public-key.pem";
 const DEFAULT_ATTEST_KEY = path.join(os.homedir(), ".harness", "attest-ed25519.pem");
