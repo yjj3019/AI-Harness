@@ -212,6 +212,12 @@ tcx() {
 }
 echo "== evidence-guard (Codex copy): same bypasses and trust set =="
 tcx coding 2 Write file_path ".phase-ev*/x.json"
+# The signing-key guard must behave the same as the Claude copy (same narrowed pattern).
+tcx coding 2 Write file_path "keys/attest_key.pem"
+tcx coding 2 Bash command "node .claude/workflows/phase-gate.js attest_keygen"
+tcx coding 2 Bash command "node .claude/workflows/phase-gate.js attest evidence-baseline --sign attest-keyfile"
+tcx coding 0 Write file_path "docs/attest-key-rotation-notes.md"
+tcx coding 0 Bash command "cat docs/attestkey-glossary.md"
 tcx coding 2 Write file_path ".phase-evidence./x.json"
 tcx coding 2 Write file_path ""
 tcx verify 2 Bash command "node .claude/workflows/phase-gate record 1 verify --status PASS"
@@ -552,6 +558,9 @@ rm -rf "$nogrep_bin"
 
 echo "== Claude and Codex hook copies must not drift =="
 # block-destructive.sh and read-tracker.sh are shared logic; only the self-referencing path may differ.
+# The signing-key pattern is duplicated in both evidence guards and must stay identical.
+total=$((total + 1))
+[ "$(grep -m1 '^re_signing_key=' .claude/hooks/evidence-guard.sh)" = "$(grep -m1 '^re_signing_key=' .codex/hooks/evidence-guard.sh)" ]   || { fails=$((fails + 1)); echo "FAIL re_signing_key differs between .claude and .codex evidence-guard.sh"; }
 for pair in block-destructive.sh read-tracker.sh; do
   total=$((total + 1))
   cmp -s <(sed "s#\.claude/hooks#HOOKS#g" ".claude/hooks/$pair") <(sed "s#\.codex/hooks#HOOKS#g" ".codex/hooks/$pair") \
